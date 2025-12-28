@@ -57,9 +57,15 @@
             right: 0;
             z-index: 1000;
             padding: 20px 0;
-            background: rgba(7, 7, 10, 0.9);
+            background: rgba(7, 7, 10, 0.85);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        nav.scrolled {
+            padding: 14px 0;
+            border-bottom-color: var(--border);
         }
 
         .nav-inner {
@@ -113,6 +119,71 @@
         }
 
         .nav-links a:hover { color: var(--gold); }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .mobile-menu-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text);
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 999;
+            padding: 100px 24px 40px;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        .mobile-menu a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 16px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .mobile-menu a:hover {
+            background: var(--bg-alt);
+        }
+
+        .mobile-menu .btn-wallet {
+            margin-top: 16px;
+            background: var(--gradient-gold);
+            color: #000 !important;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            .nav-links {
+                display: none;
+            }
+        }
 
         .btn {
             display: inline-flex;
@@ -901,11 +972,30 @@
                     <a href="#ubs">UBS Key4 Gold</a>
                     <a href="#market">Рынок</a>
                     <a href="#why-now">Почему сейчас</a>
+                    <a href="#cta" class="btn btn-primary" style="color: #000 !important;">Связаться</a>
                 </div>
-                <a href="#cta" class="btn btn-primary">Связаться</a>
+
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Меню">
+                    <svg id="menu-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="#enterprises" onclick="closeMobileMenu()">Enterprise проекты</a>
+        <a href="#ubs" onclick="closeMobileMenu()">UBS Key4 Gold</a>
+        <a href="#market" onclick="closeMobileMenu()">Рынок</a>
+        <a href="#why-now" onclick="closeMobileMenu()">Почему сейчас</a>
+        <a href="https://oltinchain.com" onclick="closeMobileMenu()">← Главная</a>
+        <a href="#cta" class="btn-wallet" onclick="closeMobileMenu()">Связаться</a>
+    </div>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -1392,6 +1482,39 @@
                 }
             });
         });
+
+        // Nav scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            const isOpen = menu.classList.toggle('active');
+
+            if (isOpen) {
+                icon.innerHTML = '<line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/>';
+                document.body.style.overflow = 'hidden';
+            } else {
+                icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function closeMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            menu.classList.remove('active');
+            icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+            document.body.style.overflow = '';
+        }
     </script>
 </body>
 </html>

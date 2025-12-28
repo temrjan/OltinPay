@@ -118,6 +118,68 @@
 
         .nav-links a:hover { color: var(--gold); }
 
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .mobile-menu-btn svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--text);
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg);
+            z-index: 999;
+            padding: 100px 24px 40px;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+        }
+
+        .mobile-menu.active {
+            display: flex;
+        }
+
+        .mobile-menu a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 16px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .mobile-menu a:hover {
+            background: var(--bg-alt);
+        }
+
+        .mobile-menu .btn-wallet {
+            margin-top: 16px;
+            background: var(--gradient-gold);
+            color: #000 !important;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+
         .btn {
             display: inline-flex;
             align-items: center;
@@ -1078,16 +1140,22 @@
         }
 
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.5rem; }
-            .section-title { font-size: 2rem; }
+            .container { padding: 0 16px; overflow-x: hidden; }
+            .hero { padding: 100px 0 60px; overflow: hidden; }
+            .hero h1 { font-size: 2rem; word-wrap: break-word; }
+            .hero-description { font-size: 1rem; padding: 0 8px; }
+            .hero-buttons { flex-wrap: wrap; gap: 12px; }
+            .hero-buttons .btn { width: 100%; justify-content: center; padding: 14px 20px; }
+            .hero-visual { display: none; }
+            .section-title { font-size: 1.8rem; }
             .problem-grid, .solution-grid, .tech-grid, .roadmap-grid, .steps { grid-template-columns: 1fr; }
             .nav-links { display: none; }
             .hero-stats { flex-direction: column; gap: 24px; }
-            .comparison-table { font-size: 0.85rem; }
-            .comparison-table th, .comparison-table td { padding: 14px 16px; }
+            .comparison-table { font-size: 0.8rem; overflow-x: auto; display: block; }
+            .comparison-table th, .comparison-table td { padding: 12px 10px; white-space: nowrap; }
             .footer-grid { grid-template-columns: 1fr; gap: 40px; }
             .footer-bottom { flex-direction: column; gap: 20px; }
-            .cta h2 { font-size: 2rem; }
+            .cta h2 { font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -1105,14 +1173,38 @@
                     <a href="#solution">Решение</a>
                     <a href="#how-it-works">Как работает</a>
                     <a href="#reserves">Резервы</a>
-                    <a href="#contract">Контракт</a>
                     <a href="#roadmap">Roadmap</a>
+                    <a href="https://dashboard.oltinchain.com" target="_blank">Dashboard ↗</a>
                     <a href="/enterprise.html" style="color: var(--gold) !important;">Enterprise</a>
-                    <a href="/wallet" class="btn btn-primary">Кошелёк</a>
+                    <a href="/wallet" class="btn btn-primary" style="color: #000 !important;">Кошелёк</a>
                 </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Меню">
+                    <svg id="menu-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="#problem" onclick="closeMobileMenu()">Проблема</a>
+        <a href="#solution" onclick="closeMobileMenu()">Решение</a>
+        <a href="#how-it-works" onclick="closeMobileMenu()">Как работает</a>
+        <a href="#reserves" onclick="closeMobileMenu()">Резервы</a>
+        <a href="#contract" onclick="closeMobileMenu()">Контракт</a>
+        <a href="#roadmap" onclick="closeMobileMenu()">Roadmap</a>
+        <a href="/enterprise.html" style="color: var(--gold);">Enterprise</a>
+        <a href="https://dashboard.oltinchain.com" target="_blank">Dashboard ↗</a>
+        <a href="https://sepolia.explorer.zksync.io/address/0xA7E92168517864359B6Fa9e2247B01e0280A7dAa" target="_blank" style="color: var(--text-muted);">Blockchain Explorer ↗</a>
+        <a href="https://api.oltinchain.com/docs" target="_blank" style="color: var(--text-muted);">API Docs ↗</a>
+        <a href="/wallet" class="btn-wallet">Кошелёк</a>
+    </div>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -1244,8 +1336,8 @@
             
             <div class="steps">
                 <div class="step">
-                    <div class="step-number">📲</div>
-                    <h3>Открой приложение</h3>
+                    <div class="step-number">👛</div>
+                    <h3>Открой кошелёк</h3>
                     <p>Зарегистрируйся по номеру телефона за 30 секунд</p>
                 </div>
                 <div class="step">
@@ -1647,6 +1739,29 @@
                 btn.textContent = '✓';
                 setTimeout(() => { btn.textContent = '📋'; }, 2000);
             });
+        }
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            const isOpen = menu.classList.toggle('active');
+
+            if (isOpen) {
+                icon.innerHTML = '<line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/>';
+                document.body.style.overflow = 'hidden';
+            } else {
+                icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+                document.body.style.overflow = '';
+            }
+        }
+
+        function closeMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            menu.classList.remove('active');
+            icon.innerHTML = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
+            document.body.style.overflow = '';
         }
     </script>
 </body>
