@@ -1,0 +1,28 @@
+# Environment
+.env
+*.env
+
+# Node
+node_modules/
+.next/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Docker volumes
+pg_data/
+redis_data/
+
+# Certificates
+traefik/acme.json
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log

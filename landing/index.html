@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OltinChain — Золото в твоём кармане</title>
+    <meta name="description" content="Первая платформа токенизации золота в Центральной Азии. Инвестируй в золото от 50,000 сум через Telegram.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23D4AF37' rx='20' width='100' height='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='70'>Au</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #F4D03F;
+            --gold-dark: #B8860B;
+            --gold-glow: rgba(212, 175, 55, 0.4);
+            --bg: #07070a;
+            --bg-card: #0c0c12;
+            --bg-alt: #111118;
+            --border: #1e1e2a;
+            --text: #f0f0f5;
+            --text-muted: #9090a8;
+            --text-dim: #606078;
+            --success: #22c55e;
+            --error: #ef4444;
+            --gradient-gold: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dark));
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold-dark); }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 0;
+            background: rgba(7, 7, 10, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        nav.scrolled {
+            padding: 14px 0;
+            border-bottom-color: var(--border);
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--gradient-gold);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            color: #000;
+            box-shadow: 0 4px 20px var(--gold-glow);
+        }
+
+        .logo-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--gold); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient-gold);
+            color: #000;
+            box-shadow: 0 4px 24px var(--gold-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--gold-glow);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 140px 0 100px;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -15%;
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, var(--gold-glow) 0%, transparent 65%);
+            opacity: 0.25;
+            pointer-events: none;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 100px;
+            font-size: 0.9rem;
+            color: var(--gold);
+            margin-bottom: 28px;
+        }
+
+        .hero-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .hero h1 {
+            font-size: 3.8rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 28px;
+        }
+
+        .hero h1 span {
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-description {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            max-width: 520px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 56px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 56px;
+        }
+
+        .hero-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .hero-stat-label {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Hero Visual */
+        .hero-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .gold-bar-3d {
+            width: 340px;
+            height: 190px;
+            background: var(--gradient-gold);
+            border-radius: 14px;
+            position: relative;
+            transform: perspective(1000px) rotateY(-12deg) rotateX(5deg);
+            box-shadow: 
+                0 60px 120px rgba(0, 0, 0, 0.5),
+                0 0 100px var(--gold-glow),
+                inset 0 2px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: perspective(1000px) rotateY(-12deg) rotateX(5deg) translateY(0); }
+            50% { transform: perspective(1000px) rotateY(-12deg) rotateX(5deg) translateY(-20px); }
+        }
+
+        .gold-bar-3d::before {
+            content: 'OLTIN';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.25);
+            letter-spacing: 10px;
+        }
+
+        .gold-bar-3d::after {
+            content: '999.9';
+            position: absolute;
+            bottom: 22px;
+            right: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: rgba(0, 0, 0, 0.2);
+        }
+
+        .floating-tokens {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .token {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 0.65rem;
+            color: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 40px rgba(212, 175, 55, 0.25);
+            animation: tokenFloat 4s ease-in-out infinite;
+        }
+
+        .token:nth-child(1) { top: 5%; left: 5%; animation-delay: 0s; }
+        .token:nth-child(2) { top: 65%; left: -5%; animation-delay: 1.2s; }
+        .token:nth-child(3) { top: 15%; right: 0%; animation-delay: 2.4s; }
+        .token:nth-child(4) { bottom: 5%; right: 10%; animation-delay: 0.6s; }
+
+        @keyframes tokenFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(8deg); }
+        }
+
+        /* Section */
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: var(--gold);
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            max-width: 650px;
+        }
+
+        .section-description {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 56px;
+        }
+
+        /* Problem Section */
+        .problem {
+            background: var(--bg-card);
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .problem-card {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            transition: all 0.3s;
+        }
+
+        .problem-card:hover {
+            border-color: rgba(239, 68, 68, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .problem-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 24px;
+        }
+
+        .problem-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+
+        .problem-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Solution Section */
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .solution-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 36px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .solution-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-gold);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .solution-card:hover {
+            border-color: rgba(212, 175, 55, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .solution-card:hover::before { opacity: 1; }
+
+        .solution-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 24px;
+        }
+
+        .solution-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+
+        .solution-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* How it works */
+        .how-it-works {
+            background: var(--bg-card);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 48px;
+            left: 12%;
+            right: 12%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), var(--gold), transparent);
+            opacity: 0.25;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 96px;
+            height: 96px;
+            background: var(--bg-alt);
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+            font-size: 40px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
+        }
+
+        .step:hover .step-number {
+            border-color: var(--gold);
+            box-shadow: 0 0 40px var(--gold-glow);
+        }
+
+        .step h3 {
+            font-size: 1.15rem;
+            margin-bottom: 10px;
+        }
+
+        .step p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+
+        /* Comparison */
+        .comparison-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 22px 28px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table th {
+            background: var(--bg-alt);
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-table th:first-child { color: var(--gold); }
+
+        .comparison-table tr:last-child td { border-bottom: none; }
+
+        .comparison-table td:first-child { font-weight: 600; }
+
+        .check { color: var(--success); font-size: 1.3rem; }
+        .cross { color: var(--error); font-size: 1.3rem; }
+
+        .highlight-row td {
+            background: rgba(212, 175, 55, 0.05);
+        }
+
+        .highlight-row td:first-child { color: var(--gold); }
+
+        /* Technology */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .tech-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-4px);
+        }
+
+        .tech-icon {
+            width: 72px;
+            height: 72px;
+            background: var(--bg-alt);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin: 0 auto 20px;
+        }
+
+        .tech-card h4 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .tech-card p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        /* Reserves */
+        .reserves {
+            background: var(--bg-card);
+        }
+
+        .reserves-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .reserves-visual {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .mini-bar {
+            aspect-ratio: 2/1;
+            background: var(--gradient-gold);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(0, 0, 0, 0.35);
+            box-shadow: 0 8px 32px rgba(212, 175, 55, 0.2);
+            transition: all 0.3s;
+        }
+
+        .mini-bar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 48px rgba(212, 175, 55, 0.35);
+        }
+
+        .reserves-info h3 {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+        }
+
+        .reserves-info h3 span {
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .reserves-info p {
+            color: var(--text-muted);
+            margin-bottom: 36px;
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .reserves-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .reserves-stat {
+            background: var(--bg-alt);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .reserves-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .reserves-stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+
+        /* Contract Section */
+        .contract-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .contract-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 28px 32px;
+            background: var(--bg-alt);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .contract-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .contract-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .contract-network {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+
+        .contract-address {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .contract-address-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .contract-address-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            background: var(--bg-alt);
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: var(--gold);
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .contract-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .contract-info-item {
+            background: var(--bg-card);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .contract-info-label {
+            display: block;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .contract-info-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        @media (max-width: 768px) {
+            .contract-header { flex-wrap: wrap; }
+            .contract-header .btn { margin-left: 0 !important; margin-top: 16px; width: 100%; justify-content: center; }
+            .contract-info { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* API Section */
+        .api-preview {
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .api-header {
+            background: var(--bg-card);
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .api-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .api-dot.red { background: #ef4444; }
+        .api-dot.yellow { background: #f59e0b; }
+        .api-dot.green { background: #22c55e; }
+
+        .api-body {
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 12px;
+        }
+
+        .api-method.get { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+        .api-method.post { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+        .api-endpoint { color: var(--text-muted); }
+        .api-comment { color: var(--text-dim); }
+
+        .api-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: start;
+        }
+
+        /* Roadmap */
+        .roadmap-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .roadmap-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .roadmap-item:hover {
+            transform: translateY(-4px);
+        }
+
+        .roadmap-item.completed {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .roadmap-item.completed::before {
+            content: '✓';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 28px;
+            height: 28px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .roadmap-item.current {
+            border-color: var(--gold);
+            box-shadow: 0 0 40px var(--gold-glow);
+        }
+
+        .roadmap-quarter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--gold);
+            margin-bottom: 14px;
+        }
+
+        .roadmap-item h4 {
+            font-size: 1.15rem;
+            margin-bottom: 16px;
+        }
+
+        .roadmap-item ul {
+            list-style: none;
+        }
+
+        .roadmap-item li {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .roadmap-item li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+        }
+
+        /* CTA */
+        .cta {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.02));
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cta-content {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .cta h2 {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+        }
+
+        .cta p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 80px 0 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            margin-top: 20px;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .footer-column h4 {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            color: var(--gold);
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column li {
+            margin-bottom: 12px;
+        }
+
+        .footer-column a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .footer-column a:hover { color: var(--gold); }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-bottom p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-socials a {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-alt);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .footer-socials a:hover {
+            background: var(--gold);
+            color: #000;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-grid { grid-template-columns: 1fr; text-align: center; }
+            .hero-visual { margin-top: 60px; }
+            .hero-description { margin: 0 auto 40px; }
+            .hero-buttons { justify-content: center; }
+            .hero-stats { justify-content: center; }
+            .problem-grid, .solution-grid, .tech-grid, .roadmap-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: repeat(2, 1fr); }
+            .steps::before { display: none; }
+            .reserves-content, .api-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .section-title { font-size: 2rem; }
+            .problem-grid, .solution-grid, .tech-grid, .roadmap-grid, .steps { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .hero-stats { flex-direction: column; gap: 24px; }
+            .comparison-table { font-size: 0.85rem; }
+            .comparison-table th, .comparison-table td { padding: 14px 16px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 40px; }
+            .footer-bottom { flex-direction: column; gap: 20px; }
+            .cta h2 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="container">
+            <div class="nav-inner">
+                <a href="#" class="logo">
+                    <div class="logo-icon">Au</div>
+                    <span class="logo-text">OltinChain</span>
+                </a>
+                <div class="nav-links">
+                    <a href="#problem">Проблема</a>
+                    <a href="#solution">Решение</a>
+                    <a href="#how-it-works">Как работает</a>
+                    <a href="#reserves">Резервы</a>
+                    <a href="#contract">Контракт</a>
+                    <a href="#roadmap">Roadmap</a>
+                    <a href="/wallet" class="btn btn-primary">Войти</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <div class="hero-badge">Первая в Центральной Азии</div>
+                    <h1>Инвестируй в <span>золото</span> от 50,000 сум</h1>
+                    <p class="hero-description">
+                        OltinChain — платформа токенизации золота. Каждый токен OLTIN обеспечен 
+                        реальным граммом золота в сертифицированных хранилищах.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="/wallet" class="btn btn-primary">Начать использовать</a>
+                        <a href="#how-it-works" class="btn btn-secondary">Как это работает</a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">~$4</div>
+                            <div class="hero-stat-label">Минимум для старта</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">100%</div>
+                            <div class="hero-stat-label">Обеспечение золотом</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-value">24/7</div>
+                            <div class="hero-stat-label">Торговля</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="floating-tokens">
+                        <div class="token">1g</div>
+                        <div class="token">1g</div>
+                        <div class="token">1g</div>
+                        <div class="token">1g</div>
+                    </div>
+                    <div class="gold-bar-3d"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem" id="problem">
+        <div class="container">
+            <div class="section-label">Проблема</div>
+            <h2 class="section-title">Почему инвестировать в золото сложно?</h2>
+            <p class="section-description">
+                Традиционные способы инвестирования в золото имеют серьёзные ограничения, 
+                которые делают его недоступным для большинства людей.
+            </p>
+            
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">💰</div>
+                    <h3>Высокий порог входа</h3>
+                    <p>Минимальная покупка в ювелирных магазинах и банках — от 1 грамма (~500,000 сум). Для многих это слишком много для начала.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">🏦</div>
+                    <h3>Сложность хранения</h3>
+                    <p>Физическое золото нужно где-то хранить. Дома — риск кражи, в банке — аренда ячейки и комиссии.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">📉</div>
+                    <h3>Низкая ликвидность</h3>
+                    <p>Продать золото быстро и по хорошей цене сложно. Ювелирки покупают с большим дисконтом, банки — с очередями.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section class="solution" id="solution">
+        <div class="container">
+            <div class="section-label">Решение</div>
+            <h2 class="section-title">OltinChain меняет правила игры</h2>
+            <p class="section-description">
+                Мы объединили надёжность золота с удобством цифровых технологий. 
+                Теперь инвестировать в золото так же просто, как отправить сообщение.
+            </p>
+            
+            <div class="solution-grid">
+                <div class="solution-card">
+                    <div class="solution-icon">📱</div>
+                    <h3>Покупай от 50,000 сум</h3>
+                    <p>Начни с малого. Даже небольшие регулярные покупки со временем превратятся в серьёзный золотой запас.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">⛓️</div>
+                    <h3>Хранение в блокчейне</h3>
+                    <p>Твоё золото записано в блокчейн — никаких сейфов и ячеек. Доступ 24/7 из любой точки мира.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">⚡</div>
+                    <h3>Мгновенная продажа</h3>
+                    <p>Продавай в один клик по рыночной цене. Деньги на счёте через секунды, не дни.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">🔒</div>
+                    <h3>100% обеспечение</h3>
+                    <p>Каждый токен OLTIN подкреплён реальным граммом физического золота в хранилище. Проверяй в любое время.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">💳</div>
+                    <h3>Оплата Click/Payme</h3>
+                    <p>Покупай через знакомые платёжные системы. Без сложных банковских переводов и конвертаций.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">📊</div>
+                    <h3>Прозрачные комиссии</h3>
+                    <p>Никаких скрытых сборов. Ты всегда видишь точную сумму до совершения операции.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-label">Как это работает</div>
+            <h2 class="section-title">4 простых шага к золотым инвестициям</h2>
+            <p class="section-description">
+                Весь процесс занимает меньше минуты. Никаких документов, очередей и ожидания.
+            </p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">📲</div>
+                    <h3>Открой приложение</h3>
+                    <p>Зарегистрируйся по номеру телефона за 30 секунд</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">💳</div>
+                    <h3>Пополни баланс</h3>
+                    <p>Через Click, Payme или банковскую карту</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">🪙</div>
+                    <h3>Купи OLTIN</h3>
+                    <p>Выбери сумму и подтверди покупку золота</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">📈</div>
+                    <h3>Следи за ростом</h3>
+                    <p>Продавай когда захочешь по рыночной цене</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="comparison">
+        <div class="container">
+            <div class="section-label">Сравнение</div>
+            <h2 class="section-title">OltinChain vs традиционные способы</h2>
+            <p class="section-description">
+                Посмотри, как мы упрощаем инвестиции в золото по сравнению с привычными методами.
+            </p>
+            
+            <div class="comparison-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Критерий</th>
+                            <th>OltinChain</th>
+                            <th>Банк</th>
+                            <th>Ювелирка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td>Минимальная покупка</td>
+                            <td>50,000 сум (~$4)</td>
+                            <td>1 грамм (~500k сум)</td>
+                            <td>1+ грамм</td>
+                        </tr>
+                        <tr>
+                            <td>Время покупки</td>
+                            <td>30 секунд</td>
+                            <td>30-60 минут</td>
+                            <td>15-30 минут</td>
+                        </tr>
+                        <tr>
+                            <td>Хранение</td>
+                            <td>Бесплатно (блокчейн)</td>
+                            <td>Ячейка (платно)</td>
+                            <td>Дома (риск)</td>
+                        </tr>
+                        <tr>
+                            <td>Продажа</td>
+                            <td>Мгновенно</td>
+                            <td>1-3 дня</td>
+                            <td>С дисконтом 10-20%</td>
+                        </tr>
+                        <tr>
+                            <td>Доступ 24/7</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="cross">✗</span></td>
+                            <td><span class="cross">✗</span></td>
+                        </tr>
+                        <tr>
+                            <td>Прозрачность резервов</td>
+                            <td><span class="check">✓</span></td>
+                            <td><span class="cross">✗</span></td>
+                            <td><span class="cross">✗</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reserves -->
+    <section class="reserves" id="reserves">
+        <div class="container">
+            <div class="reserves-content">
+                <div class="reserves-visual">
+                    <div class="mini-bar">100g</div>
+                    <div class="mini-bar">100g</div>
+                    <div class="mini-bar">100g</div>
+                    <div class="mini-bar">100g</div>
+                    <div class="mini-bar">100g</div>
+                    <div class="mini-bar">+</div>
+                </div>
+                <div class="reserves-info">
+                    <div class="section-label">Proof of Reserves</div>
+                    <h3>Каждый токен <span>обеспечен</span> реальным золотом</h3>
+                    <p>
+                        Мы не просто обещаем — мы доказываем. Каждый выпущенный токен OLTIN 
+                        подкреплён физическим золотом 999.9 пробы в сертифицированных хранилищах Ташкента. 
+                        Проверь резервы в любое время через наш API.
+                    </p>
+                    <div class="reserves-stats">
+                        <div class="reserves-stat">
+                            <div class="reserves-stat-value">999.9</div>
+                            <div class="reserves-stat-label">Проба золота</div>
+                        </div>
+                        <div class="reserves-stat">
+                            <div class="reserves-stat-value">100%</div>
+                            <div class="reserves-stat-label">Покрытие токенов</div>
+                        </div>
+                        <div class="reserves-stat">
+                            <div class="reserves-stat-value">24/7</div>
+                            <div class="reserves-stat-label">Онлайн аудит</div>
+                        </div>
+                        <div class="reserves-stat">
+                            <div class="reserves-stat-value">3</div>
+                            <div class="reserves-stat-label">Хранилища</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Smart Contract -->
+    <section class="contract" id="contract">
+        <div class="container">
+            <div class="section-label">Смарт-контракт</div>
+            <h2 class="section-title">Проверь сам на блокчейне</h2>
+            <p class="section-description">
+                Токен OLTIN — это ERC-20 смарт-контракт на zkSync Era. 
+                Все операции записаны в блокчейн и доступны для проверки.
+            </p>
+            
+            <div class="contract-card">
+                <div class="contract-header">
+                    <div class="contract-icon">⛓️</div>
+                    <div>
+                        <div class="contract-label">OLTIN Token Contract</div>
+                        <div class="contract-network">zkSync Era Sepolia</div>
+                    </div>
+                    <a href="https://sepolia.explorer.zksync.io/address/0xA7E92168517864359B6Fa9e2247B01e0280A7dAa" target="_blank" class="btn btn-secondary" style="margin-left: auto;">
+                        Открыть в Explorer →
+                    </a>
+                </div>
+                <div class="contract-address">
+                    <span class="contract-address-label">Адрес контракта:</span>
+                    <code class="contract-address-value">0xA7E92168517864359B6Fa9e2247B01e0280A7dAa</code>
+                    <button class="copy-btn" onclick="copyAddress()">📋</button>
+                </div>
+                <div class="contract-info">
+                    <div class="contract-info-item">
+                        <span class="contract-info-label">Стандарт</span>
+                        <span class="contract-info-value">ERC-20</span>
+                    </div>
+                    <div class="contract-info-item">
+                        <span class="contract-info-label">Символ</span>
+                        <span class="contract-info-value">OLTIN</span>
+                    </div>
+                    <div class="contract-info-item">
+                        <span class="contract-info-label">Decimals</span>
+                        <span class="contract-info-value">18</span>
+                    </div>
+                    <div class="contract-info-item">
+                        <span class="contract-info-label">Сеть</span>
+                        <span class="contract-info-value">zkSync Era</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology -->
+    <section class="technology" id="technology">
+        <div class="container">
+            <div class="section-label">Технологии</div>
+            <h2 class="section-title">Надёжный фундамент</h2>
+            <p class="section-description">
+                Мы используем проверенные технологии для обеспечения безопасности и скорости операций.
+            </p>
+            
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-icon">⛓️</div>
+                    <h4>zkSync Era</h4>
+                    <p>Layer 2 блокчейн с низкими комиссиями и высокой скоростью</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🔐</div>
+                    <h4>Смарт-контракты</h4>
+                    <p>Автоматизированные и прозрачные операции без посредников</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🏦</div>
+                    <h4>Банковская безопасность</h4>
+                    <p>Шифрование данных и многофакторная защита</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">📱</div>
+                    <h4>Telegram Mini App</h4>
+                    <p>Удобный интерфейс прямо в знакомом мессенджере</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Preview -->
+    <section class="api-section">
+        <div class="container">
+            <div class="api-grid">
+                <div>
+                    <div class="section-label">Для разработчиков</div>
+                    <h2 class="section-title">Открытый API</h2>
+                    <p class="section-description">
+                        Интегрируй OltinChain в своё приложение. Получай цены золота в реальном времени, 
+                        проверяй резервы и создавай собственные продукты на базе нашей платформы.
+                    </p>
+                    <a href="https://api.oltinchain.com/docs" target="_blank" class="btn btn-secondary">Документация API →</a>
+                </div>
+                <div class="api-preview">
+                    <div class="api-header">
+                        <span class="api-dot red"></span>
+                        <span class="api-dot yellow"></span>
+                        <span class="api-dot green"></span>
+                    </div>
+                    <div class="api-body">
+                        <div style="margin-bottom: 16px;">
+                            <span class="api-method get">GET</span>
+                            <span class="api-endpoint">/price/gold</span>
+                            <span class="api-comment">// Текущая цена золота</span>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <span class="api-method get">GET</span>
+                            <span class="api-endpoint">/reserves/proof</span>
+                            <span class="api-comment">// Proof of Reserves</span>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <span class="api-method get">GET</span>
+                            <span class="api-endpoint">/reserves/bars</span>
+                            <span class="api-comment">// Список слитков</span>
+                        </div>
+                        <div>
+                            <span class="api-method get">GET</span>
+                            <span class="api-endpoint">/blockchain/token</span>
+                            <span class="api-comment">// Инфо о токене</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section class="roadmap" id="roadmap">
+        <div class="container">
+            <div class="section-label">Дорожная карта</div>
+            <h2 class="section-title">Путь к будущему</h2>
+            <p class="section-description">
+                Мы активно развиваем платформу и добавляем новые возможности.
+            </p>
+            
+            <div class="roadmap-grid">
+                <div class="roadmap-item completed">
+                    <div class="roadmap-quarter">Q4 2024</div>
+                    <h4>Запуск MVP</h4>
+                    <ul>
+                        <li>Смарт-контракт OLTIN</li>
+                        <li>API платформы</li>
+                        <li>Proof of Reserves</li>
+                        <li>Admin Dashboard</li>
+                    </ul>
+                </div>
+                <div class="roadmap-item current">
+                    <div class="roadmap-quarter">Q1 2025</div>
+                    <h4>Telegram Mini App</h4>
+                    <ul>
+                        <li>Мобильный интерфейс</li>
+                        <li>Click/Payme интеграция</li>
+                        <li>KYC верификация</li>
+                        <li>Бета-тестирование</li>
+                    </ul>
+                </div>
+                <div class="roadmap-item">
+                    <div class="roadmap-quarter">Q2 2025</div>
+                    <h4>Публичный запуск</h4>
+                    <ul>
+                        <li>Открытая регистрация</li>
+                        <li>Партнёрство с банками</li>
+                        <li>Реферальная программа</li>
+                        <li>iOS/Android приложения</li>
+                    </ul>
+                </div>
+                <div class="roadmap-item">
+                    <div class="roadmap-quarter">Q3-Q4 2025</div>
+                    <h4>Масштабирование</h4>
+                    <ul>
+                        <li>Казахстан, Кыргызстан</li>
+                        <li>B2B решения</li>
+                        <li>Золотые сберегательные планы</li>
+                        <li>Институциональные инвесторы</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" id="cta">
+        <div class="container">
+            <div class="cta-content">
+                <h2>Готов начать инвестировать в золото?</h2>
+                <p>Присоединяйся к OltinChain и начни строить свой золотой запас уже сегодня.</p>
+                <div class="cta-buttons">
+                    <a href="/wallet" class="btn btn-primary">Начать использовать</a>
+                    <a href="https://t.me/oltinchain" target="_blank" class="btn btn-secondary">Telegram канал</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-icon">Au</div>
+                        <span class="logo-text">OltinChain</span>
+                    </a>
+                    <p>Первая платформа токенизации золота в Центральной Азии. Делаем инвестиции в золото доступными для каждого.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Продукт</h4>
+                    <ul>
+                        <li><a href="#how-it-works">Как работает</a></li>
+                        <li><a href="#reserves">Резервы</a></li>
+                        <li><a href="#technology">Технологии</a></li>
+                        <li><a href="#roadmap">Roadmap</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Разработчикам</h4>
+                    <ul>
+                        <li><a href="https://api.oltinchain.com/docs" target="_blank">API Docs</a></li>
+                        <li><a href="#">Интеграция</a></li>
+                        <li><a href="#">SDK</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Компания</h4>
+                    <ul>
+                        <li><a href="#">О нас</a></li>
+                        <li><a href="#">Контакты</a></li>
+                        <li><a href="#">Карьера</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2025 OltinChain. Все права защищены.</p>
+                <div class="footer-socials">
+                    <a href="https://t.me/oltinchain" target="_blank">📱</a>
+                    <a href="#">𝕏</a>
+                    <a href="#">💼</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Copy contract address
+        function copyAddress() {
+            const address = '0xA7E92168517864359B6Fa9e2247B01e0280A7dAa';
+            navigator.clipboard.writeText(address).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✓';
+                setTimeout(() => { btn.textContent = '📋'; }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

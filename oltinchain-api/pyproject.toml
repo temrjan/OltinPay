@@ -1,0 +1,65 @@
+[project]
+name = "oltinchain-api"
+version = "0.1.0"
+description = "OltinChain Gold Token API"
+authors = [{name = "OltinChain Team"}]
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.poetry]
+name = "oltinchain-api"
+version = "0.1.0"
+description = "OltinChain Gold Token API"
+authors = ["OltinChain Team"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.127.0"
+uvicorn = {extras = ["standard"], version = "^0.40.0"}
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.45"}
+asyncpg = "^0.31.0"
+pydantic = "^2.12.5"
+pydantic-settings = "^2.12.0"
+python-jose = {extras = ["cryptography"], version = "^3.5.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "^4.3.0"
+redis = "^7.1.0"
+structlog = "^25.5.0"
+httpx = "^0.28.1"
+web3 = "^7.14.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+pytest-asyncio = "^1.3.0"
+pytest-cov = "^7.0.0"
+ruff = "^0.14.10"
+mypy = "^1.19.1"
+black = "^25.12.0"
+pre-commit = "^4.5.1"
+alembic = "^1.17.2"
+aiosqlite = "^0.22.1"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "C90", "B", "S"]
+ignore = ["E501", "B008", "S101", "B904"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

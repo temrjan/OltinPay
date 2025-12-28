@@ -1,0 +1,169 @@
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--log.level=WARN"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=web"
+      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.le.acme.storage=/acme.json"
+      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/acme.json:/acme.json
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.secure.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.secure.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.ratelimit.ratelimit.burst=50"
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: oltinchain
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  oltinchain-api:
+    build: ./oltinchain-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:${PG_PASSWORD}@postgres:5432/oltinchain
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+      ZKSYNC_RPC_URL: ${ZKSYNC_RPC_URL}
+      OLTIN_CONTRACT_ADDRESS: ${OLTIN_CONTRACT_ADDRESS}
+      MINTER_PRIVATE_KEY: ${MINTER_PRIVATE_KEY}
+    networks:
+      - web
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oltin-api.rule=Host(`api.${DOMAIN}`)"
+      - "traefik.http.routers.oltin-api.entrypoints=websecure"
+      - "traefik.http.routers.oltin-api.tls.certresolver=le"
+      - "traefik.http.routers.oltin-api.middlewares=secure,ratelimit"
+      - "traefik.http.routers.oltin-dev.rule=Host(`dev.${DOMAIN}`)"
+      - "traefik.http.routers.oltin-dev.entrypoints=websecure"
+      - "traefik.http.routers.oltin-dev.tls.certresolver=le"
+      - "traefik.http.routers.oltin-dev.middlewares=secure"
+      - "traefik.http.services.oltin-api.loadbalancer.server.port=8000"
+
+  oltinchain-dashboard:
+    build:
+      context: ./oltinchain-dashboard
+      args:
+        NEXT_PUBLIC_API_URL: https://api.${DOMAIN}
+        NEXT_PUBLIC_WS_URL: wss://api.${DOMAIN}/ws
+    restart: unless-stopped
+    networks:
+      - web
+    depends_on:
+      - oltinchain-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oltin-dashboard.rule=Host(`dashboard.${DOMAIN}`)"
+      - "traefik.http.routers.oltin-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.oltin-dashboard.tls.certresolver=le"
+      - "traefik.http.routers.oltin-dashboard.middlewares=secure"
+      - "traefik.http.services.oltin-dashboard.loadbalancer.server.port=3000"
+
+  oltinchain-webapp:
+    build:
+      context: ./oltinchain-webapp
+      args:
+        NEXT_PUBLIC_API_URL: https://api.${DOMAIN}
+    restart: unless-stopped
+    networks:
+      - web
+    depends_on:
+      - oltinchain-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oltin-webapp.rule=Host(`${DOMAIN}`) && PathPrefix(`/wallet`)"
+      - "traefik.http.routers.oltin-webapp.entrypoints=websecure"
+      - "traefik.http.routers.oltin-webapp.tls.certresolver=le"
+      - "traefik.http.routers.oltin-webapp.middlewares=secure"
+      - "traefik.http.routers.oltin-webapp.priority=100"
+      - "traefik.http.services.oltin-webapp.loadbalancer.server.port=3000"
+
+  oltinchain-bots:
+    build: ./oltinchain-bots
+    restart: unless-stopped
+    environment:
+      BOT_API_BASE_URL: http://oltinchain-api:8000
+      BOT_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+    networks:
+      - internal
+    depends_on:
+      - oltinchain-api
+    profiles:
+      - bots
+
+  landing:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./landing:/usr/share/nginx/html:ro
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.landing.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)"
+      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.tls.certresolver=le"
+      - "traefik.http.routers.landing.middlewares=secure"
+      - "traefik.http.routers.landing.priority=1"
+      - "traefik.http.services.landing.loadbalancer.server.port=80"
+
+volumes:
+  pg_data:
+  redis_data:
+
+networks:
+  web:
+    name: web
+  internal:
+    name: internal
+    internal: true
