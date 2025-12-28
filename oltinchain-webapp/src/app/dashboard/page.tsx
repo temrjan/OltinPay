@@ -72,7 +72,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen p-4 pb-20">
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-gold">OltinChain</h1>
+        <a href="https://oltinchain.com" className="text-xl font-bold text-gold hover:underline">← OltinChain</a>
         <button onClick={handleLogout} className="text-muted text-sm">
           Выйти
         </button>
