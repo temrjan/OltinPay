@@ -10,7 +10,7 @@ class Settings(BaseSettings):
 
     # Security
     secret_key: str = "dev-secret-key-change-in-production"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 1440
     refresh_token_expire_days: int = 7
 
     # zkSync

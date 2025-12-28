@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
 
 interface User {
   id: string
@@ -27,6 +27,7 @@ interface AuthState {
   isAuthenticated: boolean
   setAuth: (user: User, accessToken: string, refreshToken: string) => void
   logout: () => void
+  hydrate: () => void
 }
 
 interface WalletState {
@@ -41,21 +42,24 @@ interface PriceState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken, refreshToken) =>
+      setAuth: (user, accessToken, refreshToken) => {
+        localStorage.setItem("access_token", accessToken)
+        localStorage.setItem("refresh_token", refreshToken)
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
-        }),
+        })
+      },
       logout: () => {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
+        localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
         set({
           user: null,
           accessToken: null,
@@ -63,12 +67,20 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         })
       },
+      hydrate: () => {
+        const state = get()
+        if (state.accessToken && !state.isAuthenticated) {
+          set({ isAuthenticated: true })
+        }
+      },
     }),
     {
-      name: 'auth-storage',
+      name: "oltin-auth",
       partialize: (state) => ({
+        user: state.user,
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )
