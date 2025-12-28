@@ -5,6 +5,7 @@ import Link from "next/link"
 import { walletApi } from "@/lib/api"
 import { useAuthStore } from "@/lib/store"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 function formatNumber(n: number, decimals = 2) {
   return new Intl.NumberFormat("ru-RU", {
@@ -45,6 +46,7 @@ export default function HistoryPage() {
   const { isAuthenticated } = useAuthStore()
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -55,9 +57,10 @@ export default function HistoryPage() {
     const fetchHistory = async () => {
       try {
         const { data } = await walletApi.getTransactions(100)
-        setTransactions(data.items || data || [])
-      } catch (err) {
+        setTransactions(data.transactions || data.items || data || [])
+      } catch (err: any) {
         console.error(err)
+        setError("Ошибка загрузки")
       } finally {
         setLoading(false)
       }
@@ -77,18 +80,31 @@ export default function HistoryPage() {
   return (
     <div className="min-h-screen p-4">
       <header className="flex items-center mb-6">
-        <Link href="/dashboard" className="text-muted mr-4">←</Link>
+        <button onClick={() => router.push("/dashboard")} className="text-muted mr-4 text-xl">←</button>
         <h1 className="text-xl font-bold">История</h1>
       </header>
 
-      {transactions.length === 0 ? (
+      {error && (
+        <Card className="p-4 mb-4 text-center">
+          <p className="text-red-500">{error}</p>
+          <Button onClick={() => router.push("/dashboard")} className="mt-4">
+            На главную
+          </Button>
+        </Card>
+      )}
+
+      {!error && transactions.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-muted">Нет транзакций</p>
+          <p className="text-muted mb-4">Нет транзакций</p>
+          <p className="text-sm text-muted mb-4">Совершите первую покупку OLTIN!</p>
+          <Button onClick={() => router.push("/buy")}>
+            Купить OLTIN
+          </Button>
         </Card>
       ) : (
         <div className="space-y-3">
-          {transactions.map((tx) => (
-            <Card key={tx.id} className="p-3">
+          {transactions.map((tx, idx) => (
+            <Card key={tx.id || idx} className="p-3">
               <div className="flex justify-between items-start">
                 <div>
                   <p className={`font-medium ${typeColors[tx.type] || "text-white"}`}>
@@ -100,12 +116,12 @@ export default function HistoryPage() {
                   {tx.amount_oltin && (
                     <p className="font-mono">
                       {tx.type === "sell" || tx.type === "transfer_out" ? "-" : "+"}
-                      {formatNumber(tx.amount_oltin, 4)} OLTIN
+                      {formatNumber(parseFloat(tx.amount_oltin), 4)} OLTIN
                     </p>
                   )}
                   {tx.amount_uzs && (
                     <p className="text-sm text-muted">
-                      {formatNumber(tx.amount_uzs, 0)} UZS
+                      {formatNumber(parseFloat(tx.amount_uzs), 0)} UZS
                     </p>
                   )}
                 </div>
