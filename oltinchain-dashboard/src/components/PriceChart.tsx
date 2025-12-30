@@ -79,7 +79,7 @@ export function PriceChart() {
       if (response.ok) {
         const data = await response.json();
         if (data.prices && data.prices.length > 0 && seriesRef.current) {
-          let prices = data.prices.reverse();
+          let prices = data.prices;
 
           // Filter by timeframe
           if (timeframe !== 'all') {
@@ -97,7 +97,11 @@ export function PriceChart() {
               time: Math.floor(new Date(p.timestamp).getTime() / 1000) as Time,
               value: p.price_usd,
             }))
-            .filter((p: AreaData<Time>) => p.value > 0);
+            .filter((p: AreaData<Time>) => p.value > 0)
+            .sort((a: AreaData<Time>, b: AreaData<Time>) => (a.time as number) - (b.time as number))
+            .filter((p: AreaData<Time>, i: number, arr: AreaData<Time>[]) => 
+              i === 0 || p.time !== arr[i - 1].time
+            );
 
           if (chartData.length > 0) {
             seriesRef.current.setData(chartData);
