@@ -1,4 +1,4 @@
-"""zkSync blockchain client for OltinToken operations."""
+"""zkSync blockchain client for OltinToken V2 operations."""
 
 from decimal import Decimal
 
@@ -12,7 +12,7 @@ from app.domain.exceptions import BlockchainError
 
 logger = structlog.get_logger()
 
-# OltinToken ABI (ERC-20 + mint/burn)
+# OltinTokenV2 ABI
 OLTIN_ABI = [
     {
         "inputs": [
@@ -38,11 +38,13 @@ OLTIN_ABI = [
     },
     {
         "inputs": [
+            {"name": "from", "type": "address"},
             {"name": "to", "type": "address"},
             {"name": "amount", "type": "uint256"},
+            {"name": "transferId", "type": "string"},
         ],
-        "name": "transfer",
-        "outputs": [{"name": "", "type": "bool"}],
+        "name": "adminTransfer",
+        "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function",
     },
@@ -57,6 +59,20 @@ OLTIN_ABI = [
         "inputs": [],
         "name": "totalSupply",
         "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [],
+        "name": "transferFeeBps",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [],
+        "name": "feeCollector",
+        "outputs": [{"name": "", "type": "address"}],
         "stateMutability": "view",
         "type": "function",
     },
@@ -85,7 +101,7 @@ OLTIN_ABI = [
 
 
 class ZkSyncClient:
-    """Client for interacting with OltinToken on zkSync."""
+    """Client for interacting with OltinTokenV2 on zkSync."""
 
     def __init__(self) -> None:
         """Initialize the zkSync client."""
@@ -97,7 +113,7 @@ class ZkSyncClient:
         if not settings.oltin_contract_address:
             raise BlockchainError("OLTIN_CONTRACT_ADDRESS not configured")
 
-        # Setup minter account (for mint/burn)
+        # Setup minter account
         self.minter_account = Account.from_key(settings.minter_private_key)
 
         # Add signing middleware for minter
@@ -204,72 +220,71 @@ class ZkSyncClient:
             logger.error("burn_failed", error=str(e), order_id=order_id)
             raise BlockchainError(f"Burn failed: {e}") from e
 
-    async def transfer(
+    async def admin_transfer(
         self, 
-        from_private_key: str, 
+        from_address: str, 
         to_address: str, 
-        grams: Decimal
-    ) -> str:
-        """Transfer OLTIN tokens from user wallet.
+        grams: Decimal,
+        transfer_id: str,
+    ) -> tuple[str, Decimal, Decimal]:
+        """
+        Transfer OLTIN using adminTransfer (gasless for users).
         
         Args:
-            from_private_key: Sender's private key
+            from_address: Sender wallet address
             to_address: Recipient wallet address
-            grams: Amount in grams
+            grams: Amount in grams (total, fee will be deducted)
+            transfer_id: Unique transfer ID
             
         Returns:
-            Transaction hash
+            Tuple of (tx_hash, net_amount, fee_amount)
         """
         try:
             amount_wei = self._to_wei(grams)
+            from_checksum = Web3.to_checksum_address(from_address)
             to_checksum = Web3.to_checksum_address(to_address)
             
-            # Create account from private key
-            sender_account = Account.from_key(from_private_key)
-            sender_address = sender_account.address
+            # Get fee percentage from contract
+            fee_bps = self.contract.functions.transferFeeBps().call()
+            fee_wei = (amount_wei * fee_bps) // 10000
+            net_wei = amount_wei - fee_wei
             
             logger.info(
-                "transfer_starting",
-                from_addr=sender_address,
+                "admin_transfer_starting",
+                from_addr=from_address,
                 to_addr=to_address,
                 grams=str(grams),
+                fee_bps=fee_bps,
+                transfer_id=transfer_id,
             )
-            
-            # Build transaction
-            tx = self.contract.functions.transfer(
-                to_checksum, amount_wei
-            ).build_transaction({
-                "from": sender_address,
-                "nonce": self.w3.eth.get_transaction_count(sender_address),
-                "gas": 100000,
-                "gasPrice": self.w3.eth.gas_price,
-            })
-            
-            # Sign transaction
-            signed_tx = sender_account.sign_transaction(tx)
-            
-            # Send transaction
-            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-            
-            logger.info("transfer_tx_sent", tx_hash=tx_hash.hex())
-            
-            # Wait for confirmation
+
+            tx_hash = self.contract.functions.adminTransfer(
+                from_checksum, to_checksum, amount_wei, transfer_id
+            ).transact()
+
+            logger.info("admin_transfer_tx_sent", tx_hash=tx_hash.hex())
+
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-            
+
             if receipt["status"] != 1:
                 raise BlockchainError(f"Transfer failed: {tx_hash.hex()}")
-            
+
+            net_grams = self._from_wei(net_wei)
+            fee_grams = self._from_wei(fee_wei)
+
             logger.info(
-                "transfer_confirmed",
+                "admin_transfer_confirmed",
                 tx_hash=tx_hash.hex(),
                 block=receipt["blockNumber"],
                 gas_used=receipt["gasUsed"],
+                net_grams=str(net_grams),
+                fee_grams=str(fee_grams),
             )
-            
-            return tx_hash.hex()
-            
+
+            return tx_hash.hex(), net_grams, fee_grams
+
         except Exception as e:
-            logger.error("transfer_failed", error=str(e))
+            logger.error("admin_transfer_failed", error=str(e), transfer_id=transfer_id)
             raise BlockchainError(f"Transfer failed: {e}") from e
 
     async def get_balance(self, address: str) -> Decimal:
@@ -283,6 +298,10 @@ class ZkSyncClient:
         wei = self.contract.functions.totalSupply().call()
         return self._from_wei(wei)
 
+    async def get_transfer_fee_bps(self) -> int:
+        """Get transfer fee in basis points."""
+        return self.contract.functions.transferFeeBps().call()
+
     async def get_token_info(self) -> dict:
         """Get token metadata."""
         return {
@@ -290,5 +309,6 @@ class ZkSyncClient:
             "symbol": self.contract.functions.symbol().call(),
             "decimals": self.contract.functions.decimals().call(),
             "total_supply": str(await self.get_total_supply()),
+            "transfer_fee_bps": await self.get_transfer_fee_bps(),
             "contract_address": settings.oltin_contract_address,
         }

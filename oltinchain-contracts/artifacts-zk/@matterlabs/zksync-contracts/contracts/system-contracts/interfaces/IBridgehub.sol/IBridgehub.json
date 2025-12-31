@@ -1,0 +1,79 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "IBridgehub",
+  "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBridgehub.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "l1CtmDeployer",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_assetRouter",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_ctmDeployer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_messageRoot",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_chainAssetHandler",
+          "type": "address"
+        }
+      ],
+      "name": "setAddresses",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_chainAssetHandler",
+          "type": "address"
+        }
+      ],
+      "name": "setChainAssetHandler",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

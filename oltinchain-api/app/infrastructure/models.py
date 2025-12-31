@@ -143,3 +143,62 @@ class Transaction(Base):
         Index("ix_transactions_created", "created_at"),
         Index("ix_transactions_tx_hash", "tx_hash"),
     )
+
+
+class LimitOrder(Base):
+    """Лимитный ордер в книге ордеров."""
+    __tablename__ = "limit_orders"
+
+    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    
+    # Order details
+    side: Mapped[str] = mapped_column(String(4), nullable=False)  # 'buy' or 'sell'
+    price: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)  # OLTIN amount
+    filled_quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), default=Decimal("0"))
+    
+    # Status: open, partial, filled, cancelled
+    status: Mapped[str] = mapped_column(String(20), default="open")
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    filled_at: Mapped[datetime | None] = mapped_column(DateTime)
+    
+    # Relationship
+    user: Mapped["User"] = relationship()
+    
+    __table_args__ = (
+        Index("ix_limit_orders_side_status_price", "side", "status", "price"),
+        Index("ix_limit_orders_user_status", "user_id", "status"),
+    )
+    
+    @property
+    def remaining_quantity(self) -> Decimal:
+        """Remaining quantity to fill."""
+        return self.quantity - self.filled_quantity
+
+
+class Trade(Base):
+    """Исполненная сделка между двумя ордерами."""
+    __tablename__ = "trades"
+
+    id: Mapped[UUID] = mapped_column(UUID, primary_key=True, default=uuid4)
+    
+    # Orders involved
+    buy_order_id: Mapped[UUID] = mapped_column(ForeignKey("limit_orders.id"), nullable=False)
+    sell_order_id: Mapped[UUID] = mapped_column(ForeignKey("limit_orders.id"), nullable=False)
+    
+    # Trade details
+    price: Mapped[Decimal] = mapped_column(Numeric(20, 2), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    
+    # Who initiated (taker)
+    taker_side: Mapped[str] = mapped_column(String(4), nullable=False)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        Index("ix_trades_created", "created_at"),
+    )

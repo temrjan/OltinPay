@@ -16,7 +16,7 @@ class BalanceItem(BaseModel):
 
 class WalletBalanceResponse(BaseModel):
     """Full wallet balance response."""
-    uzs: BalanceItem
+    usd: BalanceItem
     oltin: BalanceItem
     wallet_address: str | None = None
 
@@ -27,9 +27,9 @@ class TransactionResponse(BaseModel):
     type: str  # buy, sell, deposit, withdraw, transfer
     asset: str
     amount: Decimal
-    amount_uzs: Decimal | None = None
+    amount_usd: Decimal | None = None
     amount_oltin: Decimal | None = None
-    fee_uzs: Decimal | None = None
+    fee_usd: Decimal | None = None
     tx_hash: str | None = None
     to_address: str | None = None
     status: str
@@ -60,7 +60,7 @@ class SyncStatusResponse(BaseModel):
 
 class DepositRequest(BaseModel):
     """Deposit request (for testing)."""
-    amount_uzs: Decimal
+    amount_usd: Decimal
 
 
 class DepositResponse(BaseModel):
@@ -71,8 +71,14 @@ class DepositResponse(BaseModel):
 
 
 class TransferRequest(BaseModel):
-    """Transfer OLTIN to another wallet."""
+    """Transfer OLTIN to another wallet by address."""
     to_address: str = Field(min_length=42, max_length=42)
+    amount: Decimal = Field(gt=0, description="Amount in grams")
+
+
+class TransferByPhoneRequest(BaseModel):
+    """Transfer OLTIN to another user by phone number."""
+    phone: str = Field(min_length=9, max_length=15, description="Recipient phone number")
     amount: Decimal = Field(gt=0, description="Amount in grams")
 
 
@@ -82,5 +88,8 @@ class TransferResponse(BaseModel):
     tx_hash: str
     from_address: str
     to_address: str
+    recipient_phone: str | None = None
     amount: Decimal
+    net_amount: Decimal | None = None  # Amount after fee
+    fee_amount: Decimal | None = None  # Fee deducted
     message: str

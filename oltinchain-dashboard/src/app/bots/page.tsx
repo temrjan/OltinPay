@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Card } from "@/components/Card";
+import { LiveMatchWidget } from "@/components/LiveMatchWidget";
 
 // Types
 interface Trade {
@@ -22,17 +22,20 @@ interface OrderBookEntry {
   bot_count: number;
 }
 
+interface OrderBookData {
+  asks: OrderBookEntry[];
+  bids: OrderBookEntry[];
+  spread: string;
+  spread_percent: string;
+}
+
 interface CycleInfo {
   cycle_id: number;
   phase: string;
-  started_at: string;
-  duration_seconds: number | null;
   orders_count: number;
   buy_volume: string;
   sell_volume: string;
   imbalance: string;
-  price_before: string;
-  price_after: string | null;
   deviation: string;
 }
 
@@ -60,7 +63,6 @@ interface DashboardData {
   match: MatchInfo;
   current_cycle: CycleInfo | null;
   stats: Stats;
-  price_history: { price: string; timestamp: string }[];
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.oltinchain.com";
@@ -68,29 +70,23 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.oltinchain.com";
 export default function BotsDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [orderbook, setOrderbook] = useState<OrderBookData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, tradesRes] = await Promise.all([
+      const [statusRes, tradesRes, orderbookRes] = await Promise.all([
         fetch(`${API_URL}/bots/status`),
         fetch(`${API_URL}/bots/trades?limit=30`),
+        fetch(`${API_URL}/bots/orderbook`),
       ]);
 
-      if (statusRes.ok) {
-        const statusData = await statusRes.json();
-        setData(statusData);
-      }
-
-      if (tradesRes.ok) {
-        const tradesData = await tradesRes.json();
-        setTrades(tradesData);
-      }
-
-      setError(null);
+      if (statusRes.ok) setData(await statusRes.json());
+      if (tradesRes.ok) setTrades(await tradesRes.json());
+      if (orderbookRes.ok) setOrderbook(await orderbookRes.json());
+      setLastUpdate(new Date());
     } catch (err) {
-      setError("Failed to fetch data");
       console.error(err);
     } finally {
       setLoading(false);
@@ -99,252 +95,209 @@ export default function BotsDashboard() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 3000); // Update every 3 seconds
+    const interval = setInterval(fetchData, 3000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-6 flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-xl animate-pulse">Loading...</div>
       </div>
     );
   }
 
-  const deviation = data?.match?.deviation ? parseFloat(data.match.deviation) * 100 : 0;
-  const deviationColor = deviation < 0 ? "text-red-400" : deviation > 0 ? "text-green-400" : "text-gray-400";
-
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
+    <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-yellow-500">🏦 Auction Waves Trading</h1>
-        <p className="text-gray-400">OltinChain Bot Dashboard</p>
-      </div>
-
-      {/* Top Stats Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
-        <StatCard 
-          label="Market Price" 
-          value={formatPrice(data?.match?.market_price || "0")} 
-          suffix="USD"
-        />
-        <StatCard 
-          label="Target Price" 
-          value={formatPrice(data?.match?.target_price || "0")} 
-          suffix="USD"
-          className="text-yellow-400"
-        />
-        <StatCard 
-          label="Deviation" 
-          value={`${deviation.toFixed(2)}%`}
-          className={deviationColor}
-        />
-        <StatCard 
-          label="Leader" 
-          value={data?.match?.current_leader || "—"}
-          className={data?.match?.current_leader === "BUYERS" ? "text-green-400" : "text-red-400"}
-        />
-        <StatCard 
-          label="Cycles" 
-          value={String(data?.match?.cycles_completed || 0)}
-        />
-        <StatCard 
-          label="Total Trades" 
-          value={String(data?.stats?.total_trades || 0)}
-        />
-      </div>
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Order Book */}
-        <div className="lg:col-span-1">
-          <OrderBook />
+      <header className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur border-b border-gray-800 px-3 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg sm:text-2xl font-bold text-yellow-500">🏦 Auction Waves</h1>
+            <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">OltinChain Trading Dashboard</p>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <span className="text-[10px] sm:text-xs text-gray-500">
+              Updated: {lastUpdate.toLocaleTimeString()}
+            </span>
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span className="text-green-400 text-xs sm:text-sm font-medium">LIVE</span>
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* Center Column - Auction Cycle */}
-        <div className="lg:col-span-1">
-          <AuctionCycle cycle={data?.current_cycle} />
+      {/* Main Content */}
+      <main className="p-3 sm:p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+          
+          {/* Live Match Widget */}
+          <div className="lg:col-span-4 xl:col-span-3">
+            <LiveMatchWidget match={data?.match || null} />
+          </div>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-8 xl:col-span-9 space-y-4 lg:space-y-6">
+            
+            {/* Quick Stats */}
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4">
+              <QuickStat label="Market" value={`$${formatPrice(data?.match?.market_price || "0")}`} />
+              <QuickStat label="Target" value={`$${formatPrice(data?.match?.target_price || "0")}`} className="text-yellow-400" />
+              <QuickStat label="Trades" value={String(data?.stats?.total_trades || 0)} />
+              <QuickStat label="Volume" value={`$${formatPrice(data?.stats?.total_volume_usd || "0")}`} />
+            </div>
+
+            {/* Cycle + Trades */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <AuctionCycle cycle={data?.current_cycle} />
+              <TradeFeed trades={trades} />
+            </div>
+
+            {/* Order Book - Now with real data */}
+            <OrderBook data={orderbook} />
+
+            {/* Bot Stats */}
+            <BotStats stats={data?.stats} />
+          </div>
         </div>
-
-        {/* Right Column - Trade Feed */}
-        <div className="lg:col-span-1">
-          <TradeFeed trades={trades} />
-        </div>
-      </div>
-
-      {/* Bottom - Bot Stats */}
-      <div className="mt-6">
-        <BotStats stats={data?.stats} />
-      </div>
+      </main>
     </div>
   );
 }
 
-// Stat Card Component
-function StatCard({ label, value, suffix, className = "" }: { 
-  label: string; 
-  value: string; 
-  suffix?: string;
-  className?: string;
-}) {
+function QuickStat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
-      <div className="text-gray-400 text-xs uppercase">{label}</div>
-      <div className={`text-lg font-bold ${className}`}>
-        {value} {suffix && <span className="text-sm font-normal">{suffix}</span>}
-      </div>
+    <div className="flex-shrink-0 bg-gray-800 rounded-lg px-3 py-2 sm:px-4 sm:py-3 min-w-[80px] sm:min-w-0">
+      <div className="text-[10px] sm:text-xs text-gray-400 uppercase">{label}</div>
+      <div className={`text-sm sm:text-lg font-bold ${className}`}>{value}</div>
     </div>
   );
 }
 
-// Order Book Component
-function OrderBook() {
-  const [asks, setAsks] = useState<OrderBookEntry[]>([]);
-  const [bids, setBids] = useState<OrderBookEntry[]>([]);
+// Order Book - Now fetches real data from API
+function OrderBook({ data }: { data: OrderBookData | null }) {
+  const asks = data?.asks?.slice(0, 6) || [];
+  const bids = data?.bids?.slice(0, 6) || [];
+  const spread = data?.spread ? parseFloat(data.spread) : 0;
+  const spreadPct = data?.spread_percent ? parseFloat(data.spread_percent) : 0;
 
-  // Generate sample data for visualization
-  useEffect(() => {
-    const generateOrders = (basePrice: number, isBuy: boolean): OrderBookEntry[] => {
-      const orders: OrderBookEntry[] = [];
-      for (let i = 0; i < 8; i++) {
-        const priceDiff = (i + 1) * (isBuy ? -0.05 : 0.05);
-        const price = basePrice + priceDiff;
-        const amount = (Math.random() * 10 + 1).toFixed(4);
-        orders.push({
-          price: price.toString(),
-          amount,
-          total: (price * parseFloat(amount)).toFixed(0),
-          bot_count: Math.floor(Math.random() * 5) + 1,
-        });
-      }
-      return orders;
-    };
-
-    const basePrice = 61;
-    setAsks(generateOrders(basePrice, false));
-    setBids(generateOrders(basePrice, true));
-  }, []);
+  // Calculate max volume for bar visualization
+  const maxAskVol = Math.max(...asks.map(a => parseFloat(a.amount) || 0), 1);
+  const maxBidVol = Math.max(...bids.map(b => parseFloat(b.amount) || 0), 1);
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 h-full">
-      <h2 className="text-lg font-bold mb-4 text-yellow-500">📊 Order Book</h2>
+    <div className="bg-gray-800 rounded-xl p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base sm:text-lg font-bold text-yellow-500">📊 Order Book</h2>
+        <span className="text-xs text-gray-400">
+          Spread: <span className={`font-bold ${spread < 0 ? 'text-red-400' : 'text-green-400'}`}>
+            {spreadPct.toFixed(2)}%
+          </span>
+        </span>
+      </div>
       
-      {/* Headers */}
-      <div className="grid grid-cols-3 text-xs text-gray-400 mb-2">
-        <div>Price (USD)</div>
-        <div className="text-right">Amount (g)</div>
-        <div className="text-right">Total</div>
-      </div>
-
-      {/* Asks (Sell orders) */}
-      <div className="mb-4">
-        {asks.slice().reverse().map((order, i) => (
-          <div key={`ask-${i}`} className="grid grid-cols-3 text-sm py-1 hover:bg-gray-700">
-            <div className="text-red-400">{formatPrice(order.price)}</div>
-            <div className="text-right">{order.amount}</div>
-            <div className="text-right text-gray-400">{formatPrice(order.total)}</div>
+      <div className="grid grid-cols-2 gap-4">
+        {/* Asks (Sell) */}
+        <div>
+          <div className="text-xs text-red-400 mb-2 font-medium flex justify-between">
+            <span>SELL</span>
+            <span className="text-gray-500">Amount</span>
           </div>
-        ))}
-      </div>
-
-      {/* Spread */}
-      <div className="text-center py-2 bg-gray-700 rounded text-sm mb-4">
-        <span className="text-yellow-400 font-bold">61.00</span>
-        <span className="text-gray-400 ml-2">Spread: 0.15%</span>
-      </div>
-
-      {/* Bids (Buy orders) */}
-      <div>
-        {bids.map((order, i) => (
-          <div key={`bid-${i}`} className="grid grid-cols-3 text-sm py-1 hover:bg-gray-700">
-            <div className="text-green-400">{formatPrice(order.price)}</div>
-            <div className="text-right">{order.amount}</div>
-            <div className="text-right text-gray-400">{formatPrice(order.total)}</div>
+          {asks.length > 0 ? asks.map((o, i) => {
+            const vol = parseFloat(o.amount) || 0;
+            const pct = (vol / maxAskVol) * 100;
+            return (
+              <div key={i} className="relative flex justify-between text-xs sm:text-sm py-1">
+                <div 
+                  className="absolute right-0 top-0 h-full bg-red-500/20" 
+                  style={{ width: `${pct}%` }}
+                />
+                <span className="text-red-400 relative z-10">${parseFloat(o.price).toFixed(2)}</span>
+                <span className="text-gray-300 relative z-10">{vol.toFixed(2)}g</span>
+              </div>
+            );
+          }) : (
+            <div className="text-gray-500 text-xs py-2">No sell orders</div>
+          )}
+        </div>
+        
+        {/* Bids (Buy) */}
+        <div>
+          <div className="text-xs text-green-400 mb-2 font-medium flex justify-between">
+            <span>BUY</span>
+            <span className="text-gray-500">Amount</span>
           </div>
-        ))}
+          {bids.length > 0 ? bids.map((o, i) => {
+            const vol = parseFloat(o.amount) || 0;
+            const pct = (vol / maxBidVol) * 100;
+            return (
+              <div key={i} className="relative flex justify-between text-xs sm:text-sm py-1">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-green-500/20" 
+                  style={{ width: `${pct}%` }}
+                />
+                <span className="text-green-400 relative z-10">${parseFloat(o.price).toFixed(2)}</span>
+                <span className="text-gray-300 relative z-10">{vol.toFixed(2)}g</span>
+              </div>
+            );
+          }) : (
+            <div className="text-gray-500 text-xs py-2">No buy orders</div>
+          )}
+        </div>
+      </div>
+      
+      {/* Orders count */}
+      <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between text-xs text-gray-400">
+        <span>Sell orders: {asks.reduce((s, a) => s + (a.bot_count || 0), 0)}</span>
+        <span>Buy orders: {bids.reduce((s, b) => s + (b.bot_count || 0), 0)}</span>
       </div>
     </div>
   );
 }
 
-// Auction Cycle Component
 function AuctionCycle({ cycle }: { cycle: CycleInfo | null | undefined }) {
   const phase = cycle?.phase || "ACCUMULATE";
-  const isAccumulate = phase === "ACCUMULATE";
+  const imbalance = parseFloat(cycle?.imbalance || "0");
+  const buyPct = Math.max(10, Math.min(90, 50 + imbalance / 2));
   
   return (
-    <div className="bg-gray-800 rounded-lg p-4 h-full">
-      <h2 className="text-lg font-bold mb-4 text-yellow-500">⚡ Current Auction Cycle</h2>
-      
-      {/* Cycle Info */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-gray-400">Cycle #{cycle?.cycle_id || 1}</span>
-          <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-            isAccumulate ? "bg-blue-600" : "bg-purple-600"
-          }`}>
-            {phase}
-          </span>
-        </div>
-
-        {/* Phase Progress */}
-        <div className="relative h-8 bg-gray-700 rounded-full overflow-hidden mb-4">
-          <div 
-            className={`absolute h-full transition-all duration-1000 ${
-              isAccumulate ? "bg-blue-500" : "bg-purple-500"
-            }`}
-            style={{ width: isAccumulate ? "60%" : "100%" }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center text-sm font-bold">
-            {isAccumulate ? "Collecting Orders..." : "Executing..."}
-          </div>
-        </div>
+    <div className="bg-gray-800 rounded-xl p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base sm:text-lg font-bold text-yellow-500">⚡ Cycle</h2>
+        <span className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-bold ${
+          phase === "ACCUMULATE" ? "bg-blue-600" : "bg-purple-600"
+        }`}>
+          {phase}
+        </span>
       </div>
 
-      {/* Cycle Stats */}
-      <div className="space-y-3">
+      <div className="space-y-2 text-xs sm:text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-400">Cycle #</span>
+          <span className="font-bold">{cycle?.cycle_id || 0}</span>
+        </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Orders</span>
           <span className="font-bold">{cycle?.orders_count || 0}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-400">Buy Volume</span>
-          <span className="text-green-400 font-bold">
-            {formatPrice(cycle?.buy_volume || "0")} USD
-          </span>
+          <span className="text-gray-400">Buy Vol</span>
+          <span className="text-green-400 font-bold">${formatPrice(cycle?.buy_volume || "0")}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-400">Sell Volume</span>
-          <span className="text-red-400 font-bold">
-            {formatPrice(cycle?.sell_volume || "0")} USD
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Imbalance</span>
-          <span className={`font-bold ${
-            parseFloat(cycle?.imbalance || "0") > 0 ? "text-green-400" : "text-red-400"
-          }`}>
-            {parseFloat(cycle?.imbalance || "0").toFixed(1)}%
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Deviation</span>
-          <span className="text-yellow-400 font-bold">
-            {((parseFloat(cycle?.deviation || "0")) * 100).toFixed(2)}%
-          </span>
+          <span className="text-gray-400">Sell Vol</span>
+          <span className="text-red-400 font-bold">${formatPrice(cycle?.sell_volume || "0")}</span>
         </div>
       </div>
 
-      {/* Visual Imbalance Bar */}
-      <div className="mt-6">
-        <div className="text-xs text-gray-400 mb-2">Buy/Sell Imbalance</div>
-        <div className="flex h-6 rounded-full overflow-hidden">
-          <div className="bg-green-500 flex items-center justify-center text-xs" style={{ width: "80%" }}>
-            BUY 80%
+      <div className="mt-3">
+        <div className="flex h-3 sm:h-4 rounded-full overflow-hidden">
+          <div className="bg-green-500 flex items-center justify-center" style={{ width: `${buyPct}%` }}>
+            <span className="text-[8px] sm:text-[10px] font-bold">{buyPct > 25 ? `${buyPct.toFixed(0)}%` : ''}</span>
           </div>
-          <div className="bg-red-500 flex items-center justify-center text-xs" style={{ width: "20%" }}>
-            20%
+          <div className="bg-red-500 flex items-center justify-center" style={{ width: `${100-buyPct}%` }}>
+            <span className="text-[8px] sm:text-[10px] font-bold">{(100-buyPct) > 25 ? `${(100-buyPct).toFixed(0)}%` : ''}</span>
           </div>
         </div>
       </div>
@@ -352,101 +305,65 @@ function AuctionCycle({ cycle }: { cycle: CycleInfo | null | undefined }) {
   );
 }
 
-// Trade Feed Component
 function TradeFeed({ trades }: { trades: Trade[] }) {
   return (
-    <div className="bg-gray-800 rounded-lg p-4 h-full">
-      <h2 className="text-lg font-bold mb-4 text-yellow-500">📜 Trade Feed</h2>
+    <div className="bg-gray-800 rounded-xl p-3 sm:p-4">
+      <h2 className="text-base sm:text-lg font-bold mb-3 text-yellow-500">📜 Trades</h2>
       
-      {/* Headers */}
-      <div className="grid grid-cols-4 text-xs text-gray-400 mb-2">
-        <div>Side</div>
-        <div className="text-right">Price</div>
-        <div className="text-right">Amount</div>
-        <div className="text-right">Bot</div>
-      </div>
-
-      {/* Trades List */}
-      <div className="space-y-1 max-h-96 overflow-y-auto">
-        {trades.length > 0 ? (
-          trades.map((trade) => (
-            <div 
-              key={trade.id} 
-              className="grid grid-cols-4 text-sm py-2 hover:bg-gray-700 border-b border-gray-700"
-            >
-              <div className={trade.side === "BUY" ? "text-green-400" : "text-red-400"}>
-                {trade.side === "BUY" ? "▲ BUY" : "▼ SELL"}
-              </div>
-              <div className="text-right">{formatPrice(trade.price)}</div>
-              <div className="text-right">{parseFloat(trade.amount).toFixed(2)}g</div>
-              <div className="text-right text-gray-400 text-xs">
-                {trade.bot_type.charAt(0).toUpperCase()}
-              </div>
+      {trades.length > 0 ? (
+        <div className="space-y-1 max-h-48 sm:max-h-56 overflow-y-auto">
+          {trades.slice(0, 10).map((t) => (
+            <div key={t.id} className="flex items-center justify-between py-1.5 border-b border-gray-700/50 text-xs sm:text-sm">
+              <span className={t.side === "BUY" ? "text-green-400" : "text-red-400"}>
+                {t.side === "BUY" ? "▲" : "▼"} {t.side}
+              </span>
+              <span className="text-gray-300">${parseFloat(t.price).toFixed(2)}</span>
+              <span className="text-gray-400">{parseFloat(t.amount).toFixed(2)}g</span>
+              <span className="text-gray-500 text-[10px] sm:text-xs w-6 text-center bg-gray-700 rounded">{t.bot_type}</span>
             </div>
-          ))
-        ) : (
-          // Sample trades for demo
-          Array.from({ length: 10 }).map((_, i) => (
-            <div 
-              key={i} 
-              className="grid grid-cols-4 text-sm py-2 hover:bg-gray-700 border-b border-gray-700"
-            >
-              <div className={i % 3 === 0 ? "text-red-400" : "text-green-400"}>
-                {i % 3 === 0 ? "▼ SELL" : "▲ BUY"}
-              </div>
-              <div className="text-right">{(60 + Math.random() * 2).toFixed(2)}</div>
-              <div className="text-right">{(Math.random() * 5 + 0.5).toFixed(2)}g</div>
-              <div className="text-right text-gray-400 text-xs">
-                {["T", "W", "M"][Math.floor(Math.random() * 3)]}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-gray-500 text-sm text-center py-8">
+          No recent trades
+        </div>
+      )}
     </div>
   );
 }
 
-// Bot Stats Component
 function BotStats({ stats }: { stats?: Stats }) {
   return (
-    <div className="bg-gray-800 rounded-lg p-4">
-      <h2 className="text-lg font-bold mb-4 text-yellow-500">🤖 Bot Statistics</h2>
+    <div className="bg-gray-800 rounded-xl p-3 sm:p-4">
+      <h2 className="text-base sm:text-lg font-bold mb-3 text-yellow-500">🤖 Bots</h2>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-4">
+        <StatBadge value={stats?.total_bots || 50} label="Total" color="text-blue-400" />
+        <StatBadge value={stats?.traders || 42} label="Traders" color="text-green-400" />
+        <StatBadge value={stats?.whales || 2} label="Whales" color="text-purple-400" />
+        <StatBadge value={stats?.market_makers || 6} label="MM" color="text-yellow-400" />
+        <StatBadge value={stats?.active_bots || 50} label="Active" color="text-cyan-400" />
         <div className="text-center">
-          <div className="text-3xl font-bold text-blue-400">{stats?.total_bots || 50}</div>
-          <div className="text-gray-400 text-sm">Total Bots</div>
-        </div>
-        <div className="text-center">
-          <div className="text-3xl font-bold text-green-400">{stats?.traders || 42}</div>
-          <div className="text-gray-400 text-sm">Traders</div>
-        </div>
-        <div className="text-center">
-          <div className="text-3xl font-bold text-purple-400">{stats?.whales || 2}</div>
-          <div className="text-gray-400 text-sm">Whales</div>
-        </div>
-        <div className="text-center">
-          <div className="text-3xl font-bold text-yellow-400">{stats?.market_makers || 6}</div>
-          <div className="text-gray-400 text-sm">Market Makers</div>
-        </div>
-        <div className="text-center">
-          <div className="text-3xl font-bold text-cyan-400">{stats?.active_bots || 50}</div>
-          <div className="text-gray-400 text-sm">Active</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-white">
-            {formatPrice(stats?.total_volume_usd || "0")}
-          </div>
-          <div className="text-gray-400 text-sm">Volume (USD)</div>
+          <div className="text-sm sm:text-lg font-bold text-white">${formatPrice(stats?.total_volume_usd || "0")}</div>
+          <div className="text-[10px] sm:text-xs text-gray-400">Volume</div>
         </div>
       </div>
     </div>
   );
 }
 
-// Helper function
+function StatBadge({ value, label, color }: { value: number; label: string; color: string }) {
+  return (
+    <div className="text-center">
+      <div className={`text-lg sm:text-2xl font-bold ${color}`}>{value}</div>
+      <div className="text-[10px] sm:text-xs text-gray-400">{label}</div>
+    </div>
+  );
+}
+
 function formatPrice(price: string | number): string {
   const num = typeof price === "string" ? parseFloat(price) : price;
-  return new Intl.NumberFormat("en-US").format(Math.round(num));
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return Math.round(num).toString();
 }

@@ -1,0 +1,70 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "ICompressor",
+  "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ICompressor.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_bytecode",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_rawCompressedData",
+          "type": "bytes"
+        }
+      ],
+      "name": "publishCompressedBytecode",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "bytecodeHash",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_numberOfStateDiffs",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_enumerationIndexSize",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_stateDiffs",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_compressedStateDiffs",
+          "type": "bytes"
+        }
+      ],
+      "name": "verifyCompressedStateDiffs",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "stateDiffHash",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

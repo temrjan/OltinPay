@@ -38,10 +38,11 @@ async def buy_order(
     user: CurrentUser,
     order_service: OrderService = Depends(get_order_service),
 ):
-    """Buy OLTIN with UZS.
+    """Buy OLTIN with USD.
 
     Creates an order, mints tokens on blockchain, updates balances.
-    User must have sufficient UZS balance and a wallet address set.
+    Price is determined by the Price Oracle based on current market cycle.
+    User must have sufficient USD balance and a wallet address.
     """
     if not user.wallet_address:
         raise HTTPException(
@@ -53,7 +54,7 @@ async def buy_order(
         order = await order_service.buy(
             user_id=user.id,
             wallet_address=user.wallet_address,
-            amount_uzs=data.amount_uzs,
+            amount_usd=data.amount_usd,
         )
         return OrderResponse.model_validate(order)
     except InsufficientBalanceError as e:
@@ -68,10 +69,11 @@ async def sell_order(
     user: CurrentUser,
     order_service: OrderService = Depends(get_order_service),
 ):
-    """Sell OLTIN for UZS.
+    """Sell OLTIN for USD.
 
     Creates an order, burns tokens on blockchain, updates balances.
-    User must have sufficient OLTIN balance and a wallet address set.
+    Price is determined by the Price Oracle based on current market cycle.
+    User must have sufficient OLTIN balance and a wallet address.
     """
     if not user.wallet_address:
         raise HTTPException(

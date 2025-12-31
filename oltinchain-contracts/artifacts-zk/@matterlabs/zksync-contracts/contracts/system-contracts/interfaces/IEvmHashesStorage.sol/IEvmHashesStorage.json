@@ -1,0 +1,49 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "IEvmHashesStorage",
+  "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IEvmHashesStorage.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "versionedBytecodeHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getEvmCodeHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "versionedBytecodeHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "evmBytecodeHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "storeEvmCodeHash",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

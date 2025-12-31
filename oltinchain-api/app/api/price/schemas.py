@@ -1,55 +1,59 @@
 """Price API schemas."""
 
+from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class GoldPriceResponse(BaseModel):
-    """Current gold price response with buy/sell prices."""
-    base_price: Decimal = Field(..., description="Market price per gram in UZS")
-    buy_price: Decimal = Field(..., description="Ask price (user pays when buying)")
-    sell_price: Decimal = Field(..., description="Bid price (user receives when selling)")
-    spread_percent: float = Field(..., description="Spread percentage")
-    currency: str = Field(default="UZS", description="Currency code")
+class PriceResponse(BaseModel):
+    """Current price response."""
+    
+    price: Decimal = Field(description="Current OLTIN price in USD")
+    bid: Decimal = Field(description="Bid price (sell price for users)")
+    ask: Decimal = Field(description="Ask price (buy price for users)")
+    spread_percent: Decimal = Field(description="Current spread percentage")
+    timestamp: datetime = Field(description="Price timestamp")
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
-class BuyQuoteRequest(BaseModel):
-    """Request for buy quote."""
-    amount_uzs: Decimal = Field(..., gt=0, description="Amount to spend in UZS")
+class CycleStateResponse(BaseModel):
+    """Current market cycle state."""
+    
+    cycle_number: int = Field(ge=1, description="Current cycle number")
+    phase: str = Field(description="Current Wyckoff phase")
+    day_in_cycle: float = Field(ge=0, le=7, description="Day position in cycle")
+    cycle_progress: float = Field(ge=0, le=1, description="Progress 0-1")
+    
+    start_price: Decimal = Field(description="Cycle start price")
+    current_price: Decimal = Field(description="Current target price")
+    peak_price: Decimal = Field(description="Expected cycle peak")
+    bottom_price: Decimal = Field(description="Expected cycle bottom")
+    end_price: Decimal = Field(description="Expected cycle end price")
+    
+    total_growth_percent: Decimal = Field(description="Growth from cycle start")
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
-class SellQuoteRequest(BaseModel):
-    """Request for sell quote."""
-    amount_oltin: Decimal = Field(..., gt=0, description="Amount of OLTIN to sell (grams)")
+class PriceHistoryItem(BaseModel):
+    """Single price history point."""
+    
+    timestamp: datetime
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal = Field(default=Decimal("0"))
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
-class QuoteResponse(BaseModel):
-    """Quote response for buy/sell operations."""
-    amount_uzs: Decimal = Field(..., description="Total UZS amount")
-    amount_oltin: Decimal = Field(..., description="OLTIN amount (grams)")
-    fee_uzs: Decimal = Field(..., description="Fee in UZS")
-    gold_price_per_gram: Decimal = Field(..., description="Effective price per gram (with spread)")
-    base_price_per_gram: Decimal = Field(..., description="Market price per gram")
-    net_amount_uzs: Decimal = Field(..., description="Net UZS after fee")
-
-
-class XauUsdPriceResponse(BaseModel):
-    """Current XAU/USD price from replay strategy."""
-    price_usd: float = Field(..., description="Gold price in USD per ounce")
-    price_change_pct: float = Field(..., description="Price change percentage")
-    data_index: int = Field(..., description="Current index in historical data")
-    data_date: str = Field(..., description="Date from historical data")
-    timestamp: str = Field(..., description="Timestamp of last update")
-
-
-class XauUsdHistoryItem(BaseModel):
-    """Single price point in history."""
-    timestamp: str
-    price_usd: float
-    change_pct: float
-
-
-class XauUsdHistoryResponse(BaseModel):
-    """XAU/USD price history for charting."""
-    prices: list[dict] = Field(default_factory=list, description="Price history points")
-    count: int = Field(..., description="Number of points returned")
+class PriceHistoryResponse(BaseModel):
+    """Price history (OHLCV) response."""
+    
+    interval: str = Field(description="Candle interval (1m, 5m, 1h, 1d)")
+    data: list[PriceHistoryItem]
+    
+    model_config = ConfigDict(from_attributes=True)

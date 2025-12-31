@@ -1,6 +1,6 @@
 """Metrics service for dashboard."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select, and_
@@ -17,7 +17,8 @@ class MetricsService:
 
     async def get_live_metrics(self) -> dict:
         """Get live metrics for dashboard."""
-        now = datetime.now(timezone.utc)
+        # Use naive datetime to match database column type
+        now = datetime.utcnow()
         day_ago = now - timedelta(hours=24)
 
         # Transaction count in 24h

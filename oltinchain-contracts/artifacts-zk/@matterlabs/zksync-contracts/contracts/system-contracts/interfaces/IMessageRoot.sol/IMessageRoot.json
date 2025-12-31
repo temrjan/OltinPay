@@ -1,0 +1,25 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "IMessageRoot",
+  "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IMessageRoot.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getAggregatedRoot",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "aggregatedRoot",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

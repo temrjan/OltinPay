@@ -16,6 +16,8 @@ from app.api.wallet.router import router as wallet_router
 from app.api.ws.router import router as ws_router
 from app.api.reserves.router import router as reserves_router
 from app.api.admin.router import router as admin_router
+from app.api.bots.router import router as bots_router
+from app.api.orderbook.router import router as orderbook_router
 from app.database import async_session_maker
 from app.application.services.metrics_service import MetricsService
 from app.application.services.broadcast_service import broadcast
@@ -102,6 +104,8 @@ app.include_router(wallet_router)
 app.include_router(ws_router)
 app.include_router(reserves_router)
 app.include_router(admin_router)
+app.include_router(bots_router)
+app.include_router(orderbook_router)
 
 
 @app.get("/health")

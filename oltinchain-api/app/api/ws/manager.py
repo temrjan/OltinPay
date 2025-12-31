@@ -24,6 +24,8 @@ class ConnectionManager:
             "price": set(),
             "transactions": set(),
             "metrics": set(),
+            "orderbook": set(),
+            "trades": set(),
         }
 
     async def connect(

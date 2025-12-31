@@ -29,7 +29,7 @@ class WalletService:
         balances = result.scalars().all()
 
         balance_map = {
-            "UZS": {"available": Decimal("0"), "locked": Decimal("0")},
+            "USD": {"available": Decimal("0"), "locked": Decimal("0")},
             "OLTIN": {"available": Decimal("0"), "locked": Decimal("0")},
         }
 
@@ -214,10 +214,76 @@ class WalletService:
 
     async def deposit_uzs(self, user_id: UUID, amount: Decimal) -> dict:
         """Deposit UZS to user wallet (for testing/demo)."""
-        new_balance = await self.update_balance(user_id, "UZS", amount)
+        new_balance = await self.update_balance(user_id, "USD", amount)
         
         return {
             "success": True,
             "new_balance": new_balance,
             "message": f"Deposited {amount} UZS",
         }
+
+    async def get_all_history(
+        self,
+        user_id: UUID,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[dict]:
+        """Get combined history: orders + transfers."""
+        from sqlalchemy import union_all, literal, case
+        from app.infrastructure.models import Transaction
+
+        # Orders
+        orders_q = (
+            select(
+                Order.id.label("id"),
+                Order.type.label("type"),
+                case(
+                    (Order.type == "buy", literal("OLTIN")),
+                    else_=literal("USD")
+                ).label("asset"),
+                case(
+                    (Order.type == "buy", Order.amount_oltin),
+                    else_=Order.amount_uzs
+                ).label("amount"),
+                Order.amount_uzs.label("amount_uzs"),
+                Order.amount_oltin.label("amount_oltin"),
+                Order.fee_uzs.label("fee_uzs"),
+                Order.tx_hash.label("tx_hash"),
+                literal(None).label("to_address"),
+                Order.status.label("status"),
+                Order.created_at.label("created_at"),
+            )
+            .where(
+                Order.user_id == user_id,
+                Order.status == "completed",
+            )
+        )
+
+        # Transfers
+        transfers_q = (
+            select(
+                Transaction.id.label("id"),
+                Transaction.type.label("type"),
+                Transaction.asset.label("asset"),
+                Transaction.amount.label("amount"),
+                literal(None).label("amount_uzs"),
+                literal(None).label("amount_oltin"),
+                literal(None).label("fee_uzs"),
+                Transaction.tx_hash.label("tx_hash"),
+                Transaction.to_address.label("to_address"),
+                Transaction.status.label("status"),
+                Transaction.created_at.label("created_at"),
+            )
+            .where(Transaction.user_id == user_id)
+        )
+
+        combined = union_all(orders_q, transfers_q).subquery()
+        
+        result = await self.session.execute(
+            select(combined)
+            .order_by(desc(combined.c.created_at))
+            .limit(limit)
+            .offset(offset)
+        )
+
+        return [dict(row._mapping) for row in result.fetchall()]

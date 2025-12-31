@@ -1,0 +1,25 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "IL2AssetRouter",
+  "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL2AssetRouter.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "L2_LEGACY_SHARED_BRIDGE",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

@@ -46,10 +46,16 @@ export default function RootLayout({
                 Dashboard
               </a>
               <a 
+                href="/oltindex"
+                className="text-sm text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1"
+              >
+                📈 Биржа
+              </a>
+              <a 
                 href="/bots"
                 className="text-sm text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1"
               >
-                <span>🤖</span> Auction Bots
+                🤖 Auction Bots
               </a>
               
               {/* External Links */}

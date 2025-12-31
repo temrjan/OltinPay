@@ -4,3 +4,8 @@ export { ProofOfReserves } from './ProofOfReserves';
 export { GoldBarLookup } from './GoldBarLookup';
 export { PriceChart } from './PriceChart';
 export { TransactionFeed } from './TransactionFeed';
+export { default as TradingWidget } from './TradingWidget';
+export { default as OltinPriceChart } from './OltinPriceChart';
+export { default as OrderBookWidget } from './OrderBookWidget';
+export { default as RecentTrades } from './RecentTrades';
+export { LiveMatchWidget } from './LiveMatchWidget';

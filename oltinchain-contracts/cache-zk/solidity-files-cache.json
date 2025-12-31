@@ -697,6 +697,2034 @@
       "artifacts": [
         "IERC20"
       ]
+    },
+    "/root/server/oltinchain-contracts/contracts/OltinPaymaster.sol": {
+      "lastModificationDate": 1767094957023,
+      "contentHash": "3890fced9874a9b3d73d48b9da63dcac",
+      "sourceName": "contracts/OltinPaymaster.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPaymaster.sol",
+        "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPaymasterFlow.sol",
+        "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/TransactionHelper.sol",
+        "@matterlabs/zksync-contracts/contracts/system-contracts/Constants.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/access/Ownable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "OltinPaymaster"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@openzeppelin/contracts/access/Ownable.sol": {
+      "lastModificationDate": 1766731101777,
+      "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
+      "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../utils/Context.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "Ownable"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/Constants.sol": {
+      "lastModificationDate": 1767094772795,
+      "contentHash": "f28f7bfe5ec5de707574da4510df21ee",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/Constants.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/IAccountCodeStorage.sol",
+        "./interfaces/IBaseToken.sol",
+        "./interfaces/IBootloaderUtilities.sol",
+        "./interfaces/IBridgehub.sol",
+        "./interfaces/IComplexUpgrader.sol",
+        "./interfaces/ICompressor.sol",
+        "./interfaces/IContractDeployer.sol",
+        "./interfaces/ICreate2Factory.sol",
+        "./interfaces/IEvmHashesStorage.sol",
+        "./interfaces/IImmutableSimulator.sol",
+        "./interfaces/IKnownCodesStorage.sol",
+        "./interfaces/IL1Messenger.sol",
+        "./interfaces/IL2AssetRouter.sol",
+        "./interfaces/IL2NativeTokenVault.sol",
+        "./interfaces/IMessageRoot.sol",
+        "./interfaces/INonceHolder.sol",
+        "./interfaces/IPubdataChunkPublisher.sol",
+        "./interfaces/ISystemContext.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": []
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPaymasterFlow.sol": {
+      "lastModificationDate": 1767094773016,
+      "contentHash": "959d69afc50a7d4ff84af9e938bdb82e",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPaymasterFlow.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IPaymasterFlow"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPaymaster.sol": {
+      "lastModificationDate": 1767094773014,
+      "contentHash": "1f2e570653ead581e94e557a8d99b355",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPaymaster.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../libraries/TransactionHelper.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IPaymaster"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/libraries/TransactionHelper.sol": {
+      "lastModificationDate": 1767094773035,
+      "contentHash": "b69e3898d2b06c1c47bec75e69ae068a",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/TransactionHelper.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts-v4/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts-v4/token/ERC20/utils/SafeERC20.sol",
+        "../Constants.sol",
+        "../SystemContractErrors.sol",
+        "../interfaces/IPaymasterFlow.sol",
+        "./EfficientCall.sol",
+        "./RLPEncoder.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "TransactionHelper"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IAccountCodeStorage.sol": {
+      "lastModificationDate": 1767094772965,
+      "contentHash": "cee33b9d5fd6ad87cce6c74365fde36a",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IAccountCodeStorage.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IAccountCodeStorage"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBaseToken.sol": {
+      "lastModificationDate": 1767094772966,
+      "contentHash": "5fb3f50c383e624190993060c11a4368",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBaseToken.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IBaseToken"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBridgehub.sol": {
+      "lastModificationDate": 1767094772972,
+      "contentHash": "a87e1b351ac548b563085f5606023510",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBridgehub.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IBridgehub"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IComplexUpgrader.sol": {
+      "lastModificationDate": 1767094772973,
+      "contentHash": "e8eb5eeb764bda0a3227dabaca09c1b6",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IComplexUpgrader.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "./IContractDeployer.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IComplexUpgrader"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ICompressor.sol": {
+      "lastModificationDate": 1767094772974,
+      "contentHash": "13454dcac823ca2ff34ead3b66e4b7a6",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ICompressor.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ICompressor"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IContractDeployer.sol": {
+      "lastModificationDate": 1767094772975,
+      "contentHash": "2c2b3e5f609bdef9f86e6769e85f3a33",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IContractDeployer.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IContractDeployer"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ICreate2Factory.sol": {
+      "lastModificationDate": 1767094772976,
+      "contentHash": "c7b6dd9e1de4d6cd8a903ea0a302c880",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ICreate2Factory.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "./IContractDeployer.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ICreate2Factory"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IEvmHashesStorage.sol": {
+      "lastModificationDate": 1767094772977,
+      "contentHash": "6df1495ca5ff4fd51067f8dc19287574",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IEvmHashesStorage.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IEvmHashesStorage"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IImmutableSimulator.sol": {
+      "lastModificationDate": 1767094772980,
+      "contentHash": "ae61d6d953d29f2465abb56f2b66636a",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IImmutableSimulator.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IImmutableSimulator"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL2NativeTokenVault.sol": {
+      "lastModificationDate": 1767094772999,
+      "contentHash": "b23186b74ffa1ea17ff9983dad84c732",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL2NativeTokenVault.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IL2NativeTokenVault"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IKnownCodesStorage.sol": {
+      "lastModificationDate": 1767094772981,
+      "contentHash": "430291e0349a907b41020db80b12170d",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IKnownCodesStorage.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IKnownCodesStorage"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IMessageRoot.sol": {
+      "lastModificationDate": 1767094773012,
+      "contentHash": "41a3dff07fa01ca6374b85c9c60aba5c",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IMessageRoot.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IMessageRoot"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL2AssetRouter.sol": {
+      "lastModificationDate": 1767094772983,
+      "contentHash": "5d0039653c0ef80a4fd921f133f3c4e3",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL2AssetRouter.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IL2AssetRouter"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/INonceHolder.sol": {
+      "lastModificationDate": 1767094773013,
+      "contentHash": "a028f06e0c6ddd23221408e9d5a9ab15",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/INonceHolder.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "INonceHolder"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL1Messenger.sol": {
+      "lastModificationDate": 1767094772982,
+      "contentHash": "83eec35be4d4a614c88abecd41a3f0a2",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IL1Messenger.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IL1Messenger"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPubdataChunkPublisher.sol": {
+      "lastModificationDate": 1767094773016,
+      "contentHash": "2e5b5d4a7d3b790a3c1167f5e0384856",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPubdataChunkPublisher.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IPubdataChunkPublisher"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ISystemContext.sol": {
+      "lastModificationDate": 1767094773018,
+      "contentHash": "c791b4c27b4e71edda367a09714f5f19",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/ISystemContext.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ISystemContext"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBootloaderUtilities.sol": {
+      "lastModificationDate": 1767094772967,
+      "contentHash": "4f5e7370456f3ff58833346f89bf7e03",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IBootloaderUtilities.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../libraries/TransactionHelper.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IBootloaderUtilities"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/SystemContractErrors.sol": {
+      "lastModificationDate": 1767094772797,
+      "contentHash": "67bbb0a334c62ce5d885af9ca5c4118b",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/SystemContractErrors.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": []
+    },
+    "/root/server/oltinchain-contracts/node_modules/@openzeppelin/contracts-v4/token/ERC20/IERC20.sol": {
+      "lastModificationDate": 1767094773238,
+      "contentHash": "df36f7051335cd1e748b1b6463b7fdd3",
+      "sourceName": "@openzeppelin/contracts-v4/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/libraries/EfficientCall.sol": {
+      "lastModificationDate": 1767094773024,
+      "contentHash": "d7dcd3c1123b046094043cb494d36d90",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/EfficientCall.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../Constants.sol",
+        "../SystemContractErrors.sol",
+        "./SystemContractHelper.sol",
+        "./SystemContractsCaller.sol",
+        "./Utils.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "EfficientCall"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/libraries/RLPEncoder.sol": {
+      "lastModificationDate": 1767094773026,
+      "contentHash": "ed3e0c02d3c750a057971b13c950fa8b",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/RLPEncoder.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "RLPEncoder"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@openzeppelin/contracts-v4/token/ERC20/utils/SafeERC20.sol": {
+      "lastModificationDate": 1767094773325,
+      "contentHash": "1b5d667d3740d866eca0352758e59827",
+      "sourceName": "@openzeppelin/contracts-v4/token/ERC20/utils/SafeERC20.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../IERC20.sol",
+        "../extensions/IERC20Permit.sol",
+        "../../../utils/Address.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "SafeERC20"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/libraries/SystemContractsCaller.sol": {
+      "lastModificationDate": 1767094773030,
+      "contentHash": "f873ce16a460961e3cf0142a34aac646",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/SystemContractsCaller.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../Constants.sol",
+        "./Utils.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "SystemContractsCaller"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/libraries/SystemContractHelper.sol": {
+      "lastModificationDate": 1767094773029,
+      "contentHash": "f61c656df5238c4ce8e5fbce565d2812",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/SystemContractHelper.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../Constants.sol",
+        "../interfaces/IContractDeployer.sol",
+        "../SystemContractErrors.sol",
+        "./SystemContractsCaller.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "SystemContractHelper"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@matterlabs/zksync-contracts/contracts/system-contracts/libraries/Utils.sol": {
+      "lastModificationDate": 1767094773036,
+      "contentHash": "08ab8495a100e8e499fd110ac9ea08da",
+      "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/libraries/Utils.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "../Constants.sol",
+        "../SystemContractErrors.sol",
+        "./EfficientCall.sol",
+        "./RLPEncoder.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Utils"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@openzeppelin/contracts-v4/utils/Address.sol": {
+      "lastModificationDate": 1767094773037,
+      "contentHash": "211ffd288c1588ba8c10eae668ca3c66",
+      "sourceName": "@openzeppelin/contracts-v4/utils/Address.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.1"
+      ],
+      "artifacts": [
+        "Address"
+      ]
+    },
+    "/root/server/oltinchain-contracts/node_modules/@openzeppelin/contracts-v4/token/ERC20/extensions/IERC20Permit.sol": {
+      "lastModificationDate": 1767094773242,
+      "contentHash": "525fcdad8d171312933f47baf01d1ed8",
+      "sourceName": "@openzeppelin/contracts-v4/token/ERC20/extensions/IERC20Permit.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IERC20Permit"
+      ]
+    },
+    "/root/server/oltinchain-contracts/contracts/OltinTokenV2.sol": {
+      "lastModificationDate": 1767095066808,
+      "contentHash": "1e04c8f4b6d58139aad068a5b069831a",
+      "sourceName": "contracts/OltinTokenV2.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "mode": "3"
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "detectMissingLibraries": false,
+          "forceEVMLA": false,
+          "enableEraVMExtensions": false,
+          "libraries": {}
+        },
+        "eraVersion": "1.0.1",
+        "zksolc": {
+          "version": "1.5.8",
+          "compilerSource": "binary",
+          "settings": {
+            "optimizer": {
+              "enabled": true,
+              "mode": "3"
+            },
+            "compilerPath": "/root/.cache/hardhat-nodejs/compilers-v2/zksolc/zksolc-v1.5.8",
+            "missingLibrariesPath": "./.zksolc-libraries-cache/missingLibraryDependencies.json",
+            "areLibrariesMissing": false,
+            "experimental": {},
+            "libraries": {},
+            "enableEraVMExtensions": false,
+            "forceEVMLA": false
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
+        "@openzeppelin/contracts/access/AccessControl.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "OltinTokenV2"
+      ]
     }
   }
 }

@@ -1,0 +1,31 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "IPubdataChunkPublisher",
+  "sourceName": "@matterlabs/zksync-contracts/contracts/system-contracts/interfaces/IPubdataChunkPublisher.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_pubdata",
+          "type": "bytes"
+        }
+      ],
+      "name": "chunkPubdataToBlobs",
+      "outputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "blobLinearHashes",
+          "type": "bytes32[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}
