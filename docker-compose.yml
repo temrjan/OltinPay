@@ -165,6 +165,20 @@ services:
       - "traefik.http.routers.landing.priority=1"
       - "traefik.http.services.landing.loadbalancer.server.port=80"
 
+  oltinchain-bots-v3:
+    build: ./oltinchain-bots-v3
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: http://oltinchain-api:8000
+      BOT_PASSWORD: bot123
+      CYCLE_INTERVAL: 45
+      ORDER_TTL: 300
+      DATABASE_URL: postgresql://postgres:${PG_PASSWORD}@postgres:5432/oltinchain
+    networks:
+      - internal
+    depends_on:
+      - oltinchain-api
+
 volumes:
   pg_data:
   redis_data:
@@ -175,3 +189,4 @@ networks:
   internal:
     name: internal
     internal: true
+

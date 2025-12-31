@@ -422,3 +422,70 @@ async def get_analytics(
         pending_alerts=pending_alerts,
         high_severity_alerts=high_severity_alerts,
     )
+
+
+# === Internal Endpoints for Bots ===
+
+from pydantic import BaseModel
+
+class AddBalanceRequest(BaseModel):
+    phone: str
+    asset: str  # USD or OLTIN
+    amount: Decimal
+
+
+class AddBalanceResponse(BaseModel):
+    user_id: str
+    phone: str
+    asset: str
+    new_balance: Decimal
+
+
+@router.post("/internal/add-balance", response_model=AddBalanceResponse)
+async def add_balance(
+    request: AddBalanceRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Add balance to a user by phone. Internal use for bots."""
+    from uuid import uuid4
+    from app.infrastructure.models import Balance
+
+    # Find user
+    result = await session.execute(
+        select(User).where(User.phone == request.phone)
+    )
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail=f"User with phone {request.phone} not found")
+    
+    # Find or create balance
+    balance_result = await session.execute(
+        select(Balance).where(
+            Balance.user_id == user.id,
+            Balance.asset == request.asset
+        )
+    )
+    balance = balance_result.scalar_one_or_none()
+    
+    if balance:
+        balance.available += request.amount
+    else:
+        balance = Balance(
+            id=uuid4(),
+            user_id=user.id,
+            asset=request.asset,
+            available=request.amount,
+            locked=Decimal("0"),
+        )
+        session.add(balance)
+    
+    await session.commit()
+    await session.refresh(balance)
+    
+    return AddBalanceResponse(
+        user_id=str(user.id),
+        phone=user.phone,
+        asset=request.asset,
+        new_balance=balance.available,
+    )

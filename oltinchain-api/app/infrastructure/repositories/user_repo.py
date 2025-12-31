@@ -15,7 +15,7 @@ from app.infrastructure.models import User, Balance
 logger = structlog.get_logger()
 
 # Welcome bonus for new users (demo mode)
-WELCOME_BONUS_UZS = Decimal("1000000")  # 1 million UZS
+WELCOME_BONUS_USD = Decimal("1000")  # 1000 USD welcome bonus
 
 
 def get_fernet() -> Fernet:
@@ -89,14 +89,14 @@ class UserRepository:
         self.session.add(user)
         await self.session.flush()  # Get user.id
         
-        # Create UZS balance with welcome bonus
-        uzs_balance = Balance(
+        # Create USD balance with welcome bonus
+        usd_balance = Balance(
             user_id=user.id,
-            asset="UZS",
-            available=WELCOME_BONUS_UZS,
+            asset="USD",
+            available=WELCOME_BONUS_USD,
             locked=Decimal("0"),
         )
-        self.session.add(uzs_balance)
+        self.session.add(usd_balance)
         
         # Create OLTIN balance (empty)
         oltin_balance = Balance(
@@ -115,7 +115,7 @@ class UserRepository:
             user_id=str(user.id),
             phone=phone,
             wallet_address=wallet_address,
-            welcome_bonus_uzs=str(WELCOME_BONUS_UZS),
+            welcome_bonus_usd=str(WELCOME_BONUS_USD),
         )
         
         return user

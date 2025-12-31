@@ -41,6 +41,12 @@ async def get_current_price() -> PriceResponse:
     )
 
 
+
+@router.get("/gold", response_model=PriceResponse)
+async def get_gold_price() -> PriceResponse:
+    """Get current gold/OLTIN price (alias for /current)."""
+    return await get_current_price()
+
 @router.get("/cycle", response_model=CycleStateResponse)
 async def get_cycle_state() -> CycleStateResponse:
     """Get current market cycle state.
