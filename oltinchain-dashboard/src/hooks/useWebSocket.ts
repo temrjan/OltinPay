@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { WSMessage } from '@/types';
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { WSMessage } from "@/types";
+import { logger } from "@/lib/logger";
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'wss://api.oltinchain.com/ws';
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://api.oltinchain.com/ws";
 const RECONNECT_DELAY = 3000;
 const HEARTBEAT_INTERVAL = 30000;
 
@@ -22,11 +23,11 @@ interface UseWebSocketReturn {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketReturn {
-  const { channels = ['price', 'metrics'], onMessage, autoConnect = true } = options;
-  
+  const { channels = ["price", "metrics"], onMessage, autoConnect = true } = options;
+
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<WSMessage | null>(null);
-  
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,17 +35,16 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const channelParam = channels.join(',');
+    const channelParam = channels.join(",");
     const ws = new WebSocket(`${WS_URL}?channels=${channelParam}`);
 
     ws.onopen = () => {
       setIsConnected(true);
-      console.log('[WS] Connected');
-      
-      // Start heartbeat
+      logger.log("[WS] Connected");
+
       heartbeatRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'ping' }));
+          ws.send(JSON.stringify({ type: "ping" }));
         }
       }, HEARTBEAT_INTERVAL);
     };
@@ -55,27 +55,26 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
         setLastMessage(message);
         onMessage?.(message);
       } catch (e) {
-        console.error('[WS] Parse error:', e);
+        logger.error("[WS] Parse error:", e);
       }
     };
 
     ws.onclose = () => {
       setIsConnected(false);
-      console.log('[WS] Disconnected');
-      
+      logger.log("[WS] Disconnected");
+
       if (heartbeatRef.current) {
         clearInterval(heartbeatRef.current);
       }
 
-      // Auto reconnect
       reconnectTimeoutRef.current = setTimeout(() => {
-        console.log('[WS] Reconnecting...');
+        logger.log("[WS] Reconnecting...");
         connect();
       }, RECONNECT_DELAY);
     };
 
     ws.onerror = (error) => {
-      console.error('[WS] Error:', error);
+      logger.error("[WS] Error:", error);
     };
 
     wsRef.current = ws;
@@ -93,11 +92,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}): UseWebSocketRet
   }, []);
 
   const subscribe = useCallback((channel: string) => {
-    wsRef.current?.send(JSON.stringify({ type: 'subscribe', channel }));
+    wsRef.current?.send(JSON.stringify({ type: "subscribe", channel }));
   }, []);
 
   const unsubscribe = useCallback((channel: string) => {
-    wsRef.current?.send(JSON.stringify({ type: 'unsubscribe', channel }));
+    wsRef.current?.send(JSON.stringify({ type: "unsubscribe", channel }));
   }, []);
 
   const sendMessage = useCallback((message: object) => {

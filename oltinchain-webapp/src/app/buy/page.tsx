@@ -1,12 +1,14 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import axios from "axios"
 import { priceApi, ordersApi, walletApi } from "@/lib/api"
 import { useAuthStore, useWalletStore } from "@/lib/store"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import type { BuyQuote } from "@/lib/types"
 
 function formatNumber(n: number, decimals = 2) {
   return new Intl.NumberFormat("ru-RU", {
@@ -20,7 +22,7 @@ export default function BuyPage() {
   const { isAuthenticated } = useAuthStore()
   const { balance, setBalance } = useWalletStore()
   const [amount, setAmount] = useState("")
-  const [quote, setQuote] = useState<any>(null)
+  const [quote, setQuote] = useState<BuyQuote | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
@@ -42,8 +44,12 @@ export default function BuyPage() {
         const { data } = await priceApi.getBuyQuote(amountNum)
         setQuote(data)
         setError("")
-      } catch (err: any) {
-        setError(err.response?.data?.detail || "Ошибка расчёта")
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data?.detail || "Ошибка расчёта")
+        } else {
+          setError("Ошибка расчёта")
+        }
         setQuote(null)
       }
     }
@@ -52,7 +58,7 @@ export default function BuyPage() {
     return () => clearTimeout(timer)
   }, [amount])
 
-  const handleBuy = async () => {
+  const handleBuy = useCallback(async () => {
     const amountNum = parseFloat(amount)
     if (!amountNum || !quote) return
 
@@ -65,18 +71,22 @@ export default function BuyPage() {
       const { data } = await walletApi.getBalance()
       setBalance(data)
       setTimeout(() => router.push("/dashboard"), 1500)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Ошибка покупки")
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Ошибка покупки")
+      } else {
+        setError("Ошибка покупки")
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [amount, quote, router, setBalance])
 
-  const setPreset = (percent: number) => {
+  const setPreset = useCallback((percent: number) => {
     if (balance?.uzs.available) {
       setAmount(Math.floor(balance.uzs.available * percent / 100).toString())
     }
-  }
+  }, [balance?.uzs.available])
 
   if (success) {
     return (
@@ -101,7 +111,7 @@ export default function BuyPage() {
         <p className="text-muted text-sm mb-2">
           Доступно: {formatNumber(balance?.uzs.available || 0, 0)} UZS
         </p>
-        
+
         <div className="mb-4">
           <label className="text-sm text-muted">Сумма в UZS</label>
           <Input

@@ -26,6 +26,7 @@ bcrypt = "^4.3.0"
 redis = "^7.1.0"
 structlog = "^25.5.0"
 httpx = "^0.28.1"
+slowapi = "^0.1.9"
 web3 = "^7.14.0"
 
 [tool.poetry.group.dev.dependencies]

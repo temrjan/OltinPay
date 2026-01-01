@@ -1,16 +1,16 @@
 """Wallet service for balance and transaction management."""
 
+from datetime import datetime, timezone
 from decimal import Decimal
-from datetime import datetime
 from uuid import UUID, uuid4
 
 import structlog
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.models import Balance, Transaction, Order
-from app.infrastructure.blockchain.zksync_client import ZkSyncClient
 from app.domain.exceptions import BlockchainError
+from app.infrastructure.blockchain.zksync_client import ZkSyncClient
+from app.infrastructure.models import Balance, Order, Transaction
 
 logger = structlog.get_logger()
 
@@ -23,9 +23,7 @@ class WalletService:
 
     async def get_balances(self, user_id: UUID) -> dict[str, dict]:
         """Get all balances for a user."""
-        result = await self.session.execute(
-            select(Balance).where(Balance.user_id == user_id)
-        )
+        result = await self.session.execute(select(Balance).where(Balance.user_id == user_id))
         balances = result.scalars().all()
 
         balance_map = {
@@ -49,12 +47,12 @@ class WalletService:
         delta: Decimal,
     ) -> Decimal:
         """Update user balance by delta amount.
-        
+
         Args:
             user_id: User UUID
             asset: Asset code (UZS, OLTIN)
             delta: Amount to add (positive) or subtract (negative)
-            
+
         Returns:
             New available balance
         """
@@ -65,10 +63,10 @@ class WalletService:
             )
         )
         balance = result.scalar_one_or_none()
-        
+
         if balance:
             balance.available += delta
-            balance.updated_at = datetime.utcnow()
+            balance.updated_at = datetime.now(timezone.utc)
         else:
             balance = Balance(
                 id=uuid4(),
@@ -76,13 +74,13 @@ class WalletService:
                 asset=asset,
                 available=delta,
                 locked=Decimal("0"),
-                updated_at=datetime.utcnow(),
+                updated_at=datetime.now(timezone.utc),
             )
             self.session.add(balance)
-        
+
         await self.session.commit()
         await self.session.refresh(balance)
-        
+
         logger.info(
             "balance_updated",
             user_id=str(user_id),
@@ -90,7 +88,7 @@ class WalletService:
             delta=str(delta),
             new_balance=str(balance.available),
         )
-        
+
         return balance.available
 
     async def record_transfer(
@@ -110,11 +108,11 @@ class WalletService:
             to_address=to_address,
             tx_hash=tx_hash,
             status="completed",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         self.session.add(tx)
         await self.session.commit()
-        
+
         logger.info(
             "transfer_recorded",
             user_id=str(user_id),
@@ -122,7 +120,7 @@ class WalletService:
             amount=str(amount),
             tx_hash=tx_hash,
         )
-        
+
         return tx
 
     async def get_transactions(
@@ -215,7 +213,7 @@ class WalletService:
     async def deposit_uzs(self, user_id: UUID, amount: Decimal) -> dict:
         """Deposit UZS to user wallet (for testing/demo)."""
         new_balance = await self.update_balance(user_id, "USD", amount)
-        
+
         return {
             "success": True,
             "new_balance": new_balance,
@@ -229,61 +227,47 @@ class WalletService:
         offset: int = 0,
     ) -> list[dict]:
         """Get combined history: orders + transfers."""
-        from sqlalchemy import union_all, literal, case
+        from sqlalchemy import case, literal, union_all
+
         from app.infrastructure.models import Transaction
 
         # Orders
-        orders_q = (
-            select(
-                Order.id.label("id"),
-                Order.type.label("type"),
-                case(
-                    (Order.type == "buy", literal("OLTIN")),
-                    else_=literal("USD")
-                ).label("asset"),
-                case(
-                    (Order.type == "buy", Order.amount_oltin),
-                    else_=Order.amount_uzs
-                ).label("amount"),
-                Order.amount_uzs.label("amount_uzs"),
-                Order.amount_oltin.label("amount_oltin"),
-                Order.fee_uzs.label("fee_uzs"),
-                Order.tx_hash.label("tx_hash"),
-                literal(None).label("to_address"),
-                Order.status.label("status"),
-                Order.created_at.label("created_at"),
-            )
-            .where(
-                Order.user_id == user_id,
-                Order.status == "completed",
-            )
+        orders_q = select(
+            Order.id.label("id"),
+            Order.type.label("type"),
+            case((Order.type == "buy", literal("OLTIN")), else_=literal("USD")).label("asset"),
+            case((Order.type == "buy", Order.amount_oltin), else_=Order.amount_uzs).label("amount"),
+            Order.amount_uzs.label("amount_uzs"),
+            Order.amount_oltin.label("amount_oltin"),
+            Order.fee_uzs.label("fee_uzs"),
+            Order.tx_hash.label("tx_hash"),
+            literal(None).label("to_address"),
+            Order.status.label("status"),
+            Order.created_at.label("created_at"),
+        ).where(
+            Order.user_id == user_id,
+            Order.status == "completed",
         )
 
         # Transfers
-        transfers_q = (
-            select(
-                Transaction.id.label("id"),
-                Transaction.type.label("type"),
-                Transaction.asset.label("asset"),
-                Transaction.amount.label("amount"),
-                literal(None).label("amount_uzs"),
-                literal(None).label("amount_oltin"),
-                literal(None).label("fee_uzs"),
-                Transaction.tx_hash.label("tx_hash"),
-                Transaction.to_address.label("to_address"),
-                Transaction.status.label("status"),
-                Transaction.created_at.label("created_at"),
-            )
-            .where(Transaction.user_id == user_id)
-        )
+        transfers_q = select(
+            Transaction.id.label("id"),
+            Transaction.type.label("type"),
+            Transaction.asset.label("asset"),
+            Transaction.amount.label("amount"),
+            literal(None).label("amount_uzs"),
+            literal(None).label("amount_oltin"),
+            literal(None).label("fee_uzs"),
+            Transaction.tx_hash.label("tx_hash"),
+            Transaction.to_address.label("to_address"),
+            Transaction.status.label("status"),
+            Transaction.created_at.label("created_at"),
+        ).where(Transaction.user_id == user_id)
 
         combined = union_all(orders_q, transfers_q).subquery()
-        
+
         result = await self.session.execute(
-            select(combined)
-            .order_by(desc(combined.c.created_at))
-            .limit(limit)
-            .offset(offset)
+            select(combined).order_by(desc(combined.c.created_at)).limit(limit).offset(offset)
         )
 
         return [dict(row._mapping) for row in result.fetchall()]

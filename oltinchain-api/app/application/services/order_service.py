@@ -1,6 +1,6 @@
 """Order service for buy/sell operations."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import UUID
 
@@ -9,9 +9,9 @@ import structlog
 from app.application.interfaces.balance_repository import BalanceRepositoryProtocol
 from app.application.interfaces.blockchain import BlockchainServiceProtocol
 from app.application.interfaces.order_repository import OrderRepositoryProtocol
-from app.application.services.price_service import PriceService
 from app.application.services.broadcast_service import broadcast
-from app.domain.exceptions import InsufficientBalanceError, OrderError, BlockchainError
+from app.application.services.price_service import PriceService
+from app.domain.exceptions import BlockchainError, InsufficientBalanceError
 from app.infrastructure.models import Order
 
 logger = structlog.get_logger()
@@ -19,7 +19,7 @@ logger = structlog.get_logger()
 
 class OrderService:
     """Service for order operations (buy/sell OLTIN).
-    
+
     Uses Price Oracle for dynamic pricing based on market cycles.
     """
 
@@ -42,12 +42,12 @@ class OrderService:
         amount_usd: Decimal,
     ) -> Order:
         """Buy OLTIN with USD.
-        
+
         Args:
             user_id: User UUID.
             wallet_address: User's blockchain wallet.
             amount_usd: Amount to spend in USD.
-            
+
         Returns:
             Created order.
         """
@@ -91,7 +91,7 @@ class OrderService:
             )
             order.tx_hash = tx_hash
             order.status = "completed"
-            order.completed_at = datetime.utcnow()
+            order.completed_at = datetime.now(timezone.utc)
 
             # 5. Release locked USD (spent)
             await self.balance_repo.release_locked(user_id, "USD", amount_usd)
@@ -143,12 +143,12 @@ class OrderService:
         amount_oltin: Decimal,
     ) -> Order:
         """Sell OLTIN for USD.
-        
+
         Args:
             user_id: User UUID.
             wallet_address: User's blockchain wallet.
             amount_oltin: Amount of OLTIN to sell.
-            
+
         Returns:
             Created order.
         """
@@ -192,7 +192,7 @@ class OrderService:
             )
             order.tx_hash = tx_hash
             order.status = "completed"
-            order.completed_at = datetime.utcnow()
+            order.completed_at = datetime.now(timezone.utc)
 
             # 5. Release locked OLTIN (burned)
             await self.balance_repo.release_locked(user_id, "OLTIN", amount_oltin)

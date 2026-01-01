@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
+import { logger } from "@/lib/logger";
 
 interface Trade {
   id: string;
@@ -16,13 +17,12 @@ export default function RecentTrades() {
   const wsRef = useRef<WebSocket | null>(null);
   const mountedRef = useRef(true);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  const WS_URL = API_URL.replace('http', 'ws');
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const WS_URL = API_URL.replace("http", "ws");
 
   useEffect(() => {
     mountedRef.current = true;
 
-    // Fetch initial trades
     const fetchTrades = async () => {
       try {
         const res = await fetch(`${API_URL}/orderbook/trades?limit=20`);
@@ -31,22 +31,21 @@ export default function RecentTrades() {
           setTrades(data.trades || []);
         }
       } catch (e) {
-        console.error('Failed to fetch trades:', e);
+        logger.error("Failed to fetch trades:", e);
       }
     };
 
     fetchTrades();
 
-    // Connect WebSocket
     const connectWs = () => {
       if (!mountedRef.current) return;
-      
+
       const ws = new WebSocket(`${WS_URL}/ws?channels=trades`);
       wsRef.current = ws;
 
       ws.onopen = () => {
         if (mountedRef.current) {
-          console.log('Trades WS connected');
+          logger.log("Trades WS connected");
           setConnected(true);
         }
       };
@@ -55,31 +54,29 @@ export default function RecentTrades() {
         if (!mountedRef.current) return;
         try {
           const message = JSON.parse(event.data);
-          if (message.type === 'trade') {
+          if (message.type === "trade") {
             setTrades(prev => [message.data, ...prev.slice(0, 19)]);
           }
         } catch (e) {
-          console.error('WS parse error:', e);
+          logger.error("WS parse error:", e);
         }
       };
 
       ws.onclose = () => {
         if (mountedRef.current) {
-          console.log('Trades WS disconnected');
+          logger.log("Trades WS disconnected");
           setConnected(false);
-          // Reconnect after 5 seconds
           setTimeout(connectWs, 5000);
         }
       };
 
       ws.onerror = (error) => {
-        console.error('WS error:', error);
+        logger.error("WS error:", error);
       };
     };
 
     connectWs();
 
-    // Polling fallback
     const pollInterval = setInterval(() => {
       if (!connected) {
         fetchTrades();
@@ -96,10 +93,10 @@ export default function RecentTrades() {
   }, [API_URL, WS_URL]);
 
   const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
       hour12: false,
     });
   };
@@ -108,11 +105,10 @@ export default function RecentTrades() {
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-white">Recent Trades</h3>
-        <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+        <span className={`w-2 h-2 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />
       </div>
 
       <div className="space-y-2">
-        {/* Header */}
         <div className="grid grid-cols-4 text-xs text-zinc-500 font-medium">
           <span>Price</span>
           <span className="text-center">Amount</span>
@@ -120,15 +116,14 @@ export default function RecentTrades() {
           <span className="text-right">Time</span>
         </div>
 
-        {/* Trades list */}
         <div className="space-y-1 max-h-[300px] overflow-y-auto">
           {trades.map((trade, i) => {
             const total = (parseFloat(trade.price) * parseFloat(trade.quantity)).toFixed(2);
-            const isBuy = trade.taker_side === 'buy';
-            
+            const isBuy = trade.taker_side === "buy";
+
             return (
               <div key={trade.id || i} className="grid grid-cols-4 text-sm">
-                <span className={isBuy ? 'text-green-400' : 'text-red-400'}>
+                <span className={isBuy ? "text-green-400" : "text-red-400"}>
                   {parseFloat(trade.price).toFixed(2)}
                 </span>
                 <span className="text-center text-zinc-300">
@@ -145,7 +140,6 @@ export default function RecentTrades() {
           })}
         </div>
 
-        {/* Empty state */}
         {trades.length === 0 && (
           <div className="text-center text-zinc-500 py-8">
             No trades yet

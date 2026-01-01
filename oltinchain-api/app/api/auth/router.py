@@ -1,6 +1,8 @@
-"""Auth API router."""
+"""Auth API router with rate limiting."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth.schemas import (
@@ -17,6 +19,9 @@ from app.infrastructure.security import decode_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+# Rate limiter - uses Redis in production
+limiter = Limiter(key_func=get_remote_address)
+
 
 def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthService:
     """Get auth service dependency."""
@@ -25,11 +30,13 @@ def get_auth_service(session: AsyncSession = Depends(get_session)) -> AuthServic
 
 
 @router.post("/register", response_model=TokenResponse)
+@limiter.limit("3/minute")
 async def register(
+    request: Request,
     data: RegisterRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Register a new user."""
+    """Register a new user. Rate limited to 3 requests per minute."""
     try:
         result = await auth_service.register(data.phone, data.password)
         return TokenResponse(**result)
@@ -38,11 +45,13 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     data: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Authenticate a user."""
+    """Authenticate a user. Rate limited to 5 requests per minute."""
     try:
         result = await auth_service.login(data.phone, data.password)
         return TokenResponse(**result)
@@ -51,11 +60,13 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenResponse)
+@limiter.limit("10/minute")
 async def refresh(
+    request: Request,
     data: RefreshRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
-    """Refresh access token."""
+    """Refresh access token. Rate limited to 10 requests per minute."""
     try:
         payload = decode_token(data.refresh_token)
         if payload.get("type") != "refresh":
