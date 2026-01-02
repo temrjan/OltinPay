@@ -1,6 +1,6 @@
 """Admin API endpoints."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
@@ -314,7 +314,7 @@ async def update_alert(
 
     alert.status = request.status
     if request.status in ("resolved", "dismissed"):
-        alert.resolved_at = datetime.now(timezone.utc)
+        alert.resolved_at = datetime.utcnow()
 
     await session.commit()
     await session.refresh(alert)
@@ -338,7 +338,7 @@ async def get_analytics(
     session: AsyncSession = Depends(get_session),
 ):
     """Get platform analytics."""
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     day_ago = now - timedelta(days=1)
 
     # Total users

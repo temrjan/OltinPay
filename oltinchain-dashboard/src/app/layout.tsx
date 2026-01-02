@@ -41,8 +41,7 @@ export default function RootLayout({
 
               <nav className="hidden lg:flex items-center gap-6">
                 <a href="/" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors">Dashboard</a>
-                <a href="/oltindex" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1">📈 Биржа</a>
-                <a href="/bots" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1">🤖 Auction Bots</a>
+                <a href="https://oltinchain.com/trade" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors flex items-center gap-1">📈 Биржа</a>
                 <div className="h-4 w-px bg-zinc-700" />
                 <a href="https://sepolia.explorer.zksync.io/address/0xA7E92168517864359B6Fa9e2247B01e0280A7dAa" target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors">Contract ↗</a>
                 <a href="https://api.oltinchain.com/docs" target="_blank" rel="noopener noreferrer" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors">API Docs ↗</a>
@@ -58,8 +57,7 @@ export default function RootLayout({
                   </summary>
                   <div className="absolute right-0 top-full mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-lg py-2 z-50">
                     <a href="/" className="block px-4 py-2 text-sm text-zinc-400 hover:text-amber-400 hover:bg-zinc-700">Dashboard</a>
-                    <a href="/oltindex" className="block px-4 py-2 text-sm text-zinc-400 hover:text-amber-400 hover:bg-zinc-700">📈 Биржа</a>
-                    <a href="/bots" className="block px-4 py-2 text-sm text-zinc-400 hover:text-amber-400 hover:bg-zinc-700">🤖 Auction Bots</a>
+                    <a href="https://oltinchain.com/trade" className="block px-4 py-2 text-sm text-zinc-400 hover:text-amber-400 hover:bg-zinc-700">📈 Биржа</a>
                     <div className="border-t border-zinc-700 my-2" />
                     <a href="https://sepolia.explorer.zksync.io/address/0xA7E92168517864359B6Fa9e2247B01e0280A7dAa" target="_blank" className="block px-4 py-2 text-sm text-zinc-400 hover:text-amber-400 hover:bg-zinc-700">Contract ↗</a>
                     <a href="https://api.oltinchain.com/docs" target="_blank" className="block px-4 py-2 text-sm text-zinc-400 hover:text-amber-400 hover:bg-zinc-700">API Docs ↗</a>

@@ -86,7 +86,7 @@ services:
       - "traefik.http.routers.oltin-ws.tls.certresolver=le"
       - "traefik.http.routers.oltin-ws.middlewares=secure"
       - "traefik.http.routers.oltin-ws.priority=100"
-      # HTTP API router - with rate limit  
+      # HTTP API router - with rate limit
       - "traefik.http.routers.oltin-api.rule=Host(`api.${DOMAIN}`)"
       - "traefik.http.routers.oltin-api.entrypoints=websecure"
       - "traefik.http.routers.oltin-api.tls.certresolver=le"
@@ -116,6 +116,18 @@ services:
       - "traefik.http.routers.oltin-dashboard.tls.certresolver=le"
       - "traefik.http.routers.oltin-dashboard.middlewares=secure"
       - "traefik.http.services.oltin-dashboard.loadbalancer.server.port=3000"
+      - "traefik.http.routers.oltin-trade.rule=Host(`${DOMAIN}`) && PathPrefix(`/trade`)"
+      - "traefik.http.routers.oltin-trade.entrypoints=websecure"
+      - "traefik.http.routers.oltin-trade.tls.certresolver=le"
+      - "traefik.http.routers.oltin-trade.middlewares=secure"
+      - "traefik.http.routers.oltin-trade.service=oltin-dashboard"
+      - "traefik.http.routers.oltin-trade.priority=10"
+      # Static assets for trade page
+      - "traefik.http.routers.oltin-trade-next.rule=Host(`${DOMAIN}`) && PathPrefix(`/_next`)"
+      - "traefik.http.routers.oltin-trade-next.entrypoints=websecure"
+      - "traefik.http.routers.oltin-trade-next.tls.certresolver=le"
+      - "traefik.http.routers.oltin-trade-next.service=oltin-dashboard"
+      - "traefik.http.routers.oltin-trade-next.priority=10"
 
   oltinchain-webapp:
     build:
@@ -190,3 +202,4 @@ networks:
     name: internal
     internal: true
 
+# Note: Adding _next route for trade page - need to add to dashboard labels

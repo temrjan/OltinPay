@@ -16,14 +16,25 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   return response.json();
 }
 
+export interface DashboardMetrics {
+  total_supply: string;
+  transaction_count_24h: number;
+  active_users_24h: number;
+  volume_24h: string;
+}
+
 export const api = {
+  // Dashboard metrics
+  getDashboardMetrics: () =>
+    fetchAPI<DashboardMetrics>('/metrics/dashboard'),
+
   // Reserves
-  getProofOfReserves: () => 
+  getProofOfReserves: () =>
     fetchAPI<import('@/types').ProofOfReserves>('/reserves/proof'),
-  
+
   getGoldBars: (limit = 50, offset = 0) =>
     fetchAPI<import('@/types').GoldBarListResponse>(`/reserves/bars?limit=${limit}&offset=${offset}`),
-  
+
   lookupGoldBar: (serial: string) =>
     fetchAPI<import('@/types').GoldBar>(`/reserves/lookup?serial=${encodeURIComponent(serial)}`),
 

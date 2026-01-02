@@ -13,13 +13,6 @@ interface Metrics {
   volume24h: string;
 }
 
-interface MetricsData {
-  total_supply: string;
-  transaction_count_24h: number;
-  active_users_24h: number;
-  volume_24h: string;
-}
-
 export function LiveMetrics() {
   const [metrics, setMetrics] = useState<Metrics>({
     totalSupply: '0',
@@ -29,41 +22,33 @@ export function LiveMetrics() {
   });
   const [loading, setLoading] = useState(true);
 
-  const { isConnected, lastMessage } = useWebSocket({
+  const { isConnected } = useWebSocket({
     channels: ['metrics'],
   });
 
-  // Fetch initial data
+  // Fetch metrics data
   useEffect(() => {
-    async function fetchInitial() {
+    async function fetchMetrics() {
       try {
-        const tokenInfo = await api.getTokenInfo();
-        setMetrics(prev => ({
-          ...prev,
-          totalSupply: tokenInfo.total_supply,
-        }));
+        const data = await api.getDashboardMetrics();
+        setMetrics({
+          totalSupply: data.total_supply,
+          transactionCount24h: data.transaction_count_24h,
+          activeUsers24h: data.active_users_24h,
+          volume24h: data.volume_24h,
+        });
       } catch (error) {
-        console.error('Failed to fetch token info:', error);
+        console.error('Failed to fetch metrics:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchInitial();
-  }, []);
+    fetchMetrics();
 
-  // Handle WebSocket updates
-  useEffect(() => {
-    if (lastMessage?.type === 'metrics') {
-      const msg = lastMessage as { type: string; data: MetricsData };
-      const data = msg.data;
-      setMetrics({
-        totalSupply: data.total_supply,
-        transactionCount24h: data.transaction_count_24h,
-        activeUsers24h: data.active_users_24h,
-        volume24h: data.volume_24h,
-      });
-    }
-  }, [lastMessage]);
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchMetrics, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const metricCards = [
     {
@@ -101,7 +86,7 @@ export function LiveMetrics() {
             </div>
             <span className="text-2xl">{metric.icon}</span>
           </div>
-          
+
           {/* Connection indicator */}
           <div className="absolute top-2 right-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />

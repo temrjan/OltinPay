@@ -25,7 +25,7 @@ export default function RecentTrades() {
 
     const fetchTrades = async () => {
       try {
-        const res = await fetch(`${API_URL}/orderbook/trades?limit=20`);
+        const res = await fetch(`${API_URL}/orderbook/trades?limit=50`);
         if (res.ok && mountedRef.current) {
           const data = await res.json();
           setTrades(data.trades || []);
@@ -55,7 +55,7 @@ export default function RecentTrades() {
         try {
           const message = JSON.parse(event.data);
           if (message.type === "trade") {
-            setTrades(prev => [message.data, ...prev.slice(0, 19)]);
+            setTrades(prev => [message.data, ...prev.slice(0, 49)]);
           }
         } catch (e) {
           logger.error("WS parse error:", e);
@@ -116,8 +116,8 @@ export default function RecentTrades() {
           <span className="text-right">Time</span>
         </div>
 
-        <div className="space-y-1 max-h-[300px] overflow-y-auto">
-          {trades.map((trade, i) => {
+        <div className="space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(20 * 2 * 22px + 40px)' }}>
+          {trades.slice(0, 50).map((trade, i) => {
             const total = (parseFloat(trade.price) * parseFloat(trade.quantity)).toFixed(2);
             const isBuy = trade.taker_side === "buy";
 

@@ -4,7 +4,7 @@ Implements a price-time priority matching engine for limit orders.
 """
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -13,9 +13,28 @@ from sqlalchemy import and_, asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.services.orderbook_broadcast import orderbook_broadcast
+from app.database import async_session_maker
 from app.infrastructure.models import Balance, LimitOrder, Trade
 
 logger = structlog.get_logger()
+
+
+async def _broadcast_orderbook_with_new_session():
+    """Broadcast orderbook update using a new database session."""
+    try:
+        async with async_session_maker() as session:
+            await orderbook_broadcast.broadcast_orderbook_update(session)
+    except Exception as e:
+        logger.error("broadcast_orderbook_error", error=str(e))
+
+
+async def _broadcast_trades(trades: list[Trade]):
+    """Broadcast trades."""
+    try:
+        for trade in trades:
+            await orderbook_broadcast.broadcast_trade(trade)
+    except Exception as e:
+        logger.error("broadcast_trades_error", error=str(e))
 
 
 class OrderBookService:
@@ -71,22 +90,12 @@ class OrderBookService:
 
         await self.session.commit()
 
-        # Broadcast updates (non-blocking)
-        asyncio.create_task(self._broadcast_updates(trades))
+        # Broadcast updates (non-blocking, uses NEW session)
+        asyncio.create_task(_broadcast_orderbook_with_new_session())
+        if trades:
+            asyncio.create_task(_broadcast_trades(trades))
 
         return order, trades
-
-    async def _broadcast_updates(self, trades: list[Trade]):
-        """Broadcast orderbook and trade updates."""
-        try:
-            # Broadcast orderbook update
-            await orderbook_broadcast.broadcast_orderbook_update(self.session)
-
-            # Broadcast each trade
-            for trade in trades:
-                await orderbook_broadcast.broadcast_trade(trade)
-        except Exception as e:
-            logger.error("broadcast_error", error=str(e))
 
     async def cancel_order(self, order_id: UUID, user_id: UUID) -> LimitOrder:
         """Cancel an open limit order.
@@ -124,12 +133,12 @@ class OrderBookService:
         await self._unlock_funds(order.user_id, asset, amount)
 
         order.status = "cancelled"
-        order.updated_at = datetime.now(timezone.utc)
+        order.updated_at = datetime.utcnow()
 
         await self.session.commit()
 
-        # Broadcast orderbook update
-        asyncio.create_task(orderbook_broadcast.broadcast_orderbook_update(self.session))
+        # Broadcast orderbook update (non-blocking, uses NEW session)
+        asyncio.create_task(_broadcast_orderbook_with_new_session())
 
         logger.info(
             "limit_order_cancelled",
@@ -277,7 +286,7 @@ class OrderBookService:
             match.status = "filled" if match.remaining_quantity == 0 else "partial"
 
             if match.status == "filled":
-                match.filled_at = datetime.now(timezone.utc)
+                match.filled_at = datetime.utcnow()
 
             # Settle balances
             await self._settle_trade(trade, order, match)
@@ -292,7 +301,7 @@ class OrderBookService:
 
         if order.remaining_quantity == 0:
             order.status = "filled"
-            order.filled_at = datetime.now(timezone.utc)
+            order.filled_at = datetime.utcnow()
 
         return trades
 

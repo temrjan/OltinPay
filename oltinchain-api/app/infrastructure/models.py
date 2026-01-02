@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from uuid import uuid4
 
@@ -33,13 +33,11 @@ class User(Base):
     kyc_level: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     kyc_data: Mapped[dict | None] = mapped_column(JSON)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.utcnow(),
+        onupdate=lambda: datetime.utcnow(),
     )
 
     # Relationships
@@ -59,8 +57,8 @@ class Balance(Base):
     locked: Mapped[Decimal] = mapped_column(Numeric(20, 8), default=Decimal("0"))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.utcnow(),
+        onupdate=lambda: datetime.utcnow(),
     )
 
     user: Mapped["User"] = relationship(back_populates="balances")
@@ -87,9 +85,7 @@ class Order(Base):
     block_number: Mapped[int | None] = mapped_column(Integer)
     error_message: Mapped[str | None] = mapped_column(String(500))
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     user: Mapped["User"] = relationship(back_populates="orders")
@@ -116,9 +112,7 @@ class GoldBar(Base):
         String(20), default="active", server_default=text("'active'")
     )
     metadata_json: Mapped[dict | None] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
 
 
 class Alert(Base):
@@ -133,9 +127,7 @@ class Alert(Base):
     severity: Mapped[str] = mapped_column(String(20))
     details: Mapped[dict | None] = mapped_column(JSON)
     status: Mapped[str] = mapped_column(String(20), default="new", server_default=text("'new'"))
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     __table_args__ = (
@@ -167,9 +159,7 @@ class Transaction(Base):
     block_number: Mapped[int | None] = mapped_column(Integer)
 
     status: Mapped[str] = mapped_column(String(20), default="completed")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
 
     __table_args__ = (
         Index("ix_transactions_user", "user_id"),
@@ -196,13 +186,11 @@ class LimitOrder(Base):
     status: Mapped[str] = mapped_column(String(20), default="open")
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.utcnow(),
+        onupdate=lambda: datetime.utcnow(),
     )
     filled_at: Mapped[datetime | None] = mapped_column(DateTime)
 
@@ -238,8 +226,6 @@ class Trade(Base):
     # Who initiated (taker)
     taker_side: Mapped[str] = mapped_column(String(4), nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=lambda: datetime.now(timezone.utc)
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.utcnow())
 
     __table_args__ = (Index("ix_trades_created", "created_at"),)

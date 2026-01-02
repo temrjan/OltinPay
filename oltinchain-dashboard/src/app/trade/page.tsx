@@ -26,7 +26,7 @@ export default function TradePage() {
 
       {/* Middle row: OrderBook + Recent Trades */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <OrderBookWidget depth={15} />
+        <OrderBookWidget depth={20} />
         <RecentTrades />
       </div>
 

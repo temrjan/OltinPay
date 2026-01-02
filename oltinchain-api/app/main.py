@@ -14,6 +14,7 @@ from app.api.admin.router import router as admin_router
 from app.api.auth.router import router as auth_router
 from app.api.blockchain.router import router as blockchain_router
 from app.api.bots.router import router as bots_router
+from app.api.metrics_router import router as metrics_router
 from app.api.orderbook.router import router as orderbook_router
 from app.api.orders.router import router as orders_router
 from app.api.price.router import router as price_router
@@ -26,6 +27,7 @@ from app.application.services.metrics_service import MetricsService
 from app.config import settings
 from app.database import async_session_maker
 from app.infrastructure.blockchain import ZkSyncClient
+from app.infrastructure.pubsub import pubsub
 
 logger = structlog.get_logger()
 
@@ -68,6 +70,13 @@ async def lifespan(app: FastAPI):
     global _metrics_task
     logger.info("application_starting", version="0.1.0")
 
+    # Connect to Redis Pub/Sub
+    try:
+        await pubsub.connect()
+        logger.info("redis_pubsub_connected")
+    except Exception as e:
+        logger.error("redis_pubsub_connect_failed", error=str(e))
+
     # Start background metrics task
     _metrics_task = asyncio.create_task(broadcast_metrics_loop())
     logger.info("metrics_broadcast_task_started")
@@ -81,6 +90,13 @@ async def lifespan(app: FastAPI):
             await _metrics_task
         except asyncio.CancelledError:
             pass
+
+    # Disconnect from Redis Pub/Sub
+    try:
+        await pubsub.disconnect()
+        logger.info("redis_pubsub_disconnected")
+    except Exception as e:
+        logger.error("redis_pubsub_disconnect_failed", error=str(e))
 
     logger.info("application_shutdown")
 
@@ -117,6 +133,7 @@ app.include_router(reserves_router)
 app.include_router(admin_router)
 app.include_router(bots_router)
 app.include_router(orderbook_router)
+app.include_router(metrics_router)
 
 
 @app.get("/health")

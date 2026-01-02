@@ -3,70 +3,55 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './Card';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { formatNumber, formatAddress, formatTimeAgo } from '@/lib/utils';
+import { formatNumber, formatTimeAgo } from '@/lib/utils';
 
-interface Transaction {
-  txHash: string;
-  type: 'mint' | 'burn';
-  address: string;
-  amount: string;
-  timestamp: string;
-}
-
-interface TransactionData {
-  tx_hash: string;
-  tx_type: 'mint' | 'burn';
-  address: string;
-  amount: string;
-  timestamp: string;
+interface Trade {
+  id: string;
+  price: string;
+  quantity: string;
+  taker_side: 'buy' | 'sell';
+  created_at: string;
 }
 
 export function TransactionFeed() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const { isConnected, lastMessage } = useWebSocket({
-    channels: ['transactions'],
+    channels: ['trades'],
   });
 
-  // Handle new transactions
+  // Fetch initial trades from API
   useEffect(() => {
-    if (lastMessage?.type === 'transaction') {
-      const msg = lastMessage as { type: string; data: TransactionData };
-      const data = msg.data;
-      const newTx: Transaction = {
-        txHash: data.tx_hash,
-        type: data.tx_type,
-        address: data.address,
-        amount: data.amount,
-        timestamp: data.timestamp,
-      };
+    async function fetchInitialTrades() {
+      try {
+        const response = await fetch('https://api.oltinchain.com/orderbook/trades?limit=20');
+        if (response.ok) {
+          const data = await response.json();
+          setTrades(data.trades || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch trades:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchInitialTrades();
+  }, []);
 
-      setTransactions((prev) => [newTx, ...prev].slice(0, 50));
+  // Handle new trades from WebSocket
+  useEffect(() => {
+    if (lastMessage?.type === 'trade') {
+      const msg = lastMessage as { type: string; data: Trade };
+      const newTrade = msg.data;
+      setTrades((prev) => [newTrade, ...prev].slice(0, 50));
     }
   }, [lastMessage]);
-
-  // Generate some mock transactions for initial display
-  useEffect(() => {
-    if (transactions.length === 0) {
-      const mockTxs: Transaction[] = [];
-      const types: ('mint' | 'burn')[] = ['mint', 'burn'];
-      
-      for (let i = 0; i < 10; i++) {
-        mockTxs.push({
-          txHash: `0x${Math.random().toString(16).slice(2, 10)}....${Math.random().toString(16).slice(2, 6)}`,
-          type: types[Math.floor(Math.random() * 2)],
-          address: `0x${Math.random().toString(16).slice(2, 10)}...${Math.random().toString(16).slice(2, 6)}`,
-          amount: (Math.random() * 10).toFixed(4),
-          timestamp: new Date(Date.now() - i * 60000 * Math.random() * 10).toISOString(),
-        });
-      }
-      setTransactions(mockTxs);
-    }
-  }, [transactions.length]);
 
   return (
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Live Transactions</CardTitle>
+        <CardTitle>Live Trades</CardTitle>
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
           <span className="text-xs text-zinc-500">
@@ -74,47 +59,50 @@ export function TransactionFeed() {
           </span>
         </div>
       </CardHeader>
-      
+
       <CardContent className="max-h-96 overflow-y-auto">
         <div className="space-y-2">
-          {transactions.length === 0 ? (
-            <p className="text-center text-zinc-500 py-8">
-              Waiting for transactions...
-            </p>
+          {loading ? (
+            <p className="text-center text-zinc-500 py-8">Loading trades...</p>
+          ) : trades.length === 0 ? (
+            <p className="text-center text-zinc-500 py-8">No trades yet</p>
           ) : (
-            transactions.map((tx, index) => (
+            trades.map((trade, index) => (
               <div
-                key={`${tx.txHash}-${index}`}
-                className={`flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 
+                key={`${trade.id}-${index}`}
+                className={`flex items-center justify-between p-3 rounded-lg bg-zinc-800/50
                            hover:bg-zinc-800 transition-colors
                            ${index === 0 ? 'animate-fade-in' : ''}`}
               >
                 <div className="flex items-center gap-3">
-                  {/* Type indicator */}
+                  {/* Side indicator */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm
-                    ${tx.type === 'mint' 
-                      ? 'bg-green-500/20 text-green-400' 
+                    ${trade.taker_side === 'buy'
+                      ? 'bg-green-500/20 text-green-400'
                       : 'bg-red-500/20 text-red-400'
                     }`}>
-                    {tx.type === 'mint' ? '↗' : '↘'}
+                    {trade.taker_side === 'buy' ? '↗' : '↘'}
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-medium ${
-                        tx.type === 'mint' ? 'text-green-400' : 'text-red-400'
+                        trade.taker_side === 'buy' ? 'text-green-400' : 'text-red-400'
                       }`}>
-                        {tx.type === 'mint' ? '+' : '-'}{formatNumber(tx.amount, 4)} OLTIN
+                        {formatNumber(trade.quantity, 4)} OLTIN
+                      </span>
+                      <span className="text-xs text-zinc-500">
+                        @ ${formatNumber(trade.price, 2)}
                       </span>
                     </div>
-                    <span className="text-xs text-zinc-500 font-mono">
-                      {formatAddress(tx.address)}
+                    <span className="text-xs text-zinc-500">
+                      ${formatNumber(String(Number(trade.price) * Number(trade.quantity)), 2)} USD
                     </span>
                   </div>
                 </div>
-                
+
                 <span className="text-xs text-zinc-500">
-                  {formatTimeAgo(tx.timestamp)}
+                  {formatTimeAgo(trade.created_at)}
                 </span>
               </div>
             ))

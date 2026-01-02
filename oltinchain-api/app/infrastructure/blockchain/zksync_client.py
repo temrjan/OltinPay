@@ -114,7 +114,7 @@ class ZkSyncClient:
             raise BlockchainError("OLTIN_CONTRACT_ADDRESS not configured")
 
         # Setup minter account
-        self.minter_account = Account.from_key(settings.minter_private_key)
+        self.minter_account = Account.from_key(settings.minter_private_key.get_secret_value())
 
         # Add signing middleware for minter
         self.w3.middleware_onion.inject(
@@ -158,9 +158,7 @@ class ZkSyncClient:
                 order_id=order_id,
             )
 
-            tx_hash = self.contract.functions.mint(
-                to_checksum, amount_wei, order_id
-            ).transact()
+            tx_hash = self.contract.functions.mint(to_checksum, amount_wei, order_id).transact()
 
             logger.info("mint_tx_sent", tx_hash=tx_hash.hex())
 
@@ -196,9 +194,7 @@ class ZkSyncClient:
                 order_id=order_id,
             )
 
-            tx_hash = self.contract.functions.burn(
-                from_checksum, amount_wei, order_id
-            ).transact()
+            tx_hash = self.contract.functions.burn(from_checksum, amount_wei, order_id).transact()
 
             logger.info("burn_tx_sent", tx_hash=tx_hash.hex())
 
@@ -221,21 +217,21 @@ class ZkSyncClient:
             raise BlockchainError(f"Burn failed: {e}") from e
 
     async def admin_transfer(
-        self, 
-        from_address: str, 
-        to_address: str, 
+        self,
+        from_address: str,
+        to_address: str,
         grams: Decimal,
         transfer_id: str,
     ) -> tuple[str, Decimal, Decimal]:
         """
         Transfer OLTIN using adminTransfer (gasless for users).
-        
+
         Args:
             from_address: Sender wallet address
             to_address: Recipient wallet address
             grams: Amount in grams (total, fee will be deducted)
             transfer_id: Unique transfer ID
-            
+
         Returns:
             Tuple of (tx_hash, net_amount, fee_amount)
         """
@@ -243,12 +239,12 @@ class ZkSyncClient:
             amount_wei = self._to_wei(grams)
             from_checksum = Web3.to_checksum_address(from_address)
             to_checksum = Web3.to_checksum_address(to_address)
-            
+
             # Get fee percentage from contract
             fee_bps = self.contract.functions.transferFeeBps().call()
             fee_wei = (amount_wei * fee_bps) // 10000
             net_wei = amount_wei - fee_wei
-            
+
             logger.info(
                 "admin_transfer_starting",
                 from_addr=from_address,
