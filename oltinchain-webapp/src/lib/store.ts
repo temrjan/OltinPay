@@ -14,9 +14,9 @@ interface Balance {
 }
 
 interface Price {
-  base_price: number
-  buy_price: number
-  sell_price: number
+  price: number
+  bid: number
+  ask: number
   spread_percent: number
 }
 

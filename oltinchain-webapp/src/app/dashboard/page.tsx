@@ -111,11 +111,11 @@ export default function DashboardPage() {
           <div className="flex justify-between">
             <div>
               <p className="text-xs text-muted">Покупка</p>
-              <p className="text-lg font-bold text-green-500">{formatNumber(price.buy_price, 0)} USD</p>
+              <p className="text-lg font-bold text-green-500">{formatNumber(price.bid, 0)} USD</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-muted">Продажа</p>
-              <p className="text-lg font-bold text-red-400">{formatNumber(price.sell_price, 0)} USD</p>
+              <p className="text-lg font-bold text-red-400">{formatNumber(price.ask, 0)} USD</p>
             </div>
           </div>
         </Card>

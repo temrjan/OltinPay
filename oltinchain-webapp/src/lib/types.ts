@@ -20,26 +20,26 @@ export interface Balance {
 
 // Price types
 export interface Price {
-  base_price: number
-  buy_price: number
-  sell_price: number
+  price: number
+  bid: number
+  ask: number
   spread_percent: number
 }
 
 // Quote types
 export interface BuyQuote {
-  amount_uzs: number
+  amount_usd: number
   amount_oltin: number
   price_per_gram: number
-  fee_uzs: number
+  fee_usd: number
   fee_percent: number
 }
 
 export interface SellQuote {
   amount_oltin: number
-  amount_uzs: number
+  amount_usd: number
   price_per_gram: number
-  fee_uzs: number
+  fee_usd: number
   fee_percent: number
 }
 
@@ -56,7 +56,7 @@ export interface Transaction {
   id: string
   type: TransactionType
   amount_oltin?: string
-  amount_uzs?: string
+  amount_usd?: string
   tx_hash?: string
   to_address?: string
   from_address?: string

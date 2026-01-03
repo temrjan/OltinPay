@@ -138,11 +138,11 @@ export default function BuyPage() {
           <div className="bg-background p-3 rounded space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted">Вы платите</span>
-              <span>{formatNumber(quote.amount_uzs, 0)} USD</span>
+              <span>{formatNumber(quote.amount_usd, 0)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Комиссия</span>
-              <span>{formatNumber(quote.fee_uzs, 0)} USD</span>
+              <span>{formatNumber(quote.fee_usd, 0)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Цена за грамм</span>
