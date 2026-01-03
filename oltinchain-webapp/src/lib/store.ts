@@ -8,7 +8,7 @@ interface User {
 }
 
 interface Balance {
-  uzs: { available: number; locked: number; total: number }
+  usd: { available: number; locked: number; total: number }
   oltin: { available: number; locked: number; total: number }
   wallet_address: string | null
 }

@@ -80,7 +80,7 @@ export function getTelegramWebApp(): TelegramWebApp | null {
  */
 export function isTelegramWebApp(): boolean {
   const tg = getTelegramWebApp()
-  return \!\!tg?.initData
+  return !!tg?.initData
 }
 
 /**
@@ -119,7 +119,7 @@ export function hapticFeedback(
   type: "success" | "error" | "warning" | "light" | "medium" | "heavy"
 ) {
   const tg = getTelegramWebApp()
-  if (\!tg?.HapticFeedback) return
+  if (!tg?.HapticFeedback) return
 
   if (type === "success" || type === "error" || type === "warning") {
     tg.HapticFeedback.notificationOccurred(type)

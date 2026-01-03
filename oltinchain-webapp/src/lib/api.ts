@@ -29,7 +29,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  if (typeof window \!== "undefined") {
+  if (typeof window !== "undefined") {
     const token = localStorage.getItem("access_token")
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
@@ -46,7 +46,7 @@ api.interceptors.response.use(
       _retry?: boolean
     }
 
-    if (error.response?.status === 401 && \!originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -63,7 +63,7 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem("refresh_token")
-        if (\!refreshToken) {
+        if (!refreshToken) {
           throw new Error("No refresh token")
         }
 
@@ -84,7 +84,7 @@ api.interceptors.response.use(
         processQueue(refreshError as Error, null)
         localStorage.removeItem("access_token")
         localStorage.removeItem("refresh_token")
-        if (typeof window \!== "undefined") {
+        if (typeof window !== "undefined") {
           window.location.href = "/auth/login"
         }
         return Promise.reject(refreshError)

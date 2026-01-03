@@ -85,7 +85,7 @@ export default function SellPage() {
         <Card className="p-6 text-center">
           <div className="text-4xl mb-4">✓</div>
           <h2 className="text-xl font-bold text-gold">Продажа успешна!</h2>
-          <p className="text-muted mt-2">+{formatNumber(quote?.amount_uzs || 0, 0)} UZS</p>
+          <p className="text-muted mt-2">+{formatNumber(quote?.amount_uzs || 0, 0)} USD</p>
         </Card>
       </div>
     )
@@ -102,7 +102,7 @@ export default function SellPage() {
         <p className="text-muted text-sm mb-2">
           Доступно: {formatNumber(balance?.oltin.available || 0, 4)} OLTIN
         </p>
-        
+
         <div className="mb-4">
           <label className="text-sm text-muted">Количество OLTIN (граммы)</label>
           <Input
@@ -134,15 +134,15 @@ export default function SellPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Комиссия</span>
-              <span>{formatNumber(quote.fee_uzs, 0)} UZS</span>
+              <span>{formatNumber(quote.fee_uzs, 0)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Цена за грамм</span>
-              <span>{formatNumber(quote.price_per_gram, 0)} UZS</span>
+              <span>{formatNumber(quote.price_per_gram, 0)} USD</span>
             </div>
             <div className="flex justify-between font-bold border-t border-border pt-2">
               <span>Получите</span>
-              <span className="text-green-500">{formatNumber(quote.amount_uzs, 0)} UZS</span>
+              <span className="text-green-500">{formatNumber(quote.amount_uzs, 0)} USD</span>
             </div>
           </div>
         )}

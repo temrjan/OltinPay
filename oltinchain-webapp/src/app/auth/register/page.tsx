@@ -103,7 +103,7 @@ export default function RegisterPage() {
         </p>
 
         <p className="text-center mt-4 text-xs text-muted">
-          🎁 Бонус при регистрации: 1,000,000 UZS
+          🎁 Бонус при регистрации: 1,000 USD
         </p>
       </Card>
     </div>

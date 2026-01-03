@@ -82,15 +82,15 @@ export default function DashboardPage() {
       <Card className="p-4 mb-4">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <p className="text-muted text-sm">Баланс UZS</p>
-            <p className="text-2xl font-bold">{formatNumber(balance?.uzs.available || 0, 0)} UZS</p>
+            <p className="text-muted text-sm">Баланс USD</p>
+            <p className="text-2xl font-bold">{formatNumber(balance?.usd.available || 0, 0)} USD</p>
           </div>
           <div className="text-right">
             <p className="text-muted text-sm">Баланс OLTIN</p>
             <p className="text-2xl font-bold text-gold">{formatNumber(balance?.oltin.available || 0, 4)} г</p>
           </div>
         </div>
-        
+
         {balance?.wallet_address && (
           <div className="border-t border-border pt-3">
             <p className="text-muted text-xs mb-1">Адрес кошелька</p>
@@ -111,11 +111,11 @@ export default function DashboardPage() {
           <div className="flex justify-between">
             <div>
               <p className="text-xs text-muted">Покупка</p>
-              <p className="text-lg font-bold text-green-500">{formatNumber(price.buy_price, 0)} UZS</p>
+              <p className="text-lg font-bold text-green-500">{formatNumber(price.buy_price, 0)} USD</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-muted">Продажа</p>
-              <p className="text-lg font-bold text-red-400">{formatNumber(price.sell_price, 0)} UZS</p>
+              <p className="text-lg font-bold text-red-400">{formatNumber(price.sell_price, 0)} USD</p>
             </div>
           </div>
         </Card>

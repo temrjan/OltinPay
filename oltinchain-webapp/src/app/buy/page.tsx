@@ -83,10 +83,10 @@ export default function BuyPage() {
   }, [amount, quote, router, setBalance])
 
   const setPreset = useCallback((percent: number) => {
-    if (balance?.uzs.available) {
-      setAmount(Math.floor(balance.uzs.available * percent / 100).toString())
+    if (balance?.usd.available) {
+      setAmount(Math.floor(balance.usd.available * percent / 100).toString())
     }
-  }, [balance?.uzs.available])
+  }, [balance?.usd.available])
 
   if (success) {
     return (
@@ -109,11 +109,11 @@ export default function BuyPage() {
 
       <Card className="p-4 mb-4">
         <p className="text-muted text-sm mb-2">
-          Доступно: {formatNumber(balance?.uzs.available || 0, 0)} UZS
+          Доступно: {formatNumber(balance?.usd.available || 0, 0)} USD
         </p>
 
         <div className="mb-4">
-          <label className="text-sm text-muted">Сумма в UZS</label>
+          <label className="text-sm text-muted">Сумма в USD</label>
           <Input
             type="number"
             placeholder="100000"
@@ -138,15 +138,15 @@ export default function BuyPage() {
           <div className="bg-background p-3 rounded space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted">Вы платите</span>
-              <span>{formatNumber(quote.amount_uzs, 0)} UZS</span>
+              <span>{formatNumber(quote.amount_uzs, 0)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Комиссия</span>
-              <span>{formatNumber(quote.fee_uzs, 0)} UZS</span>
+              <span>{formatNumber(quote.fee_uzs, 0)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Цена за грамм</span>
-              <span>{formatNumber(quote.price_per_gram, 0)} UZS</span>
+              <span>{formatNumber(quote.price_per_gram, 0)} USD</span>
             </div>
             <div className="flex justify-between font-bold border-t border-border pt-2">
               <span>Получите</span>

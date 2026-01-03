@@ -22,6 +22,8 @@ interface CycleData {
 type OrderSide = 'buy' | 'sell';
 type OrderType = 'market' | 'limit';
 
+const DEMO_USD_BALANCE = 1000;
+
 export default function TradingWidget() {
   const [price, setPrice] = useState<PriceData | null>(null);
   const [cycle, setCycle] = useState<CycleData | null>(null);
@@ -53,12 +55,14 @@ export default function TradingWidget() {
     return () => clearInterval(interval);
   }, [API_URL]);
 
-  // Auto-fill limit price when price loads
   useEffect(() => {
     if (price && !limitPrice) {
       setLimitPrice(price.price);
     }
   }, [price, limitPrice]);
+
+  // Calculate OLTIN equivalent from demo balance
+  const oltinBalance = price ? (DEMO_USD_BALANCE / parseFloat(price.price)).toFixed(4) : '---';
 
   const getEstimate = () => {
     if (!amount || !price) return null;
@@ -82,56 +86,46 @@ export default function TradingWidget() {
 
   const handleSubmit = async () => {
     if (!amount || loading) return;
-    
+
     setLoading(true);
     setMessage(null);
-    
+
     try {
       if (orderType === 'limit') {
-        // Place limit order
         const orderPrice = parseFloat(limitPrice || price?.price || '0');
         const quantity = parseFloat(amount);
-        
+
         if (isNaN(orderPrice) || orderPrice <= 0 || isNaN(quantity) || quantity <= 0) {
           setMessage({ type: 'error', text: 'Введите корректные данные' });
           return;
         }
-        
+
         const res = await fetch(`${API_URL}/orderbook/orders`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            // Note: In production, add auth token here
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             side,
             price: orderPrice.toFixed(2),
             quantity: quantity.toFixed(8),
           }),
         });
-        
+
         if (res.ok) {
           const data = await res.json();
-          setMessage({ 
-            type: 'success', 
-            text: data.message || 'Ордер размещен успешно' 
-          });
+          setMessage({ type: 'success', text: data.message || 'Ордер размещен успешно' });
           setAmount('');
         } else {
           const err = await res.json();
           setMessage({ type: 'error', text: err.detail || 'Ошибка при размещении ордера' });
         }
       } else {
-        // Market order - use existing API
         const endpoint = side === 'buy' ? '/orders/buy' : '/orders/sell';
         const res = await fetch(`${API_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: parseFloat(amount),
-          }),
+          body: JSON.stringify({ amount: parseFloat(amount) }),
         });
-        
+
         if (res.ok) {
           setMessage({ type: 'success', text: 'Ордер выполнен успешно' });
           setAmount('');
@@ -169,6 +163,24 @@ export default function TradingWidget() {
 
   return (
     <div className="bg-[#111] border border-[#222] rounded-xl p-6 max-w-md w-full">
+      {/* Demo Balance Card */}
+      <div className="bg-gradient-to-r from-[#1a1a1a] to-[#0d0d0d] border border-[#333] rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[#888] text-sm">Демо-баланс</span>
+          <span className="text-xs px-2 py-1 bg-[#D4AF37]/20 text-[#D4AF37] rounded-full">Demo</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[#666] text-xs mb-1">USD</p>
+            <p className="text-white text-xl font-bold">${DEMO_USD_BALANCE.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-[#666] text-xs mb-1">OLTIN</p>
+            <p className="text-[#D4AF37] text-xl font-bold">{oltinBalance}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header with price */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -203,7 +215,7 @@ export default function TradingWidget() {
             <span>{(cycle.cycle_progress * 100).toFixed(0)}%</span>
           </div>
           <div className="h-2 bg-[#222] rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-[#D4AF37] to-[#F4D03F] transition-all duration-500"
               style={{ width: `${cycle.cycle_progress * 100}%` }}
             />
@@ -285,9 +297,7 @@ export default function TradingWidget() {
       {/* Limit price input */}
       {orderType === 'limit' && (
         <div className="mb-4">
-          <label className="block text-[#888] text-sm mb-2">
-            Цена (USD)
-          </label>
+          <label className="block text-[#888] text-sm mb-2">Цена (USD)</label>
           <input
             type="number"
             value={limitPrice}
@@ -304,10 +314,7 @@ export default function TradingWidget() {
           <div className="flex justify-between text-sm mb-2">
             <span className="text-[#888]">Вы получите</span>
             <span className="text-white font-medium">
-              {side === 'buy' 
-                ? `${estimate.oltin} OLTIN`
-                : `$${estimate.usd}`
-              }
+              {side === 'buy' ? `${estimate.oltin} OLTIN` : `$${estimate.usd}`}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -355,9 +362,8 @@ export default function TradingWidget() {
         {loading ? 'Обработка...' : side === 'buy' ? 'Купить OLTIN' : 'Продать OLTIN'}
       </button>
 
-      {/* Info */}
       <p className="text-center text-[#666] text-xs mt-4">
-        {orderType === 'limit' 
+        {orderType === 'limit'
           ? 'Лимитный ордер будет исполнен когда цена достигнет указанного уровня'
           : 'Цена обновляется каждые 5 секунд. Комиссия: 1.5% (мин. $1)'
         }

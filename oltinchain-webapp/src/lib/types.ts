@@ -13,7 +13,7 @@ export interface BalanceItem {
 }
 
 export interface Balance {
-  uzs: BalanceItem
+  usd: BalanceItem
   oltin: BalanceItem
   wallet_address: string | null
 }

@@ -121,7 +121,7 @@ export default function HistoryPage() {
                   )}
                   {tx.amount_uzs && (
                     <p className="text-sm text-muted">
-                      {formatNumber(parseFloat(tx.amount_uzs), 0)} UZS
+                      {formatNumber(parseFloat(tx.amount_uzs), 0)} USD
                     </p>
                   )}
                 </div>
