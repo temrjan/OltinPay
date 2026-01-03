@@ -1,5 +1,6 @@
 """OrderBook API router."""
 
+from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,13 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, get_session
 from app.api.orderbook.schemas import (
+    LimitOrderResponse,
+    OrderBookResponse,
     PlaceOrderRequest,
     PlaceOrderResponse,
-    LimitOrderResponse,
-    TradeResponse,
-    OrderBookResponse,
-    UserOrdersResponse,
     RecentTradesResponse,
+    TradeResponse,
+    UserOrdersResponse,
 )
 from app.application.services.orderbook_service import OrderBookService
 
@@ -33,7 +34,7 @@ async def get_orderbook(
     service: OrderBookService = Depends(get_orderbook_service),
 ):
     """Get current order book.
-    
+
     Returns aggregated bid and ask levels.
     """
     return await service.get_orderbook(depth)
@@ -46,28 +47,28 @@ async def place_order(
     service: OrderBookService = Depends(get_orderbook_service),
 ):
     """Place a new limit order.
-    
+
     Order will be matched against existing orders if possible.
     Remaining quantity stays in the order book.
     """
     try:
         order, trades = await service.place_order(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             side=data.side,
             price=data.price,
             quantity=data.quantity,
         )
-        
+
         trades_count = len(trades)
         if trades_count > 0:
             message = f"Order placed and {trades_count} trade(s) executed"
         else:
             message = "Order placed in order book"
-        
+
         return PlaceOrderResponse(
             order=LimitOrderResponse(
-                id=order.id,
-                user_id=order.user_id,
+                id=cast(UUID, order.id),
+                user_id=cast(UUID, order.user_id),
                 side=order.side,
                 price=order.price,
                 quantity=order.quantity,
@@ -93,10 +94,10 @@ async def cancel_order(
 ):
     """Cancel an open limit order."""
     try:
-        order = await service.cancel_order(order_id, user.id)
+        order = await service.cancel_order(order_id, cast(UUID, user.id))
         return LimitOrderResponse(
-            id=order.id,
-            user_id=order.user_id,
+            id=cast(UUID, order.id),
+            user_id=cast(UUID, order.user_id),
             side=order.side,
             price=order.price,
             quantity=order.quantity,
@@ -119,12 +120,12 @@ async def get_my_orders(
     service: OrderBookService = Depends(get_orderbook_service),
 ):
     """Get current user's limit orders."""
-    orders = await service.get_user_orders(user.id, status, limit)
+    orders = await service.get_user_orders(cast(UUID, user.id), status, limit)
     return UserOrdersResponse(
         orders=[
             LimitOrderResponse(
-                id=o.id,
-                user_id=o.user_id,
+                id=cast(UUID, o.id),
+                user_id=cast(UUID, o.user_id),
                 side=o.side,
                 price=o.price,
                 quantity=o.quantity,

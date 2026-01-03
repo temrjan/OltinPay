@@ -1,27 +1,29 @@
 """Wallet API endpoints."""
 
-from uuid import uuid4
-from fastapi import APIRouter, Depends, Query, HTTPException
+from typing import cast
+from uuid import UUID, uuid4
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_session
 from app.api.wallet.schemas import (
+    BalanceItem,
     DepositRequest,
     DepositResponse,
-    WalletBalanceResponse,
-    BalanceItem,
-    TransactionResponse,
-    TransactionListResponse,
     SyncStatusResponse,
+    TransactionListResponse,
+    TransactionResponse,
+    TransferByPhoneRequest,
     TransferRequest,
     TransferResponse,
-    TransferByPhoneRequest,
+    WalletBalanceResponse,
 )
 from app.application.services.wallet_service import WalletService
+from app.domain.exceptions import BlockchainError
 from app.infrastructure.blockchain.zksync_client import ZkSyncClient
 from app.infrastructure.models import User
-from app.domain.exceptions import BlockchainError
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 
@@ -40,7 +42,7 @@ async def get_balance(
     service: WalletService = Depends(get_wallet_service),
 ):
     """Get current user wallet balances."""
-    balances = await service.get_balances(user.id)
+    balances = await service.get_balances(cast(UUID, user.id))
 
     usd = balances.get("USD", {"available": 0, "locked": 0})
     oltin = balances.get("OLTIN", {"available": 0, "locked": 0})
@@ -69,7 +71,7 @@ async def get_transactions(
 ):
     """Get transaction history (orders + transfers)."""
     history = await service.get_all_history(
-        user_id=user.id,
+        user_id=cast(UUID, user.id),
         limit=limit,
         offset=offset,
     )
@@ -112,7 +114,7 @@ async def sync_blockchain(
         )
 
     result = await service.sync_blockchain_balance(
-        user_id=user.id,
+        user_id=cast(UUID, user.id),
         wallet_address=user.wallet_address,
     )
 
@@ -120,7 +122,7 @@ async def sync_blockchain(
 
 
 @router.post("/deposit", response_model=DepositResponse)
-async def deposit_usd(
+async def deposit_uzs(
     request: DepositRequest,
     user: User = Depends(get_current_user),
     service: WalletService = Depends(get_wallet_service),
@@ -131,8 +133,8 @@ async def deposit_usd(
             status_code=400,
             detail="Amount must be positive",
         )
-    
-    result = await service.deposit_usd(user.id, request.amount_usd)
+
+    result = await service.deposit_uzs(cast(UUID, user.id), request.amount_usd)
     return DepositResponse(**result)
 
 
@@ -150,19 +152,19 @@ async def transfer_oltin(
             status_code=400,
             detail="User wallet not configured",
         )
-    
+
     # Check balance
-    balances = await service.get_balances(user.id)
+    balances = await service.get_balances(cast(UUID, user.id))
     oltin_balance = balances.get("OLTIN", {"available": 0})
-    
+
     if oltin_balance["available"] < request.amount:
         raise HTTPException(
             status_code=400,
             detail=f"Insufficient OLTIN balance. Available: {oltin_balance['available']}",
         )
-    
+
     transfer_id = f"tf-{str(uuid4())[:8]}"
-    
+
     try:
         tx_hash, net_amount, fee_amount = await blockchain.admin_transfer(
             from_address=user.wallet_address,
@@ -170,14 +172,14 @@ async def transfer_oltin(
             grams=request.amount,
             transfer_id=transfer_id,
         )
-        
+
         # Update sender balance
         await service.update_balance(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             asset="OLTIN",
             delta=-request.amount,
         )
-        
+
         # Update receiver if in system
         result = await session.execute(
             select(User).where(User.wallet_address == request.to_address)
@@ -185,19 +187,19 @@ async def transfer_oltin(
         receiver = result.scalar_one_or_none()
         if receiver:
             await service.update_balance(
-                user_id=receiver.id,
+                user_id=cast(UUID, receiver.id),
                 asset="OLTIN",
                 delta=net_amount,
             )
-        
+
         # Record transaction
         await service.record_transfer(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             to_address=request.to_address,
             amount=request.amount,
             tx_hash=tx_hash,
         )
-        
+
         return TransferResponse(
             success=True,
             tx_hash=tx_hash,
@@ -208,7 +210,7 @@ async def transfer_oltin(
             fee_amount=fee_amount,
             message=f"Transferred {net_amount} OLTIN (fee: {fee_amount})",
         )
-        
+
     except BlockchainError as e:
         raise HTTPException(
             status_code=500,
@@ -230,43 +232,41 @@ async def transfer_by_phone(
             status_code=400,
             detail="User wallet not configured",
         )
-    
+
     # Find recipient by phone
-    result = await session.execute(
-        select(User).where(User.phone == request.phone)
-    )
+    result = await session.execute(select(User).where(User.phone == request.phone))
     recipient = result.scalar_one_or_none()
-    
+
     if not recipient:
         raise HTTPException(
             status_code=404,
             detail=f"User with phone {request.phone} not found",
         )
-    
+
     if not recipient.wallet_address:
         raise HTTPException(
             status_code=400,
             detail="Recipient has no wallet",
         )
-    
+
     if recipient.id == user.id:
         raise HTTPException(
             status_code=400,
             detail="Cannot transfer to yourself",
         )
-    
+
     # Check balance
-    balances = await service.get_balances(user.id)
+    balances = await service.get_balances(cast(UUID, user.id))
     oltin_balance = balances.get("OLTIN", {"available": 0})
-    
+
     if oltin_balance["available"] < request.amount:
         raise HTTPException(
             status_code=400,
             detail=f"Insufficient OLTIN balance. Available: {oltin_balance['available']}",
         )
-    
+
     transfer_id = f"tfp-{str(uuid4())[:8]}"
-    
+
     try:
         tx_hash, net_amount, fee_amount = await blockchain.admin_transfer(
             from_address=user.wallet_address,
@@ -274,29 +274,29 @@ async def transfer_by_phone(
             grams=request.amount,
             transfer_id=transfer_id,
         )
-        
+
         # Update sender balance
         await service.update_balance(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             asset="OLTIN",
             delta=-request.amount,
         )
-        
+
         # Update receiver balance
         await service.update_balance(
-            user_id=recipient.id,
+            user_id=cast(UUID, recipient.id),
             asset="OLTIN",
             delta=net_amount,
         )
-        
+
         # Record transaction
         await service.record_transfer(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             to_address=recipient.wallet_address,
             amount=request.amount,
             tx_hash=tx_hash,
         )
-        
+
         return TransferResponse(
             success=True,
             tx_hash=tx_hash,
@@ -308,7 +308,7 @@ async def transfer_by_phone(
             fee_amount=fee_amount,
             message=f"Transferred {net_amount} OLTIN to {request.phone} (fee: {fee_amount})",
         )
-        
+
     except BlockchainError as e:
         raise HTTPException(
             status_code=500,

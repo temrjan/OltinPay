@@ -33,10 +33,17 @@ class OracleService:
         if self._http_client:
             await self._http_client.aclose()
 
+    def _ensure_http_client(self) -> httpx.AsyncClient:
+        """Ensure HTTP client is initialized."""
+        if self._http_client is None:
+            raise RuntimeError("OracleService not started. Call start() first.")
+        return self._http_client
+
     async def get_price(self) -> Decimal:
         """Get current oracle price."""
         # Check cache
         if self._is_cache_valid():
+            assert self._cached_price is not None  # validated by _is_cache_valid
             return self._cached_price
 
         # Try to get fresh price
@@ -65,7 +72,8 @@ class OracleService:
     async def _fetch_price(self) -> Optional[Decimal]:
         """Fetch price from orderbook."""
         try:
-            response = await self._http_client.get("/orderbook")
+            client = self._ensure_http_client()
+            response = await client.get("/orderbook")
             response.raise_for_status()
             data = response.json()
 
@@ -97,7 +105,8 @@ class OracleService:
     async def _fetch_last_trade_price(self) -> Optional[Decimal]:
         """Fetch last trade price as fallback."""
         try:
-            response = await self._http_client.get("/orderbook/trades?limit=1")
+            client = self._ensure_http_client()
+            response = await client.get("/orderbook/trades?limit=1")
             response.raise_for_status()
             data = response.json()
 

@@ -5,6 +5,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -417,8 +418,6 @@ async def get_analytics(
 
 
 # === Internal Endpoints for Bots ===
-
-from pydantic import BaseModel
 
 
 class AddBalanceRequest(BaseModel):

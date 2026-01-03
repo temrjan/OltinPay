@@ -2,9 +2,9 @@
 
 import asyncio
 import json
-from typing import Callable, Any
+from typing import Any, Callable
 
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore[import-untyped]
 import structlog
 
 from app.config import settings

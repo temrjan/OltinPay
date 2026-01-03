@@ -3,14 +3,14 @@
 from decimal import Decimal
 from uuid import UUID
 
+import structlog
 from cryptography.fernet import Fernet
 from eth_account import Account
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import structlog
 
 from app.config import settings
-from app.infrastructure.models import User, Balance
+from app.infrastructure.models import Balance, User
 
 logger = structlog.get_logger()
 
@@ -21,15 +21,16 @@ WELCOME_BONUS_USD = Decimal("1000")  # 1000 USD welcome bonus
 def get_fernet() -> Fernet:
     """Get Fernet instance for encryption."""
     # Use SECRET_KEY as encryption key (derive 32-byte key)
-    import hashlib
     import base64
-    key = hashlib.sha256(settings.secret_key.encode()).digest()
+    import hashlib
+
+    key = hashlib.sha256(settings.secret_key.get_secret_value().encode()).digest()
     return Fernet(base64.urlsafe_b64encode(key))
 
 
 def generate_wallet() -> tuple[str, str]:
     """Generate new Ethereum wallet.
-    
+
     Returns:
         Tuple of (address, encrypted_private_key)
     """
@@ -37,11 +38,11 @@ def generate_wallet() -> tuple[str, str]:
     account = Account.create()
     address = account.address
     private_key = account.key.hex()
-    
+
     # Encrypt private key
     fernet = get_fernet()
     encrypted = fernet.encrypt(private_key.encode()).decode()
-    
+
     return address, encrypted
 
 
@@ -66,19 +67,17 @@ class UserRepository:
         """Get user by phone number."""
         result = await self.session.execute(select(User).where(User.phone == phone))
         return result.scalar_one_or_none()
-    
+
     async def get_by_wallet_address(self, address: str) -> User | None:
         """Get user by wallet address."""
-        result = await self.session.execute(
-            select(User).where(User.wallet_address == address)
-        )
+        result = await self.session.execute(select(User).where(User.wallet_address == address))
         return result.scalar_one_or_none()
 
     async def create(self, phone: str, password_hash: str) -> User:
         """Create a new user with wallet and welcome bonus."""
         # Generate wallet
         wallet_address, encrypted_private_key = generate_wallet()
-        
+
         # Create user
         user = User(
             phone=phone,
@@ -88,7 +87,7 @@ class UserRepository:
         )
         self.session.add(user)
         await self.session.flush()  # Get user.id
-        
+
         # Create USD balance with welcome bonus
         usd_balance = Balance(
             user_id=user.id,
@@ -97,7 +96,7 @@ class UserRepository:
             locked=Decimal("0"),
         )
         self.session.add(usd_balance)
-        
+
         # Create OLTIN balance (empty)
         oltin_balance = Balance(
             user_id=user.id,
@@ -106,10 +105,10 @@ class UserRepository:
             locked=Decimal("0"),
         )
         self.session.add(oltin_balance)
-        
+
         await self.session.commit()
         await self.session.refresh(user)
-        
+
         logger.info(
             "user_created_with_wallet",
             user_id=str(user.id),
@@ -117,7 +116,7 @@ class UserRepository:
             wallet_address=wallet_address,
             welcome_bonus_usd=str(WELCOME_BONUS_USD),
         )
-        
+
         return user
 
     async def update(self, user: User) -> User:

@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import cast
 from uuid import UUID
 
 import structlog
@@ -109,7 +110,7 @@ class OrderService:
             try:
                 await broadcast.broadcast_order_completed(
                     user_id=user_id,
-                    order_id=order.id,
+                    order_id=cast(UUID, order.id),
                     order_type="buy",
                     amount_uzs=amount_usd,
                     amount_oltin=quote.amount_oltin,
@@ -210,7 +211,7 @@ class OrderService:
             try:
                 await broadcast.broadcast_order_completed(
                     user_id=user_id,
-                    order_id=order.id,
+                    order_id=cast(UUID, order.id),
                     order_type="sell",
                     amount_uzs=quote.amount_usd,
                     amount_oltin=amount_oltin,

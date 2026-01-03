@@ -6,6 +6,7 @@ Implements a price-time priority matching engine for limit orders.
 import asyncio
 from datetime import datetime
 from decimal import Decimal
+from typing import cast
 from uuid import UUID, uuid4
 
 import structlog
@@ -130,7 +131,7 @@ class OrderBookService:
             asset = "OLTIN"
             amount = remaining
 
-        await self._unlock_funds(order.user_id, asset, amount)
+        await self._unlock_funds(cast(UUID, order.user_id), asset, amount)
 
         order.status = "cancelled"
         order.updated_at = datetime.utcnow()
@@ -191,8 +192,8 @@ class OrderBookService:
         )
 
         # Aggregate by price level
-        bids = self._aggregate_levels(bids_result.fetchall(), depth)
-        asks = self._aggregate_levels(asks_result.fetchall(), depth)
+        bids = self._aggregate_levels(list(bids_result.fetchall()), depth)
+        asks = self._aggregate_levels(list(asks_result.fetchall()), depth)
 
         return {
             "bids": bids,
@@ -234,12 +235,12 @@ class OrderBookService:
             # Match against asks (sellers) at or below our price
             opposite_side = "sell"
             price_condition = LimitOrder.price <= order.price
-            order_by = [asc(LimitOrder.price), asc(LimitOrder.created_at)]
+            order_by = (asc(LimitOrder.price), asc(LimitOrder.created_at))
         else:
             # Match against bids (buyers) at or above our price
             opposite_side = "buy"
             price_condition = LimitOrder.price >= order.price
-            order_by = [desc(LimitOrder.price), asc(LimitOrder.created_at)]
+            order_by = (desc(LimitOrder.price), asc(LimitOrder.created_at))
 
         # Get matching orders
         result = await self.session.execute(
@@ -372,11 +373,11 @@ class OrderBookService:
         oltin_amount = trade.quantity
 
         if taker_order.side == "buy":
-            buyer_id = taker_order.user_id
-            seller_id = maker_order.user_id
+            buyer_id = cast(UUID, taker_order.user_id)
+            seller_id = cast(UUID, maker_order.user_id)
         else:
-            buyer_id = maker_order.user_id
-            seller_id = taker_order.user_id
+            buyer_id = cast(UUID, maker_order.user_id)
+            seller_id = cast(UUID, taker_order.user_id)
 
         # Buyer: locked USD -> spent, receive OLTIN
         buyer_usd = await self._get_balance(buyer_id, "USD")

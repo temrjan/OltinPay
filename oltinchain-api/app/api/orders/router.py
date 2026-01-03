@@ -1,6 +1,7 @@
 """Orders API router."""
 
-from typing import Annotated
+from typing import Annotated, cast
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +16,7 @@ from app.api.orders.schemas import (
 from app.application.services.order_service import OrderService
 from app.application.services.price_service import PriceService
 from app.database import get_session
-from app.domain.exceptions import InsufficientBalanceError, BlockchainError
+from app.domain.exceptions import BlockchainError, InsufficientBalanceError
 from app.infrastructure.blockchain import ZkSyncClient
 from app.infrastructure.repositories.balance_repo import BalanceRepository
 from app.infrastructure.repositories.order_repo import OrderRepository
@@ -52,7 +53,7 @@ async def buy_order(
 
     try:
         order = await order_service.buy(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             wallet_address=user.wallet_address,
             amount_usd=data.amount_usd,
         )
@@ -83,7 +84,7 @@ async def sell_order(
 
     try:
         order = await order_service.sell(
-            user_id=user.id,
+            user_id=cast(UUID, user.id),
             wallet_address=user.wallet_address,
             amount_oltin=data.amount_oltin,
         )
@@ -102,7 +103,7 @@ async def list_orders(
     order_service: OrderService = Depends(get_order_service),
 ):
     """Get user's order history."""
-    orders = await order_service.get_user_orders(user.id, limit, offset)
+    orders = await order_service.get_user_orders(cast(UUID, user.id), limit, offset)
     return OrderListResponse(
         orders=[OrderResponse.model_validate(o) for o in orders],
         total=len(orders),

@@ -71,6 +71,12 @@ class APIClient:
         if self._client:
             await self._client.aclose()
 
+    def _ensure_client(self) -> httpx.AsyncClient:
+        """Ensure client is initialized."""
+        if self._client is None:
+            raise RuntimeError("APIClient not started. Call start() first.")
+        return self._client
+
     def _get_headers(self, phone: str) -> dict:
         """Get headers with auth token."""
         token = self._tokens.get_access_token(phone)
@@ -81,7 +87,8 @@ class APIClient:
     async def login(self, phone: str) -> bool:
         """Login and store both tokens."""
         try:
-            response = await self._client.post(
+            client = self._ensure_client()
+            response = await client.post(
                 "/auth/login",
                 json={
                     "phone": phone,
@@ -112,7 +119,8 @@ class APIClient:
                 return False
 
             try:
-                response = await self._client.post(
+                client = self._ensure_client()
+                response = await client.post(
                     "/auth/refresh",
                     json={"refresh_token": refresh_token},
                 )
@@ -163,7 +171,8 @@ class APIClient:
         kwargs["headers"] = headers
 
         try:
-            response = await self._client.request(method, url, **kwargs)
+            client = self._ensure_client()
+            response = await client.request(method, url, **kwargs)
 
             # If 401, try to refresh and retry once
             if response.status_code == 401:
@@ -171,7 +180,8 @@ class APIClient:
                 if await self.refresh(phone):
                     # Retry with new token
                     kwargs["headers"] = self._get_headers(phone)
-                    response = await self._client.request(method, url, **kwargs)
+                    client = self._ensure_client()
+            response = await client.request(method, url, **kwargs)
 
             return response
         except Exception as e:

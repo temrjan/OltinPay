@@ -41,6 +41,8 @@ class Database:
     @asynccontextmanager
     async def acquire(self) -> AsyncGenerator[asyncpg.Connection, None]:
         """Acquire a connection from the pool."""
+        if self.pool is None:
+            raise RuntimeError("Database not connected. Call connect() first.")
         async with self.pool.acquire() as conn:
             yield conn
 
