@@ -1,4 +1,5 @@
 "use client"
+
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/store"
@@ -9,9 +10,9 @@ export default function Home() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard")
+      router.push("/dashboard")
     } else {
-      router.replace("/auth/login")
+      router.push("/dashboard")  // TelegramAuthProvider handles auth
     }
   }, [isAuthenticated, router])
 

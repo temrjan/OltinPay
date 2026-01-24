@@ -1,17 +1,18 @@
 """Order service for buy/sell operations."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from typing import cast
 from uuid import UUID
 
 import structlog
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.interfaces.balance_repository import BalanceRepositoryProtocol
 from app.application.interfaces.blockchain import BlockchainServiceProtocol
 from app.application.interfaces.order_repository import OrderRepositoryProtocol
 from app.application.services.broadcast_service import broadcast
-from app.application.services.price_service import PriceService
+from app.application.services.orderbook_price import get_buy_quote, get_sell_quote
 from app.domain.exceptions import BlockchainError, InsufficientBalanceError
 from app.infrastructure.models import Order
 
@@ -21,7 +22,7 @@ logger = structlog.get_logger()
 class OrderService:
     """Service for order operations (buy/sell OLTIN).
 
-    Uses Price Oracle for dynamic pricing based on market cycles.
+    Uses orderbook prices for accurate pricing.
     """
 
     def __init__(
@@ -29,12 +30,12 @@ class OrderService:
         order_repo: OrderRepositoryProtocol,
         balance_repo: BalanceRepositoryProtocol,
         blockchain: BlockchainServiceProtocol,
-        price_service: PriceService | None = None,
+        session: AsyncSession,
     ):
         self.order_repo = order_repo
         self.balance_repo = balance_repo
         self.blockchain = blockchain
-        self.price_service = price_service or PriceService()
+        self.session = session
 
     async def buy(
         self,
@@ -52,8 +53,8 @@ class OrderService:
         Returns:
             Created order.
         """
-        # 1. Get quote from Price Oracle
-        quote = self.price_service.get_buy_quote(amount_usd)
+        # 1. Get quote from orderbook
+        quote = await get_buy_quote(self.session, amount_usd)
 
         logger.info(
             "buy_order_started",
@@ -92,7 +93,7 @@ class OrderService:
             )
             order.tx_hash = tx_hash
             order.status = "completed"
-            order.completed_at = datetime.now(timezone.utc)
+            order.completed_at = datetime.utcnow()
 
             # 5. Release locked USD (spent)
             await self.balance_repo.release_locked(user_id, "USD", amount_usd)
@@ -153,8 +154,8 @@ class OrderService:
         Returns:
             Created order.
         """
-        # 1. Get quote from Price Oracle
-        quote = self.price_service.get_sell_quote(amount_oltin)
+        # 1. Get quote from orderbook
+        quote = await get_sell_quote(self.session, amount_oltin)
 
         logger.info(
             "sell_order_started",
@@ -193,7 +194,7 @@ class OrderService:
             )
             order.tx_hash = tx_hash
             order.status = "completed"
-            order.completed_at = datetime.now(timezone.utc)
+            order.completed_at = datetime.utcnow()
 
             # 5. Release locked OLTIN (burned)
             await self.balance_repo.release_locked(user_id, "OLTIN", amount_oltin)

@@ -5,6 +5,7 @@ interface User {
   id: string
   phone: string
   wallet_address: string | null
+  telegram_username?: string | null
 }
 
 interface Balance {

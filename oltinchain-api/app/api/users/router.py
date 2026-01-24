@@ -1,6 +1,7 @@
 """Users API router."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser
@@ -8,9 +9,11 @@ from app.api.users.schemas import (
     UpdateUserRequest,
     UserBalanceResponse,
     UserResponse,
+    UserSearchResponse,
     UserWithBalancesResponse,
 )
 from app.database import get_session
+from app.infrastructure.models import User
 from app.infrastructure.repositories.user_repo import UserRepository
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -73,4 +76,37 @@ async def update_me(
         kyc_level=user.kyc_level,
         is_active=user.is_active,
         created_at=user.created_at,
+    )
+
+
+@router.get("/search", response_model=UserSearchResponse)
+async def search_user(
+    username: str = Query(..., min_length=1, max_length=32, description="Telegram @username"),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Search user by Telegram username for internal transfer.
+
+    Returns public info to display before transfer confirmation.
+    No authentication required - self-transfer check is done in transfer endpoint.
+    """
+    from sqlalchemy import select
+
+    # Clean username (remove @ if present)
+    clean_username = username.lstrip("@").lower()
+
+    # Search by telegram_username (case-insensitive)
+    result = await session.execute(
+        select(User).where(func.lower(User.telegram_username) == clean_username)
+    )
+    found_user = result.scalar_one_or_none()
+
+    if not found_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return UserSearchResponse(
+        id=str(found_user.id),
+        username=found_user.telegram_username,
+        first_name=found_user.telegram_first_name,
+        has_wallet=bool(found_user.wallet_address),
     )

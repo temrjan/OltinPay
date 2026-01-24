@@ -70,7 +70,6 @@ services:
       ZKSYNC_RPC_URL: ${ZKSYNC_RPC_URL}
       OLTIN_CONTRACT_ADDRESS: ${OLTIN_CONTRACT_ADDRESS}
       MINTER_PRIVATE_KEY: ${MINTER_PRIVATE_KEY}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
     networks:
       - web
       - internal
@@ -142,7 +141,7 @@ services:
       - oltinchain-api
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.oltin-webapp.rule=Host(`app.${DOMAIN}`)"
+      - "traefik.http.routers.oltin-webapp.rule=Host(`${DOMAIN}`) && PathPrefix(`/wallet`)"
       - "traefik.http.routers.oltin-webapp.entrypoints=websecure"
       - "traefik.http.routers.oltin-webapp.tls.certresolver=le"
       - "traefik.http.routers.oltin-webapp.middlewares=secure"
@@ -192,15 +191,6 @@ services:
     depends_on:
       - oltinchain-api
 
-  oltinchain-miniapp-bot:
-    build: ./oltinchain-miniapp-bot
-    restart: unless-stopped
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - WEBAPP_URL=https://app.${DOMAIN}
-    networks:
-      - web
-
 volumes:
   pg_data:
   redis_data:
@@ -212,3 +202,4 @@ networks:
     name: internal
     internal: true
 
+# Note: Adding _next route for trade page - need to add to dashboard labels

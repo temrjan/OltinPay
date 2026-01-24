@@ -1,12 +1,14 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import axios from "axios"
 import { priceApi, ordersApi, walletApi } from "@/lib/api"
-import { useAuthStore, useWalletStore } from "@/lib/store"
+import { useWalletStore } from "@/lib/store"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import type { SellQuote } from "@/lib/types"
 
 function formatNumber(n: number, decimals = 2) {
   return new Intl.NumberFormat("ru-RU", {
@@ -17,19 +19,28 @@ function formatNumber(n: number, decimals = 2) {
 
 export default function SellPage() {
   const router = useRouter()
-  const { isAuthenticated } = useAuthStore()
   const { balance, setBalance } = useWalletStore()
   const [amount, setAmount] = useState("")
-  const [quote, setQuote] = useState<any>(null)
+  const [quote, setQuote] = useState<SellQuote | null>(null)
   const [loading, setLoading] = useState(false)
+  const [quoteLoading, setQuoteLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
 
+  // Fetch balance on mount
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/auth/login")
+    const fetchBalance = async () => {
+      try {
+        const { data } = await walletApi.getBalance()
+        setBalance(data)
+      } catch (err) {
+        console.error("Failed to fetch balance", err)
+      }
     }
-  }, [isAuthenticated, router])
+    if (!balance) {
+      fetchBalance()
+    }
+  }, [balance, setBalance])
 
   useEffect(() => {
     const getQuote = async () => {
@@ -38,13 +49,21 @@ export default function SellPage() {
         setQuote(null)
         return
       }
+
+      setQuoteLoading(true)
       try {
         const { data } = await priceApi.getSellQuote(amountNum)
         setQuote(data)
         setError("")
-      } catch (err: any) {
-        setError(err.response?.data?.detail || "Ошибка расчёта")
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data?.detail || "Ошибка расчёта")
+        } else {
+          setError("Ошибка расчёта")
+        }
         setQuote(null)
+      } finally {
+        setQuoteLoading(false)
       }
     }
 
@@ -52,7 +71,7 @@ export default function SellPage() {
     return () => clearTimeout(timer)
   }, [amount])
 
-  const handleSell = async () => {
+  const handleSell = useCallback(async () => {
     const amountNum = parseFloat(amount)
     if (!amountNum || !quote) return
 
@@ -65,19 +84,23 @@ export default function SellPage() {
       const { data } = await walletApi.getBalance()
       setBalance(data)
       setTimeout(() => router.push("/dashboard"), 1500)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Ошибка продажи")
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || "Ошибка продажи")
+      } else {
+        setError("Ошибка продажи")
+      }
     } finally {
       setLoading(false)
     }
-  }
+  }, [amount, quote, router, setBalance])
 
-  const setPreset = (percent: number) => {
+  const setPreset = useCallback((percent: number) => {
     if (balance?.oltin.available) {
       const val = balance.oltin.available * percent / 100
       setAmount(val.toFixed(4))
     }
-  }
+  }, [balance?.oltin.available])
 
   if (success) {
     return (
@@ -90,6 +113,8 @@ export default function SellPage() {
       </div>
     )
   }
+
+  const canSell = quote && !loading && !quoteLoading && parseFloat(amount) > 0
 
   return (
     <div className="min-h-screen p-4">
@@ -126,7 +151,13 @@ export default function SellPage() {
           ))}
         </div>
 
-        {quote && (
+        {quoteLoading && (
+          <div className="bg-background p-3 rounded text-center text-muted">
+            Расчёт...
+          </div>
+        )}
+
+        {quote && !quoteLoading && (
           <div className="bg-background p-3 rounded space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted">Продаёте</span>
@@ -134,11 +165,11 @@ export default function SellPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Комиссия</span>
-              <span>{formatNumber(quote.fee_usd, 0)} USD</span>
+              <span>{formatNumber(quote.fee_usd, 2)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Цена за грамм</span>
-              <span>{formatNumber(quote.price_per_gram, 0)} USD</span>
+              <span>{formatNumber(quote.price_per_gram, 2)} USD</span>
             </div>
             <div className="flex justify-between font-bold border-t border-border pt-2">
               <span>Получите</span>
@@ -152,10 +183,10 @@ export default function SellPage() {
 
       <Button
         onClick={handleSell}
-        disabled={!quote || loading}
-        className="w-full bg-red-500 hover:bg-red-600"
+        disabled={!canSell}
+        className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50"
       >
-        {loading ? "Обработка..." : "Продать OLTIN"}
+        {loading ? "Обработка..." : quoteLoading ? "Расчёт..." : "Продать OLTIN"}
       </Button>
     </div>
   )

@@ -1,10 +1,10 @@
 """Price API endpoints.
 
-Provides current price from orderbook and cycle state.
+Provides current price from orderbook.
 """
 
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, asc, desc, select
@@ -12,15 +12,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
 from app.api.price.schemas import (
-    CycleStateResponse,
+    BuyQuoteRequest,
     PriceHistoryItem,
     PriceHistoryResponse,
     PriceResponse,
+    QuoteResponse,
+    SellQuoteRequest,
 )
-from app.application.services.price_oracle import get_price_oracle
+from app.config import settings
 from app.infrastructure.models import LimitOrder, Trade
 
 router = APIRouter(prefix="/price", tags=["price"])
+
+# Default price if orderbook is empty
+DEFAULT_PRICE = Decimal("500.00")
 
 
 async def get_orderbook_price(session: AsyncSession) -> tuple[Decimal, Decimal, Decimal]:
@@ -42,16 +47,14 @@ async def get_orderbook_price(session: AsyncSession) -> tuple[Decimal, Decimal, 
     best_ask = ask_result.scalar_one_or_none()
 
     if best_bid and best_ask:
-        mid = (best_bid + best_ask) / 2
-        return mid.quantize(Decimal("0.01")), best_bid, best_ask
+        mid = ((best_bid + best_ask) / 2).quantize(Decimal("0.01"))
+        return mid, best_bid, best_ask
     elif best_bid:
         return best_bid, best_bid, best_bid
     elif best_ask:
         return best_ask, best_ask, best_ask
     else:
-        oracle = get_price_oracle()
-        now = datetime.now(timezone.utc)
-        return oracle.get_price_with_spread(now, Decimal("1.0"))
+        return DEFAULT_PRICE, DEFAULT_PRICE, DEFAULT_PRICE
 
 
 @router.get("/current", response_model=PriceResponse)
@@ -71,25 +74,6 @@ async def get_gold_price(session: AsyncSession = Depends(get_session)) -> PriceR
     return await get_current_price(session)
 
 
-@router.get("/cycle", response_model=CycleStateResponse)
-async def get_cycle_state() -> CycleStateResponse:
-    """Get current market cycle state."""
-    oracle = get_price_oracle()
-    state = oracle.get_current_cycle_state()
-    return CycleStateResponse(
-        cycle_number=state.cycle_number,
-        phase=state.phase.value,
-        day_in_cycle=state.day_in_cycle,
-        cycle_progress=state.cycle_progress,
-        start_price=state.start_price,
-        current_price=state.current_price,
-        peak_price=state.peak_price,
-        bottom_price=state.bottom_price,
-        end_price=state.target_end_price,
-        total_growth_percent=state.total_growth,
-    )
-
-
 @router.get("/history", response_model=PriceHistoryResponse)
 async def get_price_history(
     interval: str = Query(default="1h", pattern="^(1m|5m|15m|1h|4h|1d)$"),
@@ -97,7 +81,7 @@ async def get_price_history(
     session: AsyncSession = Depends(get_session),
 ) -> PriceHistoryResponse:
     """Get historical OHLCV price data from real trades."""
-    now = datetime.utcnow()  # timezone-naive for DB
+    now = datetime.utcnow()
     interval_seconds = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400}[
         interval
     ]
@@ -111,7 +95,7 @@ async def get_price_history(
     trades = result.fetchall()
 
     candles: list[PriceHistoryItem] = []
-    last_price = Decimal("500")
+    last_price = DEFAULT_PRICE
 
     for i in range(limit):
         candle_start = now - timedelta(seconds=interval_seconds * (limit - i))
@@ -162,7 +146,7 @@ async def get_xau_usd_history(
     session: AsyncSession = Depends(get_session),
 ):
     """Get XAU/USD price history from trades."""
-    now = datetime.utcnow()  # timezone-naive for DB
+    now = datetime.utcnow()
     start_time = now - timedelta(minutes=limit * 5)
 
     result = await session.execute(
@@ -183,7 +167,7 @@ async def get_xau_usd_history(
         elif history:
             price = float(history[-1]["price_usd"])
         else:
-            price = 500.0
+            price = float(DEFAULT_PRICE)
 
         history.append(
             {
@@ -194,3 +178,61 @@ async def get_xau_usd_history(
         )
 
     return {"history": history}
+
+
+def calculate_fee(amount_usd: Decimal) -> Decimal:
+    """Calculate transaction fee."""
+    fee_percent = Decimal(str(settings.fee_percent))
+    min_fee = Decimal("1.0")
+    if amount_usd <= 0:
+        return Decimal("0")
+    percent_fee = (amount_usd * fee_percent).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return max(percent_fee, min_fee)
+
+
+@router.post("/quote/buy", response_model=QuoteResponse)
+async def get_buy_quote(
+    data: BuyQuoteRequest,
+    session: AsyncSession = Depends(get_session),
+) -> QuoteResponse:
+    """Get quote for buying OLTIN with USD.
+
+    Uses orderbook ask price for accurate quotes.
+    """
+    mid, bid, ask = await get_orderbook_price(session)
+
+    fee = calculate_fee(data.amount_usd)
+    net_usd = data.amount_usd - fee
+
+    oltin = (net_usd / ask).quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
+
+    return QuoteResponse(
+        amount_usd=data.amount_usd,
+        amount_oltin=oltin,
+        fee_usd=fee,
+        price_per_gram=ask,
+    )
+
+
+@router.post("/quote/sell", response_model=QuoteResponse)
+async def get_sell_quote(
+    data: SellQuoteRequest,
+    session: AsyncSession = Depends(get_session),
+) -> QuoteResponse:
+    """Get quote for selling OLTIN for USD.
+
+    Uses orderbook bid price for accurate quotes.
+    """
+    mid, bid, ask = await get_orderbook_price(session)
+
+    gross_usd = (data.amount_oltin * bid).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    fee = calculate_fee(gross_usd)
+    net_usd = gross_usd - fee
+
+    return QuoteResponse(
+        amount_usd=net_usd,
+        amount_oltin=data.amount_oltin,
+        fee_usd=fee,
+        price_per_gram=bid,
+    )

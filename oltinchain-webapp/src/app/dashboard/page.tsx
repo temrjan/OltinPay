@@ -1,9 +1,9 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { walletApi, priceApi } from "@/lib/api"
 import { useAuthStore, useWalletStore, usePriceStore } from "@/lib/store"
+import { closeMiniApp } from "@/lib/telegram"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -15,16 +15,17 @@ function formatNumber(n: number, decimals = 2) {
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const { isAuthenticated, logout } = useAuthStore()
+  const { logout } = useAuthStore()
   const { balance, setBalance } = useWalletStore()
   const { price, setPrice } = usePriceStore()
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/auth/login")
+    // TelegramAuthProvider handles auth, just wait for token
+    const token = localStorage.getItem("access_token")
+    if (!token) {
+      // Still loading - TelegramAuthProvider will handle auth
       return
     }
 
@@ -46,7 +47,7 @@ export default function DashboardPage() {
     fetchData()
     const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
-  }, [isAuthenticated, router, setBalance, setPrice])
+  }, [setBalance, setPrice])
 
   const copyAddress = () => {
     if (balance?.wallet_address) {
@@ -58,7 +59,7 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     logout()
-    router.push("/auth/login")
+    closeMiniApp()
   }
 
   if (loading) {

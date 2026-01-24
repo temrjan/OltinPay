@@ -43,3 +43,12 @@ class UserWithBalancesResponse(UserResponse):
     """User with balances."""
 
     balances: list[UserBalanceResponse] = []
+
+
+class UserSearchResponse(BaseModel):
+    """User search result for transfer."""
+
+    id: str
+    username: str | None
+    first_name: str | None
+    has_wallet: bool

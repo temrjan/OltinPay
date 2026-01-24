@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next"
+import Script from "next/script"
 import { Providers } from "@/components/Providers"
+import { TelegramAuthProvider } from "@/components/TelegramAuthProvider"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -27,9 +29,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru" className="dark">
+      <head>
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="min-h-screen bg-background text-white antialiased">
         <Providers>
-          <main className="max-w-lg mx-auto">{children}</main>
+          <TelegramAuthProvider>
+            <main className="max-w-lg mx-auto">{children}</main>
+          </TelegramAuthProvider>
         </Providers>
       </body>
     </html>

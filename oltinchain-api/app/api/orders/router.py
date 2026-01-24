@@ -14,7 +14,6 @@ from app.api.orders.schemas import (
     SellOrderRequest,
 )
 from app.application.services.order_service import OrderService
-from app.application.services.price_service import PriceService
 from app.database import get_session
 from app.domain.exceptions import BlockchainError, InsufficientBalanceError
 from app.infrastructure.blockchain import ZkSyncClient
@@ -29,8 +28,7 @@ def get_order_service(session: AsyncSession = Depends(get_session)) -> OrderServ
     order_repo = OrderRepository(session)
     balance_repo = BalanceRepository(session)
     blockchain = ZkSyncClient()
-    price_service = PriceService()
-    return OrderService(order_repo, balance_repo, blockchain, price_service)
+    return OrderService(order_repo, balance_repo, blockchain, session)
 
 
 @router.post("/buy", response_model=OrderResponse)
@@ -42,7 +40,7 @@ async def buy_order(
     """Buy OLTIN with USD.
 
     Creates an order, mints tokens on blockchain, updates balances.
-    Price is determined by the Price Oracle based on current market cycle.
+    Price is determined from the orderbook (best ask price).
     User must have sufficient USD balance and a wallet address.
     """
     if not user.wallet_address:
@@ -73,7 +71,7 @@ async def sell_order(
     """Sell OLTIN for USD.
 
     Creates an order, burns tokens on blockchain, updates balances.
-    Price is determined by the Price Oracle based on current market cycle.
+    Price is determined from the orderbook (best bid price).
     User must have sufficient OLTIN balance and a wallet address.
     """
     if not user.wallet_address:

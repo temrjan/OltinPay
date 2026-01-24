@@ -1,10 +1,12 @@
+from decimal import Decimal
+
 """Wallet API endpoints."""
 
 from typing import cast
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_session
@@ -12,6 +14,8 @@ from app.api.wallet.schemas import (
     BalanceItem,
     DepositRequest,
     DepositResponse,
+    InternalTransferRequest,
+    InternalTransferResponse,
     SyncStatusResponse,
     TransactionListResponse,
     TransactionResponse,
@@ -23,7 +27,7 @@ from app.api.wallet.schemas import (
 from app.application.services.wallet_service import WalletService
 from app.domain.exceptions import BlockchainError
 from app.infrastructure.blockchain.zksync_client import ZkSyncClient
-from app.infrastructure.models import User
+from app.infrastructure.models import Transaction, User
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 
@@ -314,3 +318,90 @@ async def transfer_by_phone(
             status_code=500,
             detail=f"Blockchain error: {str(e)}",
         )
+
+
+@router.post("/transfer/internal", response_model=InternalTransferResponse)
+async def internal_transfer(
+    request: InternalTransferRequest,
+    user: User = Depends(get_current_user),
+    service: WalletService = Depends(get_wallet_service),
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Internal OLTIN transfer by Telegram username.
+
+    Instant transfer without blockchain - no gas fees.
+    Only works between registered OltinChain users.
+    """
+    # Clean username
+    clean_username = request.recipient_username.lstrip("@").lower()
+
+    # Find recipient by telegram_username
+    result = await session.execute(
+        select(User).where(func.lower(User.telegram_username) == clean_username)
+    )
+    recipient = result.scalar_one_or_none()
+
+    if not recipient:
+        raise HTTPException(
+            status_code=404,
+            detail=f"User @{clean_username} not found",
+        )
+
+    if recipient.id == user.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot transfer to yourself",
+        )
+
+    # Check sender balance
+    balances = await service.get_balances(cast(UUID, user.id))
+    oltin_balance = balances.get("OLTIN", {"available": 0})
+
+    if oltin_balance["available"] < request.amount:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient OLTIN balance. Available: {oltin_balance['available']}",
+        )
+
+    # Internal transfers are free
+    fee = Decimal("0")
+
+    # Execute transfer: deduct from sender
+    await service.update_balance(
+        user_id=cast(UUID, user.id),
+        asset="OLTIN",
+        delta=-request.amount,
+    )
+
+    # Credit to recipient
+    await service.update_balance(
+        user_id=cast(UUID, recipient.id),
+        asset="OLTIN",
+        delta=request.amount,
+    )
+
+    # Record transaction
+    transfer_id = uuid4()
+    transaction = Transaction(
+        id=transfer_id,
+        user_id=user.id,
+        type="internal_transfer",
+        asset="OLTIN",
+        amount=request.amount,
+        to_user_id=recipient.id,
+        status="completed",
+    )
+    session.add(transaction)
+    await session.commit()
+
+    return InternalTransferResponse(
+        success=True,
+        transfer_id=str(transfer_id),
+        recipient_username=recipient.telegram_username or clean_username,
+        recipient_first_name=recipient.telegram_first_name,
+        amount=request.amount,
+        fee=fee,
+        status="completed",
+        message=f"Sent {request.amount} OLTIN to @{recipient.telegram_username}",
+    )

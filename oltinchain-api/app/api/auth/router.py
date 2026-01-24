@@ -9,13 +9,17 @@ from app.api.auth.schemas import (
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
+    TelegramAuthRequest,
+    TelegramAuthResponse,
     TokenResponse,
 )
 from app.application.services.auth_service import AuthService
+from app.config import settings
 from app.database import get_session
 from app.domain.exceptions import AuthenticationError, UserAlreadyExistsError
 from app.infrastructure.repositories.user_repo import UserRepository
 from app.infrastructure.security import decode_token
+from app.infrastructure.telegram import validate_init_data
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -75,3 +79,32 @@ async def refresh(
         return TokenResponse(**result)
     except AuthenticationError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+
+@router.post("/telegram", response_model=TelegramAuthResponse)
+@limiter.limit("10/minute")
+async def telegram_auth(
+    request: Request,
+    data: TelegramAuthRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    """
+    Authenticate via Telegram Mini App.
+
+    Validates initData signature and creates/authenticates user.
+    Rate limited to 10 requests per minute.
+    """
+    # Validate initData signature
+    tg_data = validate_init_data(data.init_data, settings.telegram_bot_token)
+    if not tg_data:
+        raise HTTPException(status_code=401, detail="Invalid Telegram data")
+
+    # Authenticate or create user
+    result = await auth_service.telegram_auth(
+        telegram_id=tg_data["telegram_id"],
+        username=tg_data.get("username"),
+        first_name=tg_data.get("first_name"),
+        photo_url=tg_data.get("photo_url"),
+    )
+
+    return TelegramAuthResponse(**result)

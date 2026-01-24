@@ -1,9 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { walletApi } from "@/lib/api"
-import { useAuthStore } from "@/lib/store"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -43,17 +41,11 @@ const typeColors: Record<string, string> = {
 
 export default function HistoryPage() {
   const router = useRouter()
-  const { isAuthenticated } = useAuthStore()
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/auth/login")
-      return
-    }
-
     const fetchHistory = async () => {
       try {
         const { data } = await walletApi.getTransactions(100)
@@ -67,7 +59,7 @@ export default function HistoryPage() {
     }
 
     fetchHistory()
-  }, [isAuthenticated, router])
+  }, [])
 
   if (loading) {
     return (

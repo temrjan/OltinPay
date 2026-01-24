@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Debug mode
     debug: bool = False
 
+    # Telegram
+    telegram_bot_token: str = ""
+
     @property
     def cors_origins(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""

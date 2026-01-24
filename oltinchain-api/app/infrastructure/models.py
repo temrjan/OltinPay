@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     Boolean,
     DateTime,
     ForeignKey,
@@ -30,6 +31,12 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     wallet_address: Mapped[str | None] = mapped_column(String(42))
     encrypted_private_key: Mapped[str | None] = mapped_column(Text)  # Fernet encrypted
+
+    # Telegram Mini App fields
+    telegram_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
+    telegram_username: Mapped[str | None] = mapped_column(String(32))
+    telegram_first_name: Mapped[str | None] = mapped_column(String(64))
+    telegram_photo_url: Mapped[str | None] = mapped_column(Text)
     kyc_level: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     kyc_data: Mapped[dict | None] = mapped_column(JSON)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))

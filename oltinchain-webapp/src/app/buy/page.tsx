@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import axios from "axios"
 import { priceApi, ordersApi, walletApi } from "@/lib/api"
-import { useAuthStore, useWalletStore } from "@/lib/store"
+import { useWalletStore } from "@/lib/store"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,19 +19,28 @@ function formatNumber(n: number, decimals = 2) {
 
 export default function BuyPage() {
   const router = useRouter()
-  const { isAuthenticated } = useAuthStore()
   const { balance, setBalance } = useWalletStore()
   const [amount, setAmount] = useState("")
   const [quote, setQuote] = useState<BuyQuote | null>(null)
   const [loading, setLoading] = useState(false)
+  const [quoteLoading, setQuoteLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
 
+  // Fetch balance on mount
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/auth/login")
+    const fetchBalance = async () => {
+      try {
+        const { data } = await walletApi.getBalance()
+        setBalance(data)
+      } catch (err) {
+        console.error("Failed to fetch balance", err)
+      }
     }
-  }, [isAuthenticated, router])
+    if (!balance) {
+      fetchBalance()
+    }
+  }, [balance, setBalance])
 
   useEffect(() => {
     const getQuote = async () => {
@@ -40,6 +49,8 @@ export default function BuyPage() {
         setQuote(null)
         return
       }
+
+      setQuoteLoading(true)
       try {
         const { data } = await priceApi.getBuyQuote(amountNum)
         setQuote(data)
@@ -51,6 +62,8 @@ export default function BuyPage() {
           setError("Ошибка расчёта")
         }
         setQuote(null)
+      } finally {
+        setQuoteLoading(false)
       }
     }
 
@@ -100,6 +113,8 @@ export default function BuyPage() {
     )
   }
 
+  const canBuy = quote && !loading && !quoteLoading && parseFloat(amount) > 0
+
   return (
     <div className="min-h-screen p-4">
       <header className="flex items-center mb-6">
@@ -116,7 +131,7 @@ export default function BuyPage() {
           <label className="text-sm text-muted">Сумма в USD</label>
           <Input
             type="number"
-            placeholder="100000"
+            placeholder="100"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
@@ -134,7 +149,13 @@ export default function BuyPage() {
           ))}
         </div>
 
-        {quote && (
+        {quoteLoading && (
+          <div className="bg-background p-3 rounded text-center text-muted">
+            Расчёт...
+          </div>
+        )}
+
+        {quote && !quoteLoading && (
           <div className="bg-background p-3 rounded space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted">Вы платите</span>
@@ -142,11 +163,11 @@ export default function BuyPage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Комиссия</span>
-              <span>{formatNumber(quote.fee_usd, 0)} USD</span>
+              <span>{formatNumber(quote.fee_usd, 2)} USD</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted">Цена за грамм</span>
-              <span>{formatNumber(quote.price_per_gram, 0)} USD</span>
+              <span>{formatNumber(quote.price_per_gram, 2)} USD</span>
             </div>
             <div className="flex justify-between font-bold border-t border-border pt-2">
               <span>Получите</span>
@@ -160,10 +181,10 @@ export default function BuyPage() {
 
       <Button
         onClick={handleBuy}
-        disabled={!quote || loading}
-        className="w-full bg-green-600 hover:bg-green-700"
+        disabled={!canBuy}
+        className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
       >
-        {loading ? "Обработка..." : "Купить OLTIN"}
+        {loading ? "Обработка..." : quoteLoading ? "Расчёт..." : "Купить OLTIN"}
       </Button>
     </div>
   )
