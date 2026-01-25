@@ -132,6 +132,56 @@ class ApiClient {
     return this.request<any>('/exchange/price');
   }
 
+  // Swap - instant exchange
+  async getSwapQuote(data: {
+    side: 'buy' | 'sell';
+    amount: number;
+    amount_type?: 'from' | 'to';
+  }) {
+    return this.request<{
+      side: string;
+      from_currency: string;
+      from_amount: number;
+      to_currency: string;
+      to_amount: number;
+      price: number;
+      fee: number;
+      fee_percent: number;
+    }>('/exchange/swap/quote', {
+      method: 'POST',
+      body: JSON.stringify({
+        side: data.side,
+        amount: data.amount,
+        amount_type: data.amount_type || 'from',
+      }),
+    });
+  }
+
+  async executeSwap(data: {
+    side: 'buy' | 'sell';
+    amount: number;
+    amount_type?: 'from' | 'to';
+  }) {
+    return this.request<{
+      success: boolean;
+      side: string;
+      from_currency: string;
+      from_amount: number;
+      to_currency: string;
+      to_amount: number;
+      price: number;
+      fee: number;
+    }>('/exchange/swap', {
+      method: 'POST',
+      body: JSON.stringify({
+        side: data.side,
+        amount: data.amount,
+        amount_type: data.amount_type || 'from',
+      }),
+    });
+  }
+
+  // Legacy orders
   async createOrder(data: {
     side: 'buy' | 'sell';
     type: 'limit' | 'market';

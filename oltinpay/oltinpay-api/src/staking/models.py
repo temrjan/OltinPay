@@ -31,11 +31,7 @@ class StakingDeposit(Base):
         Numeric(20, 8),
         nullable=False,
     )
-    deposited_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-    )
-    unlocked_at: Mapped[datetime] = mapped_column(
+    locked_until: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         index=True,
@@ -76,7 +72,7 @@ class StakingReward(Base):
         Numeric(20, 8),
         nullable=False,
     )
-    reward_date: Mapped[datetime] = mapped_column(
+    date: Mapped[datetime] = mapped_column(
         Date,
         server_default=func.current_date(),
         index=True,

@@ -1,5 +1,6 @@
 """Transfer service layer."""
 
+import asyncio
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from src.common.exceptions import (
     InsufficientBalanceException,
     NotFoundException,
 )
+from src.notifications import notify_transfer_received
 from src.transfers.models import Transfer, TransferStatus
 from src.transfers.schemas import TransferListResponse
 from src.users import service as user_service
@@ -48,6 +50,7 @@ async def create_transfer(
     3. Deduct from sender wallet
     4. Add to recipient wallet (minus fee)
     5. Create transfer record
+    6. Send notification to recipient
     """
     # Cannot transfer to self
     to_oltin_id_normalized = to_oltin_id.lower().strip()
@@ -97,6 +100,16 @@ async def create_transfer(
     await db.flush()
     await db.refresh(transfer)
 
+    # Send notification to recipient (fire and forget)
+    _task = asyncio.create_task(
+        notify_transfer_received(
+            recipient_telegram_id=to_user.telegram_id,
+            sender_oltin_id=from_user.oltin_id,
+            amount=str(net_amount),
+            language=to_user.language or "en",
+        )
+    )
+
     return transfer
 
 
@@ -124,7 +137,7 @@ async def get_user_transfers(
     limit: int = 20,
     offset: int = 0,
 ) -> list[Transfer]:
-    """Get user's transfers (sent and received)."""
+    """Get user transfers (sent and received)."""
     result = await db.execute(
         select(Transfer)
         .where(

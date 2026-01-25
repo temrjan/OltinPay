@@ -6,12 +6,21 @@ export const translations = {
     cancel: 'Bekor qilish',
     confirm: 'Tasdiqlash',
     back: 'Orqaga',
+    errorLoading: 'Yuklanishda xatolik',
+    total: 'Jami',
+    fee: 'Komissiya',
+    to: 'Kimga',
+    price: 'Narx',
 
     // Language selector
     selectLanguage: 'Tilni tanlang',
 
     // Wallet
     hello: 'Salom',
+    welcome: 'Xush kelibsiz',
+    totalBalance: 'Umumiy balans',
+    received: 'Qabul qilindi',
+    sent: 'Yuborildi',
     wallet: 'Hamyon',
     exchange: 'Birja',
     staking: 'Steyking',
@@ -26,6 +35,7 @@ export const translations = {
     buy: 'Sotib olish',
     sell: 'Sotish',
     amount: 'Miqdor',
+    orderCreated: 'Buyurtma yaratildi',
 
     // Staking
     annualYield: 'Yillik daromad',
@@ -34,6 +44,14 @@ export const translations = {
     rewards: 'Mukofotlar',
     stake: 'Steykinga qoyish',
     rewardsInfo: 'Mukofotlar har kuni 07:00 da hisoblanadi',
+    deposit: 'Kiritish',
+    withdraw: 'Chiqarish',
+    depositAmount: 'Kiritish miqdori',
+    withdrawAmount: 'Chiqarish miqdori',
+    depositSuccess: 'Muvaffaqiyatli kiritildi',
+    withdrawSuccess: 'Muvaffaqiyatli chiqarildi',
+    lockedUntil: 'Bloklangan',
+    unlocked: 'Ochiq',
 
     // Send
     sendOltin: 'OLTIN yuborish',
@@ -42,13 +60,18 @@ export const translations = {
     available: 'Mavjud',
     commission: 'Komissiya',
     continue: 'Davom etish',
+    transferSuccess: 'Muvaffaqiyatli yuborildi!',
+    backToWallet: 'Hamyonga qaytish',
+    favorites: 'Sevimlilar',
+    recent: 'Oxirgilar',
 
     // Profile
     language: 'Til',
-    favorites: 'Sevimli kontaktlar',
     allOperations: 'Barcha operatsiyalar',
     about: 'Ilova haqida',
     aylinAssistant: 'Aylin yordamchi',
+    logout: 'Chiqish',
+    setCustomId: 'OltinPay ID ni sozlash',
   },
 
   ru: {
@@ -58,12 +81,21 @@ export const translations = {
     cancel: 'Отмена',
     confirm: 'Подтвердить',
     back: 'Назад',
+    errorLoading: 'Ошибка загрузки',
+    total: 'Итого',
+    fee: 'Комиссия',
+    to: 'Кому',
+    price: 'Цена',
 
     // Language selector
     selectLanguage: 'Выберите язык',
 
     // Wallet
     hello: 'Привет',
+    welcome: 'Добро пожаловать',
+    totalBalance: 'Общий баланс',
+    received: 'Получено',
+    sent: 'Отправлено',
     wallet: 'Кошелёк',
     exchange: 'Биржа',
     staking: 'Стейкинг',
@@ -78,6 +110,7 @@ export const translations = {
     buy: 'Купить',
     sell: 'Продать',
     amount: 'Сумма',
+    orderCreated: 'Ордер создан',
 
     // Staking
     annualYield: 'Годовой доход',
@@ -86,6 +119,14 @@ export const translations = {
     rewards: 'Награды',
     stake: 'Застейкать',
     rewardsInfo: 'Награды начисляются ежедневно в 07:00',
+    deposit: 'Внести',
+    withdraw: 'Вывести',
+    depositAmount: 'Сумма внесения',
+    withdrawAmount: 'Сумма вывода',
+    depositSuccess: 'Успешно внесено',
+    withdrawSuccess: 'Успешно выведено',
+    lockedUntil: 'Заблокировано до',
+    unlocked: 'Разблокировано',
 
     // Send
     sendOltin: 'Отправить OLTIN',
@@ -94,13 +135,18 @@ export const translations = {
     available: 'Доступно',
     commission: 'Комиссия',
     continue: 'Продолжить',
+    transferSuccess: 'Успешно отправлено!',
+    backToWallet: 'Вернуться в кошелёк',
+    favorites: 'Избранные',
+    recent: 'Недавние',
 
     // Profile
     language: 'Язык',
-    favorites: 'Избранные контакты',
     allOperations: 'Все операции',
     about: 'О приложении',
     aylinAssistant: 'Помощник Aylin',
+    logout: 'Выйти',
+    setCustomId: 'Установить OltinPay ID',
   },
 
   en: {
@@ -110,12 +156,21 @@ export const translations = {
     cancel: 'Cancel',
     confirm: 'Confirm',
     back: 'Back',
+    errorLoading: 'Error loading data',
+    total: 'Total',
+    fee: 'Fee',
+    to: 'To',
+    price: 'Price',
 
     // Language selector
     selectLanguage: 'Select language',
 
     // Wallet
     hello: 'Hello',
+    welcome: 'Welcome',
+    totalBalance: 'Total Balance',
+    received: 'Received',
+    sent: 'Sent',
     wallet: 'Wallet',
     exchange: 'Exchange',
     staking: 'Staking',
@@ -130,6 +185,7 @@ export const translations = {
     buy: 'Buy',
     sell: 'Sell',
     amount: 'Amount',
+    orderCreated: 'Order created',
 
     // Staking
     annualYield: 'Annual yield',
@@ -138,6 +194,14 @@ export const translations = {
     rewards: 'Rewards',
     stake: 'Stake',
     rewardsInfo: 'Rewards are calculated daily at 07:00',
+    deposit: 'Deposit',
+    withdraw: 'Withdraw',
+    depositAmount: 'Deposit amount',
+    withdrawAmount: 'Withdraw amount',
+    depositSuccess: 'Successfully deposited',
+    withdrawSuccess: 'Successfully withdrawn',
+    lockedUntil: 'Locked until',
+    unlocked: 'Unlocked',
 
     // Send
     sendOltin: 'Send OLTIN',
@@ -146,13 +210,18 @@ export const translations = {
     available: 'Available',
     commission: 'Commission',
     continue: 'Continue',
+    transferSuccess: 'Successfully sent!',
+    backToWallet: 'Back to wallet',
+    favorites: 'Favorites',
+    recent: 'Recent',
 
     // Profile
     language: 'Language',
-    favorites: 'Favorite contacts',
     allOperations: 'All operations',
     about: 'About',
     aylinAssistant: 'Aylin assistant',
+    logout: 'Logout',
+    setCustomId: 'Set OltinPay ID',
   },
 } as const;
 

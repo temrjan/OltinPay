@@ -80,3 +80,17 @@ async def get_staking_rewards(
 ) -> list[StakingRewardResponse]:
     """Get staking rewards history."""
     return await service.get_staking_rewards(db, current_user.id)
+
+
+@router.post("/rewards/calculate")
+async def calculate_rewards(
+    db: DbSession,
+) -> dict:
+    """Calculate and credit daily rewards for all stakers.
+
+    Called by cron job. Can be triggered manually for testing.
+    Idempotent - safe to call multiple times per day.
+    """
+    result = await service.calculate_and_credit_rewards(db)
+    await db.commit()
+    return result

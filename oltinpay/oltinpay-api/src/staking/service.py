@@ -29,7 +29,7 @@ async def get_staking_info(db: AsyncSession, user_id: UUID) -> StakingInfoRespon
     result = await db.execute(
         select(StakingDeposit)
         .where(StakingDeposit.user_id == user_id)
-        .order_by(StakingDeposit.unlocked_at.desc())
+        .order_by(StakingDeposit.locked_until.desc())
         .limit(1)
     )
     latest_deposit = result.scalar_one_or_none()
@@ -38,8 +38,8 @@ async def get_staking_info(db: AsyncSession, user_id: UUID) -> StakingInfoRespon
     locked_until = None
     is_locked = False
 
-    if latest_deposit and latest_deposit.unlocked_at > now:
-        locked_until = latest_deposit.unlocked_at
+    if latest_deposit and latest_deposit.locked_until > now:
+        locked_until = latest_deposit.locked_until
         is_locked = True
 
     # Calculate daily reward
@@ -90,17 +90,17 @@ async def deposit_to_staking(
     staking_balance.amount += amount
 
     # Create deposit record with new lock
-    unlocked_at = datetime.now(UTC) + timedelta(days=LOCK_DAYS)
+    locked_until = datetime.now(UTC) + timedelta(days=LOCK_DAYS)
     deposit = StakingDeposit(
         user_id=user_id,
         amount=amount,
-        unlocked_at=unlocked_at,
+        locked_until=locked_until,
     )
     db.add(deposit)
 
     await db.flush()
 
-    return staking_balance.amount, unlocked_at
+    return staking_balance.amount, locked_until
 
 
 async def withdraw_from_staking(
@@ -149,16 +149,82 @@ async def get_staking_rewards(
     result = await db.execute(
         select(StakingReward)
         .where(StakingReward.user_id == user_id)
-        .order_by(StakingReward.reward_date.desc())
+        .order_by(StakingReward.date.desc())
         .limit(limit)
     )
     rewards = result.scalars().all()
 
     return [
         StakingRewardResponse(
-            date=r.reward_date,
+            date=r.date,
             amount=r.amount,
             balance_snapshot=r.balance_snapshot,
         )
         for r in rewards
     ]
+
+
+async def calculate_and_credit_rewards(db: AsyncSession) -> dict:
+    """Calculate and credit daily rewards for all stakers.
+
+    Should be called once per day by cron job.
+    Returns stats about credited rewards.
+    """
+    from src.balances.models import Balance
+
+    # Get all users with staking balance > 0
+    result = await db.execute(
+        select(Balance).where(
+            Balance.account_type == AccountType.STAKING,
+            Balance.currency == Currency.OLTIN,
+            Balance.amount > 0,
+        )
+    )
+    staking_balances = list(result.scalars().all())
+
+    if not staking_balances:
+        return {"users_processed": 0, "total_rewards": Decimal("0")}
+
+    today = datetime.now(UTC).date()
+    total_rewards = Decimal("0")
+    users_processed = 0
+
+    for balance in staking_balances:
+        # Check if reward already credited today
+        existing = await db.execute(
+            select(StakingReward).where(
+                StakingReward.user_id == balance.user_id,
+                StakingReward.date == today,
+            )
+        )
+        if existing.scalar_one_or_none():
+            continue  # Already credited today
+
+        # Calculate reward
+        reward_amount = balance.amount * DAILY_RATE
+
+        if reward_amount <= 0:
+            continue
+
+        # Credit reward to staking balance
+        balance.amount += reward_amount
+
+        # Create reward record
+        reward = StakingReward(
+            user_id=balance.user_id,
+            amount=reward_amount,
+            balance_snapshot=balance.amount,
+            date=today,
+        )
+        db.add(reward)
+
+        total_rewards += reward_amount
+        users_processed += 1
+
+    await db.flush()
+
+    return {
+        "users_processed": users_processed,
+        "total_rewards": str(total_rewards),
+        "date": str(today),
+    }

@@ -66,31 +66,31 @@ async def create_user(
     initial_balances = [
         Balance(
             user_id=user.id,
-            account=AccountType.WALLET,
+            account_type=AccountType.WALLET,
             currency=Currency.USD,
             amount=Decimal("1000"),
         ),
         Balance(
             user_id=user.id,
-            account=AccountType.WALLET,
+            account_type=AccountType.WALLET,
             currency=Currency.OLTIN,
             amount=Decimal("0"),
         ),
         Balance(
             user_id=user.id,
-            account=AccountType.EXCHANGE,
+            account_type=AccountType.EXCHANGE,
             currency=Currency.USD,
             amount=Decimal("0"),
         ),
         Balance(
             user_id=user.id,
-            account=AccountType.EXCHANGE,
+            account_type=AccountType.EXCHANGE,
             currency=Currency.OLTIN,
             amount=Decimal("0"),
         ),
         Balance(
             user_id=user.id,
-            account=AccountType.STAKING,
+            account_type=AccountType.STAKING,
             currency=Currency.OLTIN,
             amount=Decimal("0"),
         ),

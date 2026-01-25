@@ -51,12 +51,12 @@ class Balance(Base):
         nullable=False,
         index=True,
     )
-    account: Mapped[str] = mapped_column(
-        String(10),
+    account_type: Mapped[str] = mapped_column(
+        String(20),
         nullable=False,
     )
     currency: Mapped[str] = mapped_column(
-        String(10),
+        String(20),
         nullable=False,
     )
     amount: Mapped[Decimal] = mapped_column(
@@ -81,13 +81,16 @@ class Balance(Base):
 
     __table_args__ = (
         UniqueConstraint(
-            "user_id", "account", "currency", name="uq_balance_user_account_currency"
+            "user_id",
+            "account_type",
+            "currency",
+            name="uq_balance_user_account_currency",
         ),
         CheckConstraint("amount >= 0", name="ck_balance_amount_positive"),
     )
 
     def __repr__(self) -> str:
-        return f"<Balance(user_id={self.user_id}, account={self.account}, currency={self.currency}, amount={self.amount})>"
+        return f"<Balance(user_id={self.user_id}, account_type={self.account_type}, currency={self.currency}, amount={self.amount})>"
 
 
 # Import here to avoid circular imports

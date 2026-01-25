@@ -11,6 +11,9 @@ from src.exchange.schemas import (
     OrderRequest,
     OrderResponse,
     PriceResponse,
+    SwapQuoteResponse,
+    SwapRequest,
+    SwapResponse,
     TradeResponse,
 )
 
@@ -25,8 +28,52 @@ async def get_orderbook(db: DbSession) -> OrderBookResponse:
 
 @router.get("/price", response_model=PriceResponse)
 async def get_price(db: DbSession) -> PriceResponse:
-    """Get current bid/ask/mid price."""
+    """Get current bid/ask/mid price (real gold price)."""
     return await service.get_price(db)
+
+
+# ===== SWAP ENDPOINTS (recommended) =====
+
+
+@router.post("/swap/quote", response_model=SwapQuoteResponse)
+async def get_swap_quote(
+    request: SwapRequest,
+    current_user: CurrentUser,
+) -> SwapQuoteResponse:
+    """Get swap quote without executing.
+
+    - side: 'buy' = USD -> OLTIN, 'sell' = OLTIN -> USD
+    - amount: Amount to swap
+    - amount_type: 'from' = what you give, 'to' = what you want to receive
+    """
+    return await service.get_swap_quote(
+        side=request.side,
+        amount=request.amount,
+        amount_type=request.amount_type,
+    )
+
+
+@router.post("/swap", response_model=SwapResponse)
+async def execute_swap(
+    request: SwapRequest,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> SwapResponse:
+    """Execute instant swap on exchange account.
+
+    Requires funds on exchange account.
+    Use /send (internal transfer) to move funds from wallet to exchange first.
+    """
+    return await service.execute_swap(
+        db=db,
+        user_id=current_user.id,
+        side=request.side,
+        amount=request.amount,
+        amount_type=request.amount_type,
+    )
+
+
+# ===== LEGACY ORDER ENDPOINTS =====
 
 
 @router.post("/orders", response_model=OrderResponse)
@@ -35,12 +82,7 @@ async def create_order(
     current_user: CurrentUser,
     db: DbSession,
 ) -> OrderResponse:
-    """Create a new order.
-
-    Buy: spend USD, receive OLTIN
-    Sell: spend OLTIN, receive USD
-    Fee: 0.1% per trade
-    """
+    """Create a new order (legacy - prefer /swap for instant execution)."""
     order = await service.create_order(
         db,
         user_id=current_user.id,
@@ -94,7 +136,7 @@ async def get_trades(
         TradeResponse(
             price=t.price,
             quantity=t.quantity,
-            side="buy",  # Simplified
+            side="buy",
             created_at=t.created_at,
         )
         for t in trades
