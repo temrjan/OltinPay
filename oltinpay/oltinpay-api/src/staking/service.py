@@ -116,7 +116,7 @@ async def withdraw_from_staking(
     info = await get_staking_info(db, user_id)
     if info.is_locked:
         raise BadRequestException(
-            f"Staking is locked until {info.locked_until.isoformat() if info.locked_until else "unknown"}"
+            f"Staking is locked until {info.locked_until.isoformat() if info.locked_until else 'unknown'}"
         )
 
     # Get staking balance
