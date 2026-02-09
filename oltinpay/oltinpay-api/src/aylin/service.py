@@ -1,4 +1,4 @@
-"""Aylin AI service layer."""
+"""AI assistant service layer."""
 
 import httpx
 
@@ -6,12 +6,13 @@ from src.aylin.schemas import ChatResponse, ChatSource
 from src.config import settings
 
 
-async def chat(message: str, user_language: str = "uz") -> ChatResponse:
+async def chat(message: str, user_id: int, user_language: str = "uz") -> ChatResponse:
     """Send message to znai-cloud RAG API and get response.
 
     Args:
         message: User's question
-        user_language: User's preferred language (uz/ru)
+        user_id: User ID for session tracking
+        user_language: User's preferred language (uz/ru/en)
 
     Returns:
         ChatResponse with AI response and sources
@@ -19,22 +20,22 @@ async def chat(message: str, user_language: str = "uz") -> ChatResponse:
     # Check if znai-cloud is configured
     if not settings.znai_cloud_url or not settings.znai_cloud_api_key:
         return ChatResponse(
-            response="Aylin is not configured. Please set ZNAI_CLOUD_URL and ZNAI_CLOUD_API_KEY.",
+            response="AI assistant is not configured. Please set ZNAI_CLOUD_URL and ZNAI_CLOUD_API_KEY.",
             sources=[],
         )
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
-                f"{settings.znai_cloud_url}/api/chat",
+                f"{settings.znai_cloud_url}/public/chat",
                 headers={
-                    "Authorization": f"Bearer {settings.znai_cloud_api_key.get_secret_value()}",
+                    "X-API-Key": settings.znai_cloud_api_key.get_secret_value(),
                     "Content-Type": "application/json",
                 },
                 json={
                     "message": message,
                     "language": user_language,
-                    "project": "oltinpay",
+                    "session_id": str(user_id),
                 },
             )
             response.raise_for_status()
@@ -55,11 +56,11 @@ async def chat(message: str, user_language: str = "uz") -> ChatResponse:
 
     except httpx.HTTPStatusError as e:
         return ChatResponse(
-            response=f"Error communicating with Aylin: {e.response.status_code}",
+            response=f"Error communicating with AI assistant: {e.response.status_code}",
             sources=[],
         )
     except httpx.RequestError:
         return ChatResponse(
-            response="Aylin is temporarily unavailable. Please try again later.",
+            response="AI assistant is temporarily unavailable. Please try again later.",
             sources=[],
         )

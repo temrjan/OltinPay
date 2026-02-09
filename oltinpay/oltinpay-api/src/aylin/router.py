@@ -1,4 +1,4 @@
-"""Aylin AI router."""
+"""AI assistant router."""
 
 from fastapi import APIRouter
 
@@ -14,8 +14,9 @@ async def chat(
     request: ChatRequest,
     current_user: CurrentUser,
 ) -> ChatResponse:
-    """Chat with Aylin AI assistant."""
+    """Chat with AI assistant."""
     return await service.chat(
         message=request.message,
+        user_id=current_user.id,
         user_language=current_user.language,
     )

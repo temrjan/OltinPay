@@ -231,7 +231,7 @@ class ApiClient {
     });
   }
 
-  // Aylin
+  // AI assistant
   async chat(message: string) {
     return this.request<{ response: string; sources: any[] }>('/aylin/chat', {
       method: 'POST',

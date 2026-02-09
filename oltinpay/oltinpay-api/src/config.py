@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     oltin_contract_address: str = ""
     admin_private_key: SecretStr | None = None
 
-    # Aylin AI (znai-cloud)
+    # AI assistant (znai-cloud)
     znai_cloud_url: str | None = None
     znai_cloud_api_key: SecretStr | None = None
 

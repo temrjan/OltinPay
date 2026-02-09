@@ -43,7 +43,8 @@ async def authenticate_telegram(
             oltin_id = f"user_{telegram_user.id}"
 
         # Determine language
-        language = "ru" if telegram_user.language_code == "ru" else "uz"
+        lang_map = {"ru": "ru", "en": "en"}
+        language = lang_map.get(telegram_user.language_code, "uz")
 
         user = await user_service.create_user(
             db,

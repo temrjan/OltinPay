@@ -6,18 +6,29 @@ import { ArrowLeft, Send } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useTelegram } from '@/hooks/useTelegram';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { ChatMessage } from '@/types';
 
 export default function AylinPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: 'Salom! Men Aylin - OltinPay yordamchisiman. Sizga qanday yordam bera olaman?',
-    },
-  ]);
+  const { t } = useTranslation();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { hapticFeedback } = useTelegram();
+  const initialized = useRef(false);
+
+  // Set initial greeting based on language
+  useEffect(() => {
+    if (!initialized.current) {
+      setMessages([
+        {
+          role: 'assistant',
+          content: t('aylinGreeting'),
+        },
+      ]);
+      initialized.current = true;
+    }
+  }, [t]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,7 +50,7 @@ export default function AylinPage() {
     onError: () => {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Kechirasiz, xatolik yuz berdi. Qaytadan urinib ko\'ring.' },
+        { role: 'assistant', content: t('aylinError') },
       ]);
       hapticFeedback('error');
     },
@@ -70,8 +81,8 @@ export default function AylinPage() {
           <ArrowLeft size={24} />
         </Link>
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🤖</span>
-          <span className="font-semibold">Aylin</span>
+          <span className="text-2xl">✨</span>
+          <span className="font-semibold">{t('aylinAssistant')}</span>
         </div>
       </div>
 
@@ -90,7 +101,7 @@ export default function AylinPage() {
               }`}
             >
               {msg.role === 'assistant' && (
-                <span className="mr-2">🤖</span>
+                <span className="mr-2">✨</span>
               )}
               {msg.content}
             </div>
@@ -100,8 +111,8 @@ export default function AylinPage() {
         {chatMutation.isPending && (
           <div className="flex justify-start">
             <div className="bg-card rounded-2xl px-4 py-2">
-              <span className="mr-2">🤖</span>
-              <span className="animate-pulse">Yozmoqda...</span>
+              <span className="mr-2">✨</span>
+              <span className="animate-pulse">{t('aylinTyping')}</span>
             </div>
           </div>
         )}
@@ -117,7 +128,7 @@ export default function AylinPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Savolingizni yozing..."
+            placeholder={t('aylinPlaceholder')}
             className="flex-1 bg-card border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-gold"
             disabled={chatMutation.isPending}
           />

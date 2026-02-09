@@ -30,7 +30,7 @@ class OltinIdCreate(BaseModel):
 class UserUpdate(BaseModel):
     """Schema for updating user."""
 
-    language: str | None = Field(None, pattern="^(uz|ru)$")
+    language: str | None = Field(None, pattern="^(uz|ru|en)$")
 
 
 class UserResponse(BaseModel):

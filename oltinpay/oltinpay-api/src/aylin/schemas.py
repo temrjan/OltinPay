@@ -1,10 +1,10 @@
-"""Aylin AI Pydantic schemas."""
+"""AI assistant Pydantic schemas."""
 
 from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
-    """Chat request to Aylin AI."""
+    """Chat request to AI assistant."""
 
     message: str = Field(..., min_length=1, max_length=1000)
 
@@ -17,7 +17,7 @@ class ChatSource(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    """Chat response from Aylin AI."""
+    """Chat response from AI assistant."""
 
     response: str
     sources: list[ChatSource] = []
