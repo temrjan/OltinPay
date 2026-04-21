@@ -39,6 +39,22 @@
   - `getStakeInfo(address) = 0xc3453153` — returned 5×32 zero bytes (expected, admin has no stake)
 - Followed Python standards: `from __future__ import annotations`, `TYPE_CHECKING` for typing-only imports, Pydantic v2 patterns, no bare `except`, `is None`/`is not None`
 
+### Tests added (43 new tests, all green)
+
+- `tests/test_rpc.py` — 23 unit tests (address validation, padding, uint256 decoding)
+- `tests/test_blockchain.py` — 5 respx-mocked tests for `get_oltin_balance`, `get_uzd_balance`, `get_stake_info`
+- `tests/test_users_wallet.py` — 11 integration tests for `POST /users/wallet` (success, idempotency, rebind rejection, cross-user conflict, malformed input, auth)
+- `tests/test_balances_onchain.py` — 4 integration tests for `GET /balances` with mocked RPC
+- Fixed conftest.py bugs along the way: `_db_session`→`db_session` alias in `client` fixture; `Balance(..., account=...)`→`account_type=`. This also unblocked `test_auth.py` (6 tests now pass).
+
+### CI/CD added
+
+- `.github/workflows/api.yml` — ruff + mypy + pytest for `oltinpay/oltinpay-api`
+- `.github/workflows/webapp.yml` — `tsc --noEmit` + `next lint` for `oltinpay/oltinpay-webapp`
+- `.github/workflows/contracts.yml` — `hardhat compile` + `hardhat test` for `contracts/`
+- `.github/workflows/deploy.yml` — SSH into `7demo`, `git pull`, `docker compose up -d --build` on push to main
+- `docs/DEPLOY.md` — first-time server migration from `/opt/oltinchain` → `/opt/oltinpay`, required GitHub Secrets, rollback guide
+
 ### Outstanding (week 5)
 
 - `transfers/` and `staking/` services still DB-based; migrate to on-chain event indexing + client signing

@@ -1,0 +1,40 @@
+name: Contracts (Solidity)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'contracts/contracts/**'
+      - 'contracts/test/**'
+      - 'contracts/hardhat.config.ts'
+      - 'contracts/package.json'
+      - '.github/workflows/contracts.yml'
+  pull_request:
+    paths:
+      - 'contracts/contracts/**'
+      - 'contracts/test/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: contracts/package-lock.json
+
+      - run: npm ci
+
+      # Hardhat EVM compile + tests (UZD + OltinStaking run in the plain EVM VM,
+      # no zksolc needed for the suite).
+      - name: Compile
+        run: npx hardhat compile
+
+      - name: Test
+        run: npx hardhat test test/UZD.test.ts test/OltinStaking.test.ts

@@ -94,8 +94,9 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture
-async def client(_db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Create async test client."""
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create async test client wired to the in-memory test DB session."""
+    _ = db_session  # Depend on the fixture so tables exist before requests hit.
     app.dependency_overrides[get_db] = override_get_db
 
     async with AsyncClient(
@@ -147,7 +148,7 @@ async def test_user(db_session: AsyncSession) -> dict[str, Any]:
             balance = Balance(
                 id=uuid.uuid4(),
                 user_id=user.id,
-                account=account_type.value,
+                account_type=account_type.value,
                 currency=currency.value,
                 amount=Decimal("100") if currency == Currency.USD else Decimal("10"),
             )
@@ -189,7 +190,7 @@ async def second_user(db_session: AsyncSession) -> dict[str, Any]:
             balance = Balance(
                 id=uuid.uuid4(),
                 user_id=user.id,
-                account=account_type.value,
+                account_type=account_type.value,
                 currency=currency.value,
                 amount=Decimal("50") if currency == Currency.USD else Decimal("5"),
             )

@@ -1,0 +1,35 @@
+name: Webapp (Next.js)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'oltinpay/oltinpay-webapp/**'
+      - '.github/workflows/webapp.yml'
+  pull_request:
+    paths:
+      - 'oltinpay/oltinpay-webapp/**'
+      - '.github/workflows/webapp.yml'
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oltinpay/oltinpay-webapp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: oltinpay/oltinpay-webapp/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx next lint

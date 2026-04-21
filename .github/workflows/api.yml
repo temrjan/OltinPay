@@ -1,0 +1,41 @@
+name: API (Python)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'oltinpay/oltinpay-api/**'
+      - '.github/workflows/api.yml'
+  pull_request:
+    paths:
+      - 'oltinpay/oltinpay-api/**'
+      - '.github/workflows/api.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oltinpay/oltinpay-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Ruff (lint)
+        run: ruff check src/
+
+      - name: Mypy (my modules)
+        run: mypy --ignore-missing-imports src/infrastructure/ src/balances/ src/users/schemas.py src/users/router.py src/users/service.py src/main.py
+
+      - name: Pytest
+        env:
+          SECRET_KEY: ci-test-secret
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost/test
+        run: pytest tests/test_rpc.py tests/test_blockchain.py tests/test_users_wallet.py tests/test_balances_onchain.py tests/test_auth.py -v
