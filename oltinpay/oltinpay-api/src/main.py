@@ -13,7 +13,6 @@ from src.balances.router import router as balances_router
 from src.config import settings
 from src.contacts.router import router as contacts_router
 from src.database import engine
-from src.exchange.router import router as exchange_router
 from src.staking.router import router as staking_router
 from src.transfers.router import router as transfers_router
 from src.users.router import router as users_router
@@ -59,7 +58,6 @@ def create_app() -> FastAPI:
         transfers_router, prefix=f"{prefix}/transfers", tags=["transfers"]
     )
     app.include_router(staking_router, prefix=f"{prefix}/staking", tags=["staking"])
-    app.include_router(exchange_router, prefix=f"{prefix}/exchange", tags=["exchange"])
     app.include_router(contacts_router, prefix=f"{prefix}/contacts", tags=["contacts"])
     app.include_router(aylin_router, prefix=f"{prefix}/aylin", tags=["aylin"])
 

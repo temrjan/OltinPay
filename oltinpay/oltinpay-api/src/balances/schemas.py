@@ -1,40 +1,35 @@
-"""Balance Pydantic schemas."""
+"""Balance Pydantic schemas.
 
-from decimal import Decimal
+On-chain model: balances are read live from zkSync Era contracts via
+RPC. Values are raw wei (uint256) — serialized as strings because JSON
+numbers don't safely hold >2^53.
+"""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
-class AccountBalance(BaseModel):
-    """Single account balance."""
+class WalletBalances(BaseModel):
+    """ERC20 balances held by the user's EOA."""
 
-    usd: Decimal
-    oltin: Decimal
+    oltin_wei: str
+    uzd_wei: str
+
+
+class StakingBalances(BaseModel):
+    """On-chain staking position (OltinStaking.getStakeInfo)."""
+
+    total_principal_wei: str
+    unlocked_wei: str
+    pending_reward_wei: str
+    lot_count: int
+    next_unlock_at: int  # unix seconds; 0 = nothing locked
 
 
 class BalancesResponse(BaseModel):
-    """All user balances response."""
+    """Snapshot of all user balances, all on-chain."""
 
-    total_usd: Decimal
-    wallet: AccountBalance
-    exchange: AccountBalance
-    staking: AccountBalance
+    model_config = ConfigDict(extra="forbid")
 
-
-class InternalTransferRequest(BaseModel):
-    """Internal transfer request (between own accounts)."""
-
-    from_account: str = Field(..., pattern="^(wallet|exchange|staking)$")
-    to_account: str = Field(..., pattern="^(wallet|exchange|staking)$")
-    currency: str = Field(..., pattern="^(USD|OLTIN)$")
-    amount: Decimal = Field(..., gt=0)
-
-
-class InternalTransferResponse(BaseModel):
-    """Internal transfer response."""
-
-    success: bool = True
-    from_account: str
-    to_account: str
-    currency: str
-    amount: Decimal
+    wallet_address: str
+    wallet: WalletBalances
+    staking: StakingBalances

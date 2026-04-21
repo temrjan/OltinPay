@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-04-21 — Week 4: Backend on-chain ✅
+
+### New
+
+- `src/config.py` — `zksync_rpc_url`, `zksync_chain_id` (300), `oltin/uzd/staking_contract_address` (live Sepolia addresses baked in as defaults)
+- `src/infrastructure/rpc.py` — thin JSON-RPC client over existing httpx: `eth_call`, `pad_address`, `decode_uint256`, address validation regex. No `web3.py`/`eth-account` added.
+- `src/infrastructure/blockchain.py` — high-level reads: `get_oltin_balance`, `get_uzd_balance`, `get_stake_info`. Function selectors verified against a live contract call (`getStakeInfo` selector `0xc3453153`, confirmed via on-chain try).
+- `src/balances/db.py` — legacy DB helper `get_balance(db, user_id, account_type, currency)` kept in a separate module so `transfers/` and `staking/` (week-5 migration) keep compiling.
+- `alembic/versions/002_add_wallet_address.py` — adds `users.wallet_address` String(42), unique index
+
+### Modified
+
+- `src/users/models.py` — `wallet_address` column (nullable, unique, indexed)
+- `src/users/schemas.py` — `WalletRegister` with `^0x[a-fA-F0-9]{40}$` pattern; `UserResponse` now exposes `wallet_address`
+- `src/users/router.py` — `POST /users/wallet` endpoint (idempotent if same address, 409 if already bound or claimed by another user)
+- `src/users/service.py` — `get_user_by_wallet_address`, `set_wallet_address` (normalizes lowercase)
+- `src/balances/schemas.py` — fully rewritten: `WalletBalances(oltin_wei, uzd_wei)`, `StakingBalances(total_principal, unlocked, pending_reward, lot_count, next_unlock_at)`, `BalancesResponse(wallet_address, wallet, staking)` — wei values serialized as strings to avoid JS 2^53 overflow
+- `src/balances/service.py` — reads on-chain; three calls (OLTIN balanceOf, UZD balanceOf, staking.getStakeInfo) run concurrently over a single httpx.AsyncClient
+- `src/balances/router.py` — simplified: only `GET /balances`. Internal transfer endpoint removed (on-chain transfers happen client-side via viem)
+- `src/transfers/service.py`, `src/staking/service.py` — import `get_balance` from `src/balances/db` instead of deleted service helper
+- `src/main.py` — drops `exchange_router` import + include
+
+### Removed
+
+- `src/exchange/` (full module — orderbook, market maker bots, swap scaffolding all gone)
+
+### Verification
+
+- `ruff check src/infrastructure/ src/balances/ src/users/ src/main.py` — **all checks passed**
+- `mypy` on all my files — no errors (5 pre-existing errors only in `auth/`, `aylin/`, `staking/` legacy code I did not touch)
+- On-chain selectors verified against a live contract:
+  - `balanceOf(address) = 0x70a08231` — returned 0 for admin (expected, no OLTIN minted yet)
+  - `getStakeInfo(address) = 0xc3453153` — returned 5×32 zero bytes (expected, admin has no stake)
+- Followed Python standards: `from __future__ import annotations`, `TYPE_CHECKING` for typing-only imports, Pydantic v2 patterns, no bare `except`, `is None`/`is not None`
+
+### Outstanding (week 5)
+
+- `transfers/` and `staking/` services still DB-based; migrate to on-chain event indexing + client signing
+- `POST /users/welcome/claim` endpoint (mint 1000 UZD via admin private key)
+- DEMO badge on existing wallet/staking/exchange-page headers
+- Wire `oltinpay-webapp` `wallet/page.tsx` + `staking/page.tsx` to the new `/balances` response shape
+
+---
+
 ## 2026-04-21 — Week 3: Non-custodial wallet UX ✅
 
 ### Crypto / chain libs

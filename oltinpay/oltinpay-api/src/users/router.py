@@ -10,6 +10,7 @@ from src.users.schemas import (
     UserResponse,
     UserSearchResult,
     UserUpdate,
+    WalletRegister,
 )
 
 router = APIRouter()
@@ -62,3 +63,34 @@ async def search_users(
     """Search users by oltin_id prefix."""
     users = await service.search_users(db, q)
     return [UserSearchResult.model_validate(u) for u in users]
+
+
+@router.post("/wallet", response_model=UserResponse)
+async def register_wallet(
+    data: WalletRegister,
+    current_user: CurrentUser,
+    db: DbSession,
+) -> UserResponse:
+    """Attach a non-custodial wallet address to the current user.
+
+    Called once at the end of the client-side onboarding wizard. The
+    address is derived from a BIP39 seed that lives on the user's device
+    only; the backend never sees the seed or private key.
+
+    Conflict rules:
+    - The user can only bind one wallet (first call wins).
+    - Another user cannot claim the same address.
+    """
+    normalized = data.wallet_address.lower()
+
+    if current_user.wallet_address is not None:
+        if current_user.wallet_address == normalized:
+            return UserResponse.model_validate(current_user)
+        raise ConflictException("wallet_address already bound and cannot be changed")
+
+    existing = await service.get_user_by_wallet_address(db, normalized)
+    if existing is not None and existing.id != current_user.id:
+        raise ConflictException("wallet_address is already bound to another user")
+
+    updated = await service.set_wallet_address(db, current_user, normalized)
+    return UserResponse.model_validate(updated)

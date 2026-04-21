@@ -44,9 +44,12 @@ class Settings(BaseSettings):
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.cors_origins_str.split(",")]
 
-    # Blockchain
+    # Blockchain — zkSync Era Sepolia
     zksync_rpc_url: str = "https://sepolia.era.zksync.dev"
-    oltin_contract_address: str = ""
+    zksync_chain_id: int = 300
+    oltin_contract_address: str = "0x4A56B78DBFc2E6c914f5413B580e86ee1A474347"
+    uzd_contract_address: str = "0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32"
+    staking_contract_address: str = "0x63e537A3a150d06035151E29904C1640181C8314"
     admin_private_key: SecretStr | None = None
 
     # AI assistant (znai-cloud)

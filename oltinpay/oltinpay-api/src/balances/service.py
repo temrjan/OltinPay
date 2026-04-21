@@ -1,142 +1,52 @@
-"""Balance service layer."""
+"""Balance service — reads live from zkSync Era contracts.
 
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal
-from uuid import UUID
+The backend does not store balances anymore. All reads go through RPC.
+A single httpx.AsyncClient is reused across the three concurrent calls
+(OLTIN, UZD, staking) so one request to `/balances` is one connection.
+"""
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from __future__ import annotations
 
-from src.balances.models import AccountType, Balance, Currency
-from src.balances.schemas import AccountBalance, BalancesResponse
-from src.common.exceptions import BadRequestException, InsufficientBalanceException
-from src.staking.models import StakingDeposit
+import asyncio
 
-# OLTIN price in USD (fixed for demo)
-OLTIN_PRICE_USD = Decimal("100")
+import httpx
 
-# Staking lock period
-STAKING_LOCK_DAYS = 7
+from src.balances.schemas import BalancesResponse, StakingBalances, WalletBalances
+from src.common.exceptions import BadRequestException
+from src.infrastructure.blockchain import (
+    get_oltin_balance,
+    get_stake_info,
+    get_uzd_balance,
+)
 
 
-async def get_user_balances(db: AsyncSession, user_id: UUID) -> BalancesResponse:
-    """Get all user balances."""
-    result = await db.execute(select(Balance).where(Balance.user_id == user_id))
-    balances = list(result.scalars().all())
+async def get_user_balances(wallet_address: str | None) -> BalancesResponse:
+    """Read on-chain balances for the user's wallet.
 
-    # Build response
-    wallet_usd = Decimal("0")
-    wallet_oltin = Decimal("0")
-    exchange_usd = Decimal("0")
-    exchange_oltin = Decimal("0")
-    staking_oltin = Decimal("0")
+    Raises BadRequestException if the user hasn't completed onboarding
+    yet (no wallet_address bound). The three RPC calls run concurrently.
+    """
+    if not wallet_address:
+        raise BadRequestException("Wallet address not registered. Complete onboarding.")
 
-    for b in balances:
-        if b.account_type == AccountType.WALLET:
-            if b.currency == Currency.USD:
-                wallet_usd = b.amount
-            else:
-                wallet_oltin = b.amount
-        elif b.account_type == AccountType.EXCHANGE:
-            if b.currency == Currency.USD:
-                exchange_usd = b.amount
-            else:
-                exchange_oltin = b.amount
-        elif b.account_type == AccountType.STAKING:
-            staking_oltin = b.amount
-
-    # Calculate total in USD
-    total_usd = (
-        wallet_usd
-        + exchange_usd
-        + (wallet_oltin + exchange_oltin + staking_oltin) * OLTIN_PRICE_USD
-    )
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        oltin_wei, uzd_wei, stake = await asyncio.gather(
+            get_oltin_balance(wallet_address, client=client),
+            get_uzd_balance(wallet_address, client=client),
+            get_stake_info(wallet_address, client=client),
+        )
 
     return BalancesResponse(
-        total_usd=total_usd,
-        wallet=AccountBalance(usd=wallet_usd, oltin=wallet_oltin),
-        exchange=AccountBalance(usd=exchange_usd, oltin=exchange_oltin),
-        staking=AccountBalance(usd=Decimal("0"), oltin=staking_oltin),
+        wallet_address=wallet_address,
+        wallet=WalletBalances(
+            oltin_wei=str(oltin_wei),
+            uzd_wei=str(uzd_wei),
+        ),
+        staking=StakingBalances(
+            total_principal_wei=str(stake.total_principal),
+            unlocked_wei=str(stake.unlocked),
+            pending_reward_wei=str(stake.pending),
+            lot_count=stake.lot_count,
+            next_unlock_at=stake.next_unlock_at,
+        ),
     )
-
-
-async def get_balance(
-    db: AsyncSession,
-    user_id: UUID,
-    account: str,
-    currency: str,
-) -> Balance | None:
-    """Get specific balance."""
-    result = await db.execute(
-        select(Balance).where(
-            Balance.user_id == user_id,
-            Balance.account_type == account,
-            Balance.currency == currency,
-        )
-    )
-    return result.scalar_one_or_none()
-
-
-async def internal_transfer(
-    db: AsyncSession,
-    user_id: UUID,
-    from_account: str,
-    to_account: str,
-    currency: str,
-    amount: Decimal,
-) -> None:
-    """Transfer between user's own accounts.
-
-    Rules:
-    - Staking only supports OLTIN
-    - Free (no fee)
-    - Transfer TO staking creates a 7-day lock
-    """
-    # Validate staking constraints
-    is_staking_involved = (
-        from_account == AccountType.STAKING or to_account == AccountType.STAKING
-    )
-    if is_staking_involved and currency != Currency.OLTIN:
-        raise BadRequestException("Staking account only supports OLTIN")
-
-    # Check if withdrawing from locked staking
-    if from_account == AccountType.STAKING:
-        # Check lock status
-        result = await db.execute(
-            select(StakingDeposit)
-            .where(StakingDeposit.user_id == user_id)
-            .order_by(StakingDeposit.locked_until.desc())
-            .limit(1)
-        )
-        latest_deposit = result.scalar_one_or_none()
-
-        if latest_deposit and latest_deposit.locked_until > datetime.now(UTC):
-            raise BadRequestException(
-                f"Staking is locked until {latest_deposit.locked_until.isoformat()}"
-            )
-
-    # Get source balance
-    from_balance = await get_balance(db, user_id, from_account, currency)
-    if not from_balance or from_balance.amount < amount:
-        raise InsufficientBalanceException(f"Insufficient {currency} in {from_account}")
-
-    # Get destination balance
-    to_balance = await get_balance(db, user_id, to_account, currency)
-    if not to_balance:
-        raise BadRequestException(f"Invalid destination account: {to_account}")
-
-    # Perform transfer
-    from_balance.amount -= amount
-    to_balance.amount += amount
-
-    # Create lock record when transferring TO staking
-    if to_account == AccountType.STAKING:
-        locked_until = datetime.now(UTC) + timedelta(days=STAKING_LOCK_DAYS)
-        deposit = StakingDeposit(
-            user_id=user_id,
-            amount=amount,
-            locked_until=locked_until,
-        )
-        db.add(deposit)
-
-    await db.flush()

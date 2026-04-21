@@ -8,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.balances.models import AccountType, Currency
-from src.balances.service import get_balance
+from src.balances.db import get_balance
 from src.common.exceptions import BadRequestException, InsufficientBalanceException
 from src.staking.models import StakingDeposit, StakingReward
 from src.staking.schemas import StakingInfoResponse, StakingRewardResponse

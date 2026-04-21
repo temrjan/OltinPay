@@ -40,11 +40,15 @@
 
 ## P1 — Week 4 (backend on-chain)
 
-- [ ] `src/infrastructure/rpc.py` — JSON-RPC helper (httpx-based)
-- [ ] Rewrite `src/balances/service.py` to read `balanceOf` from chain
-- [ ] Rewrite `src/transfers/service.py` — index Transfer events, client signs
-- [ ] Drop `src/exchange/` module entirely
-- [ ] Add simple `src/swap/` module — fixed-rate OLTIN ↔ UZD
+- [x] `src/infrastructure/rpc.py` — JSON-RPC helper (httpx-based)
+- [x] `src/infrastructure/blockchain.py` — high-level reads (get_oltin_balance / get_uzd_balance / get_stake_info)
+- [x] `src/users` — `wallet_address` column + alembic 002 + `POST /users/wallet` endpoint
+- [x] Rewrite `src/balances/` — schemas + service + router on-chain
+- [x] Drop `src/exchange/` module entirely
+- [x] `ruff` + `mypy` clean on touched files
+- [ ] Rewrite `src/transfers/service.py` — index Transfer events, client signs (deferred to week 5)
+- [ ] `src/staking/service.py` — wrap OltinStaking contract (deferred to week 5)
+- [ ] Add `src/swap/` module (deferred — simple fixed-rate if needed, else skip)
 
 ## P1 — Week 5 (staking + welcome)
 

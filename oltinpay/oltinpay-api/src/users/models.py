@@ -36,6 +36,12 @@ class User(Base):
         String(2),
         default="uz",
     )
+    wallet_address: Mapped[str | None] = mapped_column(
+        String(42),
+        unique=True,
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

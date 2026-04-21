@@ -33,6 +33,16 @@ class UserUpdate(BaseModel):
     language: str | None = Field(None, pattern="^(uz|ru|en)$")
 
 
+class WalletRegister(BaseModel):
+    """Register a non-custodial wallet address for the current user.
+
+    Called by the Mini App after the client-side onboarding wizard
+    generates a BIP39 seed and derives the EVM address.
+    """
+
+    wallet_address: str = Field(..., pattern="^0x[a-fA-F0-9]{40}$")
+
+
 class UserResponse(BaseModel):
     """User response schema."""
 
@@ -42,6 +52,7 @@ class UserResponse(BaseModel):
     telegram_id: int
     oltin_id: str
     language: str
+    wallet_address: str | None = None
     created_at: datetime
 
 

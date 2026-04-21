@@ -131,6 +131,31 @@ async def set_oltin_id(
     return user
 
 
+async def get_user_by_wallet_address(
+    db: AsyncSession, wallet_address: str
+) -> User | None:
+    """Get user by non-custodial wallet address (case-insensitive)."""
+    normalized = wallet_address.lower()
+    result = await db.execute(
+        select(User).where(User.wallet_address == normalized)
+    )
+    return result.scalar_one_or_none()
+
+
+async def set_wallet_address(
+    db: AsyncSession, user: User, wallet_address: str
+) -> User:
+    """Attach a non-custodial wallet address to the user.
+
+    Address is stored lowercase for lookup parity. Caller is responsible
+    for rejecting attempts to overwrite an existing binding.
+    """
+    user.wallet_address = wallet_address.lower()
+    await db.flush()
+    await db.refresh(user)
+    return user
+
+
 async def search_users(
     db: AsyncSession,
     query: str,
