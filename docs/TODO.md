@@ -14,10 +14,13 @@
 - [x] Write `contracts/contracts/UZD.sol` — ERC20 + AccessControl, mint/burn admin
 - [x] Write `contracts/contracts/OltinStaking.sol` — port DB logic (APY 7%, **per-deposit** 7-day lock)
 - [x] hardhat tests: 32/32 passing on UZD + OltinStaking
-- [x] Deploy script `scripts/deploy-uzd-staking.ts`
-- [ ] **Manual:** top up admin with Sepolia ETH, run deploy script
-- [ ] Record deployed addresses in `docs/PROGRESS.md`
-- [ ] Verify both contracts on explorer
+- [x] Deploy script `deploy/deploy-uzd-staking.ts` + interactive `scripts/deploy.sh`
+- [x] **Deployed on zkSync Sepolia 2026-04-21:**
+  - UZD: `0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32`
+  - OltinStaking: `0x63e537A3a150d06035151E29904C1640181C8314`
+- [x] Recorded addresses in `docs/PROGRESS.md`
+- [ ] Verify both on `block-explorer.sepolia.zksync.dev` (standard verify fails — needs zkSync verify plugin tuning)
+- [ ] Fund `OltinStaking.rewardPool` with starter OLTIN (admin: approve + fundRewardPool)
 
 ## P1 — Week 3 (wallet UX)
 

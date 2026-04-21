@@ -42,13 +42,26 @@
 
 `contracts/scripts/deploy-uzd-staking.ts` — deploys both on zkSync Sepolia, uses existing OLTIN `0x4A56…4347` for staking. Requires `PRIVATE_KEY` of admin (`0xa0A78aA9…779e`) in `contracts/.env`.
 
-### Pending (manual step)
+### Deployed addresses (zkSync Era Sepolia)
 
-1. Top up `0xa0A78aA9…779e` with Sepolia ETH (~0.05)
-2. `PRIVATE_KEY=<admin pk>` in `contracts/.env`
-3. `cd contracts && npx hardhat deploy-zksync --network zkSyncSepolia --script deploy-uzd-staking.ts`
-4. Record deployed addresses in this log
-5. Verify both contracts on `block-explorer.sepolia.zksync.dev`
+| Contract | Address | Status |
+|---|---|---|
+| OltinTokenV2 (OLTIN) | `0x4A56B78DBFc2E6c914f5413B580e86ee1A474347` | deployed earlier |
+| **UZD** | `0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32` | ✅ deployed 2026-04-21 |
+| **OltinStaking** | `0x63e537A3a150d06035151E29904C1640181C8314` | ✅ deployed 2026-04-21 |
+| OltinPaymaster | source ready | not yet deployed |
+
+All three live contracts are administered by `0xa0A78aA9B9619fbc3bC12b5756442BD7A7D6779e` (rotated admin from week 1).
+
+### Sanity check (post-deploy)
+
+- `UZD.decimals()` = 18 ✓
+- `UZD.hasRole(DEFAULT_ADMIN_ROLE, admin)` = true ✓
+
+### Outstanding
+
+- [ ] Verify both contracts on `block-explorer.sepolia.zksync.dev` — standard `hardhat verify` failed with bytecode mismatch; needs zkSync-specific verify plugin tuning. Source is in repo (`contracts/contracts/UZD.sol`, `OltinStaking.sol`) so partner can read it.
+- [ ] Fund `OltinStaking.fundRewardPool(amount)` — admin must `OLTIN.approve(OltinStaking, X)` then call `fundRewardPool(X)` to seed yield.
 
 ---
 
