@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-04-21 — Week 2: Smart contracts (UZD + OltinStaking) ✅
+
+### Contracts written
+
+`contracts/contracts/UZD.sol` — DEMO stablecoin
+- `ERC20("Uzbek Sum Digital", "UZD")`, 18 decimals
+- `ERC20Burnable + AccessControl + Pausable`
+- 4 roles: `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `BURNER_ROLE`, `PAUSER_ROLE`
+- Functions: `mint`, `adminBurn`, `pause`, `unpause`
+- Events: `Minted`, `AdminBurned`
+
+`contracts/contracts/OltinStaking.sol` — on-chain staking
+- 7% APY, **per-deposit 7-day lock** (new deposits do NOT extend old locks)
+- Reward currency: OLTIN (same as principal — matches Python service)
+- Pull-based — user calls `claim()` (to wallet) or `compound()` (re-stake)
+- Each `stake()` creates a new locked `Lot` in user's array
+- `unstake()` walks lots FIFO, takes from unlocked, reverts if not enough unlocked
+- Reward pool funded by `FUNDER_ROLE`; if empty → partial payout, remainder stays as `unclaimedReward`
+- Admin can withdraw unallocated pool but cannot touch user principal
+- `Pausable`, `ReentrancyGuard`, `SafeERC20`
+
+### Tests — 32/32 passing
+
+- `contracts/test/UZD.test.ts` — 13 tests (metadata, mint, burn, transfer, pause)
+- `contracts/test/OltinStaking.test.ts` — 19 tests covering:
+  - Constructor + role grants
+  - stake creates locked lot, multiple stakes don't extend old locks
+  - unstake reverts while locked, allows partial of unlocked, compacts lots
+  - Reward accrual at 7% APY pro-rata across multiple stakes
+  - claim transfers + decreases pool, returns 0 when nothing, caps at pool when short
+  - compound moves reward to new locked lot
+  - Admin pool funding, withdrawal limits, non-funder cannot fund
+  - Pause blocks all user actions
+
+### Deploy script
+
+`contracts/scripts/deploy-uzd-staking.ts` — deploys both on zkSync Sepolia, uses existing OLTIN `0x4A56…4347` for staking. Requires `PRIVATE_KEY` of admin (`0xa0A78aA9…779e`) in `contracts/.env`.
+
+### Pending (manual step)
+
+1. Top up `0xa0A78aA9…779e` with Sepolia ETH (~0.05)
+2. `PRIVATE_KEY=<admin pk>` in `contracts/.env`
+3. `cd contracts && npx hardhat deploy-zksync --network zkSyncSepolia --script deploy-uzd-staking.ts`
+4. Record deployed addresses in this log
+5. Verify both contracts on `block-explorer.sepolia.zksync.dev`
+
+---
+
 ## 2026-04-21 — Week 1: Security & Repo Cleanup ✅
 
 ### Key rotation (zkSync Sepolia)
