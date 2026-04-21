@@ -15,40 +15,40 @@
 
 ---
 
-## Week 2 — New smart contracts
+## Week 2 — New smart contracts (DONE 2026-04-21)
 
-**Goal:** `UZD` and `OltinStaking` deployed on Sepolia, tested.
-
-- [ ] `contracts/contracts/UZD.sol` — ERC20 + AccessControl, mint/burn by admin, 18 decimals
-- [ ] `contracts/contracts/OltinStaking.sol` — port the existing DB logic from `oltinpay/oltinpay-api/src/staking/service.py`:
-  - `APY = 7%`
-  - `LOCK_DAYS = 7`
-  - Functions: `deposit(uint256 amount)`, `claim()`, `withdraw()`, `getStakeInfo(address)`
-  - Emits `Staked`, `Claimed`, `Withdrawn` events
-  - Reward source: `rewardPool` (admin tops up with UZD)
-- [ ] hardhat-zksync test suite for both contracts
-- [ ] Deploy both to Sepolia, record addresses in `docs/PROGRESS.md`
-- [ ] Verify on `block-explorer.sepolia.zksync.dev` (so partners can read the source)
-- [ ] Update `docs/ARCHITECTURE.md` with new addresses
+- [x] `contracts/contracts/UZD.sol` — ERC20 + AccessControl, mint/burn by admin, 18 decimals
+- [x] `contracts/contracts/OltinStaking.sol` — ports DB logic with one important change: **per-deposit lock** (each `stake()` creates its own Lot with its own 7-day lock; new deposits do NOT extend old locks)
+  - `APY = 7%` (700 bps)
+  - `LOCK_PERIOD = 7 days` per lot
+  - Functions: `stake`, `unstake`, `claim`, `compound`, `pendingReward`, `getStakeInfo`
+  - Emits `Staked`, `Unstaked`, `Claimed`, `Compounded`, `RewardPoolFunded`
+  - Reward source: `rewardPool` funded by FUNDER_ROLE, **reward in OLTIN** (same currency as principal, matches Python service)
+- [x] hardhat tests: 32/32 passing
+- [x] Deployed on Sepolia:
+  - UZD: `0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32`
+  - OltinStaking: `0x63e537A3a150d06035151E29904C1640181C8314`
+- [ ] Verify on explorer (standard hardhat verify fails; needs zkSync plugin tuning — carried forward)
+- [x] Updated `docs/ARCHITECTURE.md` and `README.md`
 
 ---
 
-## Week 3 — Wallet UX (client-side, non-custodial)
+## Week 3 — Wallet UX (client-side, non-custodial) (DONE 2026-04-21)
 
-**Goal:** user creates a wallet inside Telegram Mini App in <60 seconds.
-
-- [ ] Install in `oltinpay-webapp`: `@scure/bip39`, `@noble/hashes`, `viem`
-- [ ] `lib/wallet.ts` — BIP39 + scrypt + AES-GCM + Telegram Cloud Storage
-- [ ] `lib/chain.ts` — viem client for zkSync Sepolia, paymaster wrap helpers
-- [ ] `app/onboarding/page.tsx` — 4-step wizard:
-  1. Welcome → Create wallet
-  2. Show 12-word seed (warning: write it down)
-  3. Verify (enter words 3, 7, 11)
-  4. Set PIN
-- [ ] `app/onboarding/restore/page.tsx` — restore from seed + PIN
-- [ ] DEMO badge on Hero (and bottom nav, and footer)
-- [ ] Localization keys (uz/ru/en) for new strings
-- [ ] Backend: alembic migration `add_wallet_address_to_users`
+- [x] Installed in `oltinpay-webapp`: `@scure/bip39`, `@noble/hashes`, `viem` (~60KB gzipped)
+- [x] `lib/wallet.ts` — BIP39 + scrypt + AES-GCM + Telegram Cloud Storage (with localStorage fallback for dev)
+- [x] `lib/contracts.ts` + `lib/chain.ts` — viem clients for zkSync Sepolia, helpers for balanceOf/transfer/stake/unstake/claim
+- [x] `stores/wallet.ts` — in-memory unlocked HDAccount + 15-min idle auto-lock
+- [x] `app/onboarding/page.tsx` — 4-step wizard: Welcome → Show seed → Verify (3 random words) → Set PIN
+- [x] `app/onboarding/restore/page.tsx` — restore from seed + new PIN
+- [x] `components/PinUnlock.tsx` — PIN entry screen for locked sessions
+- [x] `components/DemoBadge.tsx` — yellow DEMO pill (used in onboarding)
+- [x] `WalletGate` in `providers.tsx` — checks Cloud Storage, redirects to /onboarding, shows PinUnlock if locked
+- [x] Localization keys uz/ru/en (~25 keys × 3)
+- [x] `npx tsc --noEmit` clean
+- [ ] DEMO badge in existing wallet/staking/exchange page headers (deferred to week 4)
+- [ ] Manual test in Telegram Mobile — needs deployed staging (deferred)
+- [ ] Backend alembic `add_wallet_address_to_users` — moved to week 4 (Python work)
 
 ---
 

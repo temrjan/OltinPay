@@ -47,17 +47,19 @@ OltinPay/
 
 | Symbol | Type | Status |
 |--------|------|--------|
-| **OLTIN** | commodity (1 token = 1 gram gold) | deployed on Sepolia, mint/burn by admin |
-| **UZD** | UZS-pegged stablecoin (DEMO) | to be deployed |
+| **OLTIN** | commodity (1 token = 1 gram gold) | deployed Sepolia, mint/burn by admin |
+| **UZD** | UZS-pegged stablecoin (DEMO) | deployed Sepolia, mint/burn by admin |
 
 ---
 
-## Deployed contracts (zkSync Sepolia)
+## Deployed contracts (zkSync Sepolia, chainId 300)
 
 | Contract | Address |
 |----------|---------|
-| OltinTokenV2 | `0x4A56B78DBFc2E6c914f5413B580e86ee1A474347` |
-| Admin / Minter | `0xa0A78aA9B9619fbc3bC12b5756442BD7A7D6779e` |
+| OltinTokenV2 (OLTIN) | `0x4A56B78DBFc2E6c914f5413B580e86ee1A474347` |
+| UZD                  | `0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32` |
+| OltinStaking         | `0x63e537A3a150d06035151E29904C1640181C8314` |
+| Admin / Minter       | `0xa0A78aA9B9619fbc3bC12b5756442BD7A7D6779e` |
 
 ---
 

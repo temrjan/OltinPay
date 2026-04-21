@@ -36,12 +36,12 @@ Regulatory window: НАПП stablecoin pilot started 2026-01-01, runs 12 months 
 │  - balances (RPC     │◄───┼──│   ERC20 + AccessControl        │  │
 │      read-only)      │    │  │   mint/burn by admin           │  │
 │  - transfers (event  │    │  ├────────────────────────────────┤  │
-│      indexing)       │    │  │ UZD (TBD week 2)               │  │
+│      indexing)       │    │  │ UZD (deployed)                 │  │
 │  - staking (event    │    │  │   ERC20 + AccessControl        │  │
 │      indexing)       │    │  │   mint/burn by admin           │  │
 │  - aylin (AI chat)   │    │  ├────────────────────────────────┤  │
-│  PostgreSQL + Redis  │    │  │ OltinStaking (TBD week 2)      │  │
-└──────────────────────┘    │  │   deposit OLTIN, reward in UZD │  │
+│  PostgreSQL + Redis  │    │  │ OltinStaking (deployed)        │  │
+└──────────────────────┘    │  │   deposit OLTIN, reward OLTIN  │  │
                             │  ├────────────────────────────────┤  │
                             │  │ OltinPaymaster                 │  │
                             │  │   sponsors gas for whitelisted │  │
@@ -74,10 +74,10 @@ Regulatory window: НАПП stablecoin pilot started 2026-01-01, runs 12 months 
 
 | Contract | Status | Purpose |
 |---|---|---|
-| `OltinTokenV2` | Deployed Sepolia `0x4A56…4347` | OLTIN — commodity token, 1 token = 1 g gold (DEMO declarative) |
-| `OltinPaymaster` | Source in `contracts/contracts/` | Sponsors gas for our user transactions |
-| `UZD` | TBD week 2 | UZS-pegged stablecoin, ERC20 + AccessControl, mint/burn by admin |
-| `OltinStaking` | TBD week 2 | Deposit OLTIN, earn UZD reward (7% APY, 7-day lock) |
+| `OltinTokenV2` | Deployed `0x4A56…4347` | OLTIN — commodity token, 1 token = 1 g gold (DEMO declarative) |
+| `UZD` | Deployed `0x95b3…5A32` | UZS-pegged stablecoin (DEMO), ERC20 + AccessControl, mint/burn by admin |
+| `OltinStaking` | Deployed `0x63e5…8314` | Deposit OLTIN, earn OLTIN reward (7% APY, **per-deposit** 7-day lock); pull-based claim/compound; reward pool funded by FUNDER role |
+| `OltinPaymaster` | Source only | Sponsors gas for whitelisted user transactions (not yet deployed) |
 
 **Roles** (OpenZeppelin AccessControl):
 - `DEFAULT_ADMIN_ROLE`, `MINTER_ROLE`, `BURNER_ROLE`, `PAUSER_ROLE` — all held by `0xa0A78aA9…779e` (admin/minter, MetaMask in Vivaldi)
