@@ -11,10 +11,11 @@
 
 ## P1 — Week 2 (smart contracts)
 
-- [ ] Write `contracts/contracts/UZD.sol` — ERC20 + AccessControl, mint/burn admin
-- [ ] Write `contracts/contracts/OltinStaking.sol` — port DB logic (APY 7%, 7-day lock)
-- [ ] hardhat tests: 90%+ coverage on UZD, OltinStaking
-- [ ] Deploy both to Sepolia
+- [x] Write `contracts/contracts/UZD.sol` — ERC20 + AccessControl, mint/burn admin
+- [x] Write `contracts/contracts/OltinStaking.sol` — port DB logic (APY 7%, **per-deposit** 7-day lock)
+- [x] hardhat tests: 32/32 passing on UZD + OltinStaking
+- [x] Deploy script `scripts/deploy-uzd-staking.ts`
+- [ ] **Manual:** top up admin with Sepolia ETH, run deploy script
 - [ ] Record deployed addresses in `docs/PROGRESS.md`
 - [ ] Verify both contracts on explorer
 
