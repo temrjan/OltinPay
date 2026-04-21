@@ -9,12 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@noble/hashes": "^2.2.0",
+    "@scure/bip39": "^2.0.1",
     "@tanstack/react-query": "^5.90.20",
     "@twa-dev/sdk": "^8.0.2",
     "lucide-react": "^0.563.0",
     "next": "16.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "viem": "^2.48.2",
     "zustand": "^5.0.10"
   },
   "devDependencies": {

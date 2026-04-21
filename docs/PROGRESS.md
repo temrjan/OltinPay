@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-04-21 — Week 3: Non-custodial wallet UX ✅
+
+### Crypto / chain libs
+
+- `src/lib/wallet.ts` — BIP39 + scrypt + AES-256-GCM
+  - `newMnemonic()` / `isValidMnemonic()` / `mnemonicToAddress()` / `mnemonicToHDAccount()`
+  - `encryptMnemonic(seed, pin)` / `decryptMnemonic(blob, pin)` — scrypt KDF (`N=2^17, r=8, p=1`), random 16-byte salt, AES-GCM with random 12-byte nonce
+  - `saveEncryptedWallet()` / `loadEncryptedWallet()` / `removeEncryptedWallet()` — Telegram Cloud Storage with `localStorage` fallback for browser dev
+- `src/lib/contracts.ts` — addresses (OLTIN, UZD, STAKING) + minimal ABIs
+- `src/lib/chain.ts` — viem public/wallet clients for `zksyncSepoliaTestnet`, helpers for balanceOf, transfer, stake/unstake/claim
+
+### State
+
+- `src/stores/wallet.ts` — in-memory `useWalletStore` holding the unlocked HD account, auto-locks after 15 min idle. Seed is never persisted unencrypted.
+
+### UI
+
+- `src/app/onboarding/page.tsx` — 4-step wizard: Welcome → Show seed → Verify (3 random words) → Set PIN. After PIN — encrypts and saves to Cloud Storage, unlocks session, redirects to `/wallet`.
+- `src/app/onboarding/restore/page.tsx` — paste 12 words + new PIN
+- `src/components/PinUnlock.tsx` — full-screen PIN entry shown when wallet exists but session is locked/expired
+- `src/components/DemoBadge.tsx` — yellow "DEMO" pill, used in onboarding
+- `src/app/providers.tsx` — added `WalletGate` wrapper that:
+  - On mount, checks Cloud Storage for an existing encrypted wallet
+  - If absent → redirects to `/onboarding`
+  - If present but session locked → renders `PinUnlock`
+  - Onboarding routes pass through unchanged
+  - Auto-locks expired sessions
+- `src/lib/i18n.ts` — added Demo/Onboarding/PIN keys for uz, ru, en (~25 keys × 3 langs)
+
+### Verification
+
+- `npx tsc --noEmit` — clean (zero errors)
+- Bundle additions: `@scure/bip39 @noble/hashes viem` ≈ 60KB gzipped
+- KDF choice: scrypt over Argon2 (paulmillr's own recommendation for JS due to Argon2 perf)
+
+### Outstanding (week 4)
+
+- Backend: alembic migration `add_wallet_address_to_users`, register endpoint
+- Wire wallet/staking/transfers screens to read on-chain via `chain.ts`
+- DEMO badge into existing wallet/staking/exchange page headers
+- Manual testing inside Telegram Mobile (iOS + Android) to confirm Cloud Storage + WebCrypto
+
+---
+
 ## 2026-04-21 — Week 2: Smart contracts (UZD + OltinStaking) ✅
 
 ### Contracts written

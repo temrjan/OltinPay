@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState, Suspense, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppStore } from '@/stores/app';
+import { useWalletStore } from '@/stores/wallet';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { PinUnlock } from '@/components/PinUnlock';
 import { api } from '@/lib/api';
+import { hasWallet } from '@/lib/wallet';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,6 +116,59 @@ function AppContent({ children }: { children: React.ReactNode }) {
 
   if (!language) {
     return <LanguageSelector />;
+  }
+
+  return <WalletGate>{children}</WalletGate>;
+}
+
+function WalletGate({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const account = useWalletStore((s) => s.account);
+  const isExpired = useWalletStore((s) => s.isExpired);
+  const lock = useWalletStore((s) => s.lock);
+  const [walletPresence, setWalletPresence] = useState<'unknown' | 'absent' | 'present'>('unknown');
+
+  // Onboarding routes are gateless — user is creating or restoring a wallet.
+  const isOnboarding = pathname?.startsWith('/onboarding') ?? false;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const present = await hasWallet();
+      if (!cancelled) setWalletPresence(present ? 'present' : 'absent');
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Auto-lock when the in-memory session expires
+  useEffect(() => {
+    if (account !== null && isExpired()) {
+      lock();
+    }
+  }, [account, isExpired, lock]);
+
+  // Redirect to onboarding if no wallet exists
+  useEffect(() => {
+    if (walletPresence === 'absent' && !isOnboarding) {
+      router.replace('/onboarding');
+    }
+  }, [walletPresence, isOnboarding, router]);
+
+  if (isOnboarding) {
+    return <>{children}</>;
+  }
+
+  if (walletPresence === 'unknown') {
+    return <LoadingSpinner />;
+  }
+
+  if (walletPresence === 'absent') {
+    return <LoadingSpinner />; // briefly while redirect happens
+  }
+
+  if (account === null) {
+    return <PinUnlock />;
   }
 
   return <>{children}</>;

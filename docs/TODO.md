@@ -24,14 +24,19 @@
 
 ## P1 — Week 3 (wallet UX)
 
-- [ ] Add to `oltinpay-webapp/package.json`: `@scure/bip39`, `@noble/hashes`, `viem`
-- [ ] `oltinpay-webapp/src/lib/wallet.ts` — BIP39 + scrypt + AES-GCM + Cloud Storage
-- [ ] `oltinpay-webapp/src/lib/chain.ts` — viem client + paymaster wrapper
-- [ ] `oltinpay-webapp/src/app/onboarding/page.tsx` — 4-step wizard
-- [ ] `oltinpay-webapp/src/app/onboarding/restore/page.tsx`
-- [ ] DEMO badge in Hero / footer / wallet header (3 places)
-- [ ] i18n keys for new UI strings (uz, ru, en)
-- [ ] alembic migration: `add_wallet_address_to_users` (`String(42)`, unique, indexed)
+- [x] Add to `oltinpay-webapp/package.json`: `@scure/bip39`, `@noble/hashes`, `viem`
+- [x] `oltinpay-webapp/src/lib/wallet.ts` — BIP39 + scrypt + AES-GCM + Cloud Storage
+- [x] `oltinpay-webapp/src/lib/contracts.ts` + `chain.ts` — viem client for zkSync Sepolia
+- [x] `oltinpay-webapp/src/stores/wallet.ts` — in-memory unlocked session
+- [x] `oltinpay-webapp/src/components/{DemoBadge,PinUnlock}.tsx`
+- [x] `oltinpay-webapp/src/app/onboarding/page.tsx` — 4-step wizard
+- [x] `oltinpay-webapp/src/app/onboarding/restore/page.tsx`
+- [x] `WalletGate` in `providers.tsx` — checks Cloud Storage, redirects/locks
+- [x] i18n keys for Demo/Onboarding/PIN (uz, ru, en)
+- [x] `npx tsc --noEmit` clean
+- [ ] DEMO badge in existing wallet/staking/exchange page headers
+- [ ] Manual test in Telegram Mobile (iOS + Android)
+- [ ] alembic migration: `add_wallet_address_to_users` (week 4)
 
 ## P1 — Week 4 (backend on-chain)
 
