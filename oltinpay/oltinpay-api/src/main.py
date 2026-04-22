@@ -16,6 +16,7 @@ from src.database import engine
 from src.staking.router import router as staking_router
 from src.transfers.router import router as transfers_router
 from src.users.router import router as users_router
+from src.welcome.router import router as welcome_router
 
 
 @asynccontextmanager
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
         transfers_router, prefix=f"{prefix}/transfers", tags=["transfers"]
     )
     app.include_router(staking_router, prefix=f"{prefix}/staking", tags=["staking"])
+    app.include_router(welcome_router, prefix=f"{prefix}/welcome", tags=["welcome"])
     app.include_router(contacts_router, prefix=f"{prefix}/contacts", tags=["contacts"])
     app.include_router(aylin_router, prefix=f"{prefix}/aylin", tags=["aylin"])
 

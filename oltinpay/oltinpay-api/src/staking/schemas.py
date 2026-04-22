@@ -1,51 +1,23 @@
-"""Staking Pydantic schemas."""
+"""Staking schemas — on-chain view of OltinStaking contract."""
 
-from datetime import date, datetime
-from decimal import Decimal
+from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class StakingInfoResponse(BaseModel):
-    """Staking info response."""
+    """On-chain stake position for the current user.
 
-    balance: Decimal
-    locked_until: datetime | None
-    is_locked: bool
-    apy: Decimal
-    daily_reward: Decimal
-    total_earned: Decimal
+    All amounts are uint256 wei serialized as strings (JS-safe).
+    """
 
+    model_config = ConfigDict(extra="forbid")
 
-class StakingDepositRequest(BaseModel):
-    """Staking deposit request."""
-
-    amount: Decimal = Field(..., gt=0)
-
-
-class StakingDepositResponse(BaseModel):
-    """Staking deposit response."""
-
-    new_balance: Decimal
-    locked_until: datetime
-
-
-class StakingWithdrawRequest(BaseModel):
-    """Staking withdraw request."""
-
-    amount: Decimal = Field(..., gt=0)
-
-
-class StakingWithdrawResponse(BaseModel):
-    """Staking withdraw response."""
-
-    withdrawn: Decimal
-    remaining: Decimal
-
-
-class StakingRewardResponse(BaseModel):
-    """Staking reward item."""
-
-    date: date
-    amount: Decimal
-    balance_snapshot: Decimal
+    wallet_address: str
+    total_principal_wei: str
+    unlocked_wei: str
+    pending_reward_wei: str
+    lot_count: int
+    next_unlock_at: int
+    apy_bps: int = 700  # mirrors OltinStaking.APY_BPS for UI convenience
+    lock_period_days: int = 7

@@ -14,6 +14,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "httpx>=0.28",
     "redis>=5.2",
+    "eth-account>=0.13",
 ]
 
 [project.optional-dependencies]
