@@ -4,6 +4,52 @@
 
 ---
 
+## 2026-04-22 — Week 5: Welcome bonus + on-chain staking pivot ✅
+
+Commit `a352b69` on `main` — `feat(api): welcome bonus claim + on-chain staking pivot`.
+
+### New
+
+- `src/welcome/` — new module with:
+  - `POST /api/v1/welcome/claim` — admin-signed `UZD.mint(user, 1000e18)`, one-time per user. Uses **reserve-then-broadcast**: INSERT + `flush()` with unique-constraint check precedes the on-chain mint, so concurrent claims fail fast with 409 instead of double-minting. On broadcast failure the reservation is rolled back (no orphan row pins the unique slot).
+  - `GET /api/v1/welcome/status` — claim state (`claimed`, `tx_hash`, `claimed_at`).
+- `src/infrastructure/admin_tx.py` — admin EIP-1559 signing on zkSync Era Sepolia:
+  - `eth-account` dep added (no full web3.py)
+  - Dynamic gas: `eth_estimateGas` + 20% headroom, `eth_maxPriorityFeePerGas` + `maxFee = base*2 + priority` (standard Ethereum formula)
+  - `AdminUnconfigured` (missing key → 400) vs `AdminTxError` (RPC failure → 500) split for clean handler mapping
+  - Logs tx hash; private key only from `SecretStr`, never to disk/logs
+- `alembic/versions/003_welcome_claims.py` — `welcome_claims` table with unique(user_id) + FK CASCADE + index
+
+### Modified
+
+- `src/staking/` — pivoted to **fully read-only on-chain**. Removed `service.py` deposit/withdraw/claim logic, removed `models.py` (old `StakingDeposit`/`StakingReward` tables — users now sign stake/unstake/claim/compound client-side via viem directly against `OltinStaking`). Kept only `GET /api/v1/staking` that reads `getStakeInfo(address)` live from the contract.
+- `src/staking/schemas.py` — `StakingInfoResponse` mirrors the 5-uint256 contract output plus `apy_bps=700`, `lock_period_days=7` for UI convenience. Wei values serialized as strings (JS BigInt-safe).
+- `src/main.py` — registers `welcome_router` under `/api/v1/welcome`.
+- `pyproject.toml` — added `eth-account>=0.13`.
+
+### Tests (9 new, 70 total passing)
+
+- `tests/test_welcome.py` — 6 integration tests: happy path, reject without wallet, idempotent conflict (409), auth required, status before/after claim. `send_admin_mint` patched so tests never touch the RPC.
+- `tests/test_staking_onchain.py` — 3 tests with `respx`-mocked RPC: full `getStakeInfo` payload round-trip, reject without wallet, auth required.
+- Pre-existing fixture errors in `test_contacts.py`/`test_users.py` (6) unchanged — unrelated.
+
+### Verification
+
+- `ruff check` clean on all touched files
+- `mypy` clean on 10 source files (welcome/ + staking/ + admin_tx.py)
+- `pytest`: **70 passed** (9 new + 61 pre-existing), 6 pre-existing fixture errors unrelated to this work
+- `/python-review` loop: 1 critical + 4 error + 2 warning findings all fixed before commit (double-mint race, lost-mint on commit-fail, hardcoded gas=300k, priority-fee magic numbers, `/welcome` trailing-slash redirect, wallet normalization, redundant flush+commit)
+
+### Outstanding (week 6)
+
+- Webapp `app/staking/page.tsx` — read on-chain pending reward via viem
+- Webapp first-login prompt to claim welcome bonus
+- Commit cleanup of `oltinpay/staking-rewards-cron.sh` (custodial cron, already dead)
+- Delete stale `contracts/scripts/deploy-uzd-staking.ts` (replaced by OltinStaking flow)
+- Transfers service — still DB-based; migrate to viem-signed on-chain transfers
+
+---
+
 ## 2026-04-21 — Week 4: Backend on-chain ✅
 
 ### New

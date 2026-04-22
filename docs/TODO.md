@@ -50,16 +50,25 @@
 - [ ] `src/staking/service.py` — wrap OltinStaking contract (deferred to week 5)
 - [ ] Add `src/swap/` module (deferred — simple fixed-rate if needed, else skip)
 
-## P1 — Week 5 (staking + welcome)
+## P1 — Week 5 (staking + welcome) — DONE 2026-04-22
 
-- [ ] Rewrite `src/staking/service.py` — wrap `OltinStaking` contract
-- [ ] Delete `oltinpay/staking-rewards-cron.sh` (no longer needed)
-- [ ] `oltinpay-webapp/src/app/staking/page.tsx` — read on-chain pending reward
-- [ ] `src/welcome/router.py` + service: `POST /users/welcome/claim` → mint 1000 UZD
-- [ ] Frontend prompt to claim on first login
+- [x] Rewrite `src/staking/service.py` — on-chain read-only (`get_stake_info`), write actions moved to viem client-side
+- [x] `src/welcome/router.py` + service — `POST /api/v1/welcome/claim` + `GET /api/v1/welcome/status`, admin-signed `UZD.mint`, reserve-then-broadcast dedup (unique `user_id`)
+- [x] `src/infrastructure/admin_tx.py` — EIP-1559 signing via `eth-account`, dynamic gas (`eth_estimateGas` + 20% headroom, `eth_maxPriorityFeePerGas`)
+- [x] alembic 003 — `welcome_claims` table
+- [x] 9 new tests (welcome happy/reject/conflict/auth + staking on-chain), 70 total passing
+- [x] Committed `a352b69`, pushed to `origin/main`
+- [ ] Delete `oltinpay/staking-rewards-cron.sh` (already dead in working tree, separate `chore:` commit)
+- [ ] Delete `contracts/scripts/deploy-uzd-staking.ts` (stale, separate `chore:` commit)
+- [ ] `oltinpay-webapp/src/app/staking/page.tsx` — read on-chain pending reward (webapp, week 6)
+- [ ] Frontend prompt to claim on first login (webapp, week 6)
 
 ## P1 — Week 6 (polish)
 
+- [ ] Rewrite `src/transfers/service.py` — drop DB-based transfers; users send tokens client-side via viem
+- [ ] `oltinpay-webapp/src/app/staking/page.tsx` — read on-chain pending reward via viem
+- [ ] Webapp welcome-claim prompt (first login → `POST /welcome/claim`)
+- [ ] DEMO badge on wallet/staking page headers
 - [ ] Run all 6 demo scenarios end-to-end on Sepolia
 - [ ] Demo video (Loom, 3-5 min)
 - [ ] `docs/PITCH.md` — 10-slide deck content

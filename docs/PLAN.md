@@ -65,18 +65,19 @@
 
 ---
 
-## Week 5 — Staking on-chain + Welcome bonus
+## Week 5 — Staking on-chain + Welcome bonus (DONE 2026-04-22)
 
 **Goal:** staking is fully on-chain, observable in explorer. Every new user gets 1000 UZD.
 
-- [ ] Rewrite `src/staking/service.py` to wrap calls to `OltinStaking` contract
-- [ ] Delete `staking-rewards-cron.sh` (rewards are calculated by the contract)
-- [ ] Frontend `app/staking/page.tsx` — call contract via viem, show on-chain pending reward
-- [ ] `src/welcome/router.py` + service — `POST /users/welcome/claim`:
-  - Verify user not yet claimed (DB flag)
-  - Admin signs `UZD.mint(user_address, 1000e18)`
-  - Mark `welcome_claimed=true`
-- [ ] Frontend prompts to claim on first login
+- [x] Rewrite `src/staking/service.py` — read-only wrapper around `OltinStaking.getStakeInfo`; write actions (stake/unstake/claim/compound) moved to viem client-side. Legacy `models.py` + DB schema dropped.
+- [x] `src/welcome/` module — `POST /api/v1/welcome/claim` admin-signs `UZD.mint(user, 1000e18)`, `GET /api/v1/welcome/status` reports state. Reserve-then-broadcast pattern (INSERT + flush with unique(user_id) before mint) prevents double-mint on concurrent claims.
+- [x] `src/infrastructure/admin_tx.py` — EIP-1559 signing via eth-account, dynamic gas (`eth_estimateGas` + 20% headroom, `eth_maxPriorityFeePerGas` + `maxFee = base*2 + priority`).
+- [x] alembic 003 — `welcome_claims` ledger with unique(user_id), FK CASCADE.
+- [x] 9 new tests, 70 total passing. ruff + mypy clean. `/python-review` findings fixed before commit.
+- [x] Commit `a352b69` on `main`.
+- [ ] Delete `staking-rewards-cron.sh` + stale `contracts/scripts/deploy-uzd-staking.ts` — separate `chore:` commit
+- [ ] Frontend `app/staking/page.tsx` — on-chain pending reward via viem (deferred to week 6)
+- [ ] Frontend welcome-claim prompt on first login (deferred to week 6)
 
 ---
 
