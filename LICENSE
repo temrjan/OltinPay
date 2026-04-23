@@ -1,0 +1,44 @@
+OltinPay Proprietary License
+
+Copyright (c) 2025-2026 Temrjan Khasenov. All rights reserved.
+
+This source code is made publicly visible solely for the purposes of
+evaluation, technical review, and acquisition or partnership inquiries.
+No other rights are granted.
+
+Without prior written permission from the copyright holder, you MAY NOT:
+
+  1. Use this software, in whole or in part, for any purpose other than
+     reading and evaluating it.
+  2. Run, deploy, host, or execute this software, in production or
+     otherwise, on your own systems or on behalf of any third party.
+  3. Copy, modify, merge, publish, distribute, sublicense, or create
+     derivative works of this software or any part of it.
+  4. Remove, obscure, or alter any copyright, trademark, or license
+     notices contained in this software.
+
+Third-party components (including but not limited to the OpenZeppelin
+libraries used in the `contracts/` directory) remain governed by their
+own original licenses. Their notices and license terms must be preserved
+and are not affected by this License.
+
+This project is actively offered for acquisition or strategic partnership.
+
+  Inquiries: x.temrjan@gmail.com
+
+-------------------------------------------------------------------------
+NO WARRANTY
+-------------------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+-------------------------------------------------------------------------
+LIMITATION OF LIABILITY
+-------------------------------------------------------------------------
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES,
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
