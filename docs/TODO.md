@@ -58,7 +58,7 @@
 - [x] alembic 003 — `welcome_claims` table
 - [x] 9 new tests (welcome happy/reject/conflict/auth + staking on-chain), 70 total passing
 - [x] Committed `a352b69`, pushed to `origin/main`
-- [ ] Delete `oltinpay/staking-rewards-cron.sh` (already dead in working tree, separate `chore:` commit)
+- [x] Delete `oltinpay/staking-rewards-cron.sh` (already dead in working tree, separate `chore:` commit)
 - [ ] Delete `contracts/scripts/deploy-uzd-staking.ts` (stale, separate `chore:` commit)
 - [ ] `oltinpay-webapp/src/app/staking/page.tsx` — read on-chain pending reward (webapp, week 6)
 - [ ] Frontend prompt to claim on first login (webapp, week 6)
