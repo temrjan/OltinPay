@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Providers } from './providers';
 import { BottomNav } from '@/components/layout/BottomNav';
 import './globals.css';
@@ -23,10 +24,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="uz">
-      <head>
-        <script src="https://telegram.org/js/telegram-web-app.js" />
-      </head>
       <body className="bg-background text-text-primary min-h-screen">
+        <Script
+          src="https://telegram.org/js/telegram-web-app.js"
+          strategy="beforeInteractive"
+        />
         <Providers>
           <main className="pb-16">
             {children}

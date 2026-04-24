@@ -113,9 +113,6 @@ export default function SendPage() {
   const fee = amount ? parseFloat(amount) * 0.01 : 0;
   const total = amount ? parseFloat(amount) + fee : 0;
 
-  // Internal transfer balance
-  const availableBalance = getBalance(fromAccount, currency);
-
   // Staking only supports OLTIN
   const isStakingInvolved = fromAccount === 'staking' || toAccount === 'staking';
   const effectiveCurrency = isStakingInvolved ? 'OLTIN' : currency;
