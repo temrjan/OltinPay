@@ -1,12 +1,14 @@
 """AI assistant service layer."""
 
+from uuid import UUID
+
 import httpx
 
 from src.aylin.schemas import ChatResponse, ChatSource
 from src.config import settings
 
 
-async def chat(message: str, user_id: int, user_language: str = "uz") -> ChatResponse:
+async def chat(message: str, user_id: UUID, user_language: str = "uz") -> ChatResponse:
     """Send message to znai-cloud RAG API and get response.
 
     Args:

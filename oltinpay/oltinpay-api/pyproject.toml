@@ -39,6 +39,11 @@ ignore = ["E501"]
 [tool.ruff.lint.isort]
 known-first-party = ["src"]
 
+[tool.ruff.lint.per-file-ignores]
+# i18n notification messages contain Cyrillic characters by design;
+# RUF001 flags them as ambiguous Latin look-alikes, which is wrong here.
+"src/notifications.py" = ["RUF001"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true

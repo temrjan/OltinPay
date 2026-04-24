@@ -7,8 +7,8 @@ from uuid import UUID
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.balances.models import AccountType, Currency
 from src.balances.db import get_balance
+from src.balances.models import AccountType, Currency
 from src.common.exceptions import (
     BadRequestException,
     InsufficientBalanceException,
@@ -24,6 +24,11 @@ from src.users.models import User
 TRANSFER_FEE_RATE = Decimal("0.01")  # 1%
 MIN_FEE_USD = Decimal("0.05")
 OLTIN_PRICE_USD = Decimal("100")  # Fixed demo price
+
+# Strong refs to fire-and-forget notification tasks. Without retaining
+# references, asyncio may GC the task before it completes, dropping the
+# notification silently. See asyncio.create_task in the stdlib docs.
+_background_tasks: set[asyncio.Task[object]] = set()
 
 
 def calculate_fee(amount: Decimal) -> Decimal:
@@ -101,7 +106,7 @@ async def create_transfer(
     await db.refresh(transfer)
 
     # Send notification to recipient (fire and forget)
-    _task = asyncio.create_task(
+    task = asyncio.create_task(
         notify_transfer_received(
             recipient_telegram_id=to_user.telegram_id,
             sender_oltin_id=from_user.oltin_id,
@@ -109,6 +114,8 @@ async def create_transfer(
             language=to_user.language or "en",
         )
     )
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
     return transfer
 
