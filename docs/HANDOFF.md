@@ -133,7 +133,7 @@ OltinPay/
 │   ├── PROGRESS.md             # append-only milestone log
 │   ├── TODO.md                 # active backlog P0-P3
 │   ├── DEPLOY.md               # server migration + secrets
-│   └── REDESIGN.md             # ← THIS FILE
+│   └── HANDOFF.md             # ← THIS FILE
 │
 ├── docker-compose.yml          # Traefik + Postgres + Redis + api + webapp + bot
 ├── docker-compose.monitoring.yml
@@ -351,8 +351,15 @@ gh api repos/temrjan/OltinPay/environments
 - ✅ Webapp CI migrated to Next.js 16 ESLint flat config (commit `12378ab`)
 - ✅ API CI unblocked (ruff `RUF001` per-file-ignore, ruff `RUF006` real GC fix, mypy Optional[str] and UUID fixes — commit `5f69c2a`)
 - ✅ Chore cleanup: removed `staking-rewards-cron.sh` + duplicate `deploy-uzd-staking.ts` (commits `e4b3502`, `bb15733`)
-- 🔄 **Server migration `/opt/oltinchain` → `/opt/oltinpay`** — in progress, blocked on user decisions (downtime OK, ADMIN_PRIVATE_KEY via secrets:, DNS confirmed)
-- ⏳ Create `.env.example` in repo (template for all required vars)
+- ✅ `docker-compose.yml` refactored: removed embedded Traefik, wired to shared Caddy proxy on the server (`/root/server/infra/Caddyfile` already routes `api.oltinpay.com` → `oltinpay-api:8000`, `app.oltinpay.com` → `oltinpay-webapp:3000`). Pinned `container_name`, `security_opt`, `mem_limit`, `alembic upgrade head` in api entrypoint, `ADMIN_PRIVATE_KEY` wired. Commit `d6ab9a5`.
+- ✅ `.env.example` in repo with carry-over / generate / user-provided sections and explicit do-not-copy list.
+- 🔄 **Server migration `/opt/oltinchain` → `/opt/oltinpay`** — step-by-step, user confirms each step. Done: Step 1 (read-only key inventory of old `.env.oltinpay` → 38-char SECRET_KEY + 46-char bot token, no ADMIN_PRIVATE_KEY available). Pending:
+  - ⏳ Step 2 — backup `.env` + `.env.oltinpay` to `/root/backups/`
+  - ⏳ Step 3 — `docker compose down` in `/opt/oltinchain` (downtime starts)
+  - ⏳ Step 4 — `git clone` into empty `/opt/oltinpay`
+  - ⏳ Step 5 — write new `/opt/oltinpay/.env` (carry-over SECRET_KEY + bot token from `.env.oltinpay`, generate PG/REDIS passwords, **leave ADMIN_PRIVATE_KEY empty — DEMO mode, `/welcome/claim` will 400**)
+  - ⏳ Step 6 — `docker compose up -d --build`
+  - ⏳ Step 7 — verify: `docker compose ps`, `docker compose logs --tail=30 oltinpay-api`, `curl -I https://api.oltinpay.com/...`, `curl -I https://app.oltinpay.com`
 - ⏳ Add GHA secrets to `production` env: `DEPLOY_SSH_KEY` (new `oltinpay_deploy`), `DEPLOY_HOST=62.169.20.2`, `DEPLOY_USER=root`, `DEPLOY_PORT=9281`
 - ⏳ Fix `deploy.yml`: add `-p $SSH_PORT` to ssh + ssh-keyscan, add `StrictHostKeyChecking=accept-new`, add `docker compose config` as post-step sanity check
 
@@ -383,17 +390,25 @@ gh api repos/temrjan/OltinPay/environments
 ## 7. Что делать дальше
 
 **Приоритет 1 — Server migration + GHA deploy (Task #6, 🔄 активно).**
-Перед стартом собрать ответы пользователя: backup БД из `/opt/oltinchain` (pg_dumpall или снести?), downtime OK, DNS подтверждён. Шаги:
-1. Прочесть `/opt/oltinchain/docker-compose.yml` + `/opt/oltinchain/.env` (если есть) — понять что нужно перенести.
-2. `docker exec` → pg_dumpall старой БД в `/root/oltinchain-backup-$(date).sql`.
-3. `docker compose down -v` в `/opt/oltinchain` (освобождает 80/443).
-4. `GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519' git clone git@github.com:temrjan/OltinPay.git /opt/oltinpay`.
-5. Создать `.env.example` в репо и `/opt/oltinpay/.env` на сервере (chmod 600). `ADMIN_PRIVATE_KEY` — через `docker compose secrets:` (требует правки compose + чтение из `/run/secrets/admin_private_key` в `src/config.py`).
-6. `docker compose up -d --build` в `/opt/oltinpay`. Проверить: Traefik работает, все сервисы healthy, `api.oltinpay.com` / `app.oltinpay.com` отвечают.
-7. На сервере: `ssh-keygen -t ed25519 -N "" -f /root/.ssh/oltinpay_deploy`, добавить `.pub` в `authorized_keys`, тестнуть `ssh -p 9281 -i ... root@62.169.20.2`.
-8. `gh secret set` 4 секрета в env `production`.
-9. Fix `deploy.yml` (порт, StrictHostKeyChecking, `docker compose config` step).
-10. Commit deploy.yml → push → wait green deploy run.
+
+User's choices зафиксированы 2026-04-24: downtime OK, старую БД снести (postgres не был в контейнерах — нет данных в volume, backup не нужен), `ADMIN_PRIVATE_KEY` — **в `.env` без значения** (DEMO mode, `/welcome/claim` 400). Новая compose интегрируется в shared Caddy (committed `d6ab9a5`).
+
+Миграция делается **step-by-step**, user подтверждает каждый шаг. Прогресс:
+
+1. ✅ Read-only inventory обоих старых `.env`. Source для carry-over: `/opt/oltinchain/.env.oltinpay` (SECRET_KEY 38, TELEGRAM_BOT_TOKEN 46, RAG_SERVICE_URL/KEY → переименуются в ZNAI_CLOUD_URL/KEY).
+2. ⏳ `mkdir -p /root/backups && cp /opt/oltinchain/.env /opt/oltinchain/.env.oltinpay /root/backups/oltinchain-env-$(date +%F).bak`
+3. ⏳ `cd /opt/oltinchain && docker compose down` — downtime начинается, старый webapp исчезает, Caddy возвращает 502 до Step 6.
+4. ⏳ `rm -rf /opt/oltinpay && GIT_SSH_COMMAND='ssh -i /root/.ssh/id_ed25519' git clone git@github.com:temrjan/OltinPay.git /opt/oltinpay`
+5. ⏳ Сгенерировать `PG_PASSWORD`/`REDIS_PASSWORD` (`openssl rand -hex 32`), записать `/opt/oltinpay/.env` с carry-over + generated + ADMIN_PRIVATE_KEY пустой. `chmod 600`.
+6. ⏳ `cd /opt/oltinpay && docker compose up -d --build`. Alembic migrations применятся автоматически через `command:` override.
+7. ⏳ Verify: `docker compose ps` (все healthy), `docker compose logs --tail=30 oltinpay-api` (нет ошибок), `curl -I https://api.oltinpay.com/health` (200), `curl -I https://app.oltinpay.com` (200).
+
+После успешной ручной миграции — автоматический deploy pipeline:
+
+8. ⏳ На сервере: `ssh-keygen -t ed25519 -N "" -f /root/.ssh/oltinpay_deploy`, `cat .pub >> authorized_keys`, тест `ssh -p 9281 -i ... root@62.169.20.2 'echo ok'`.
+9. ⏳ `gh secret set --env production --repo temrjan/OltinPay`: `DEPLOY_SSH_KEY` (stdin), `DEPLOY_HOST=62.169.20.2`, `DEPLOY_USER=root`, `DEPLOY_PORT=9281`.
+10. ⏳ Fix `deploy.yml`: add `-p "$SSH_PORT"` to `ssh` + `ssh-keyscan`, add `-o StrictHostKeyChecking=accept-new`, add `docker compose config` post-step.
+11. ⏳ Commit deploy.yml → push → verify green deploy run.
 
 **Приоритет 2 — Frontend Week 6 cleanup (независимо от migration).**
 Можно делать параллельно, пока пользователь решает про сервер.
@@ -454,8 +469,8 @@ EOF
 # 5. Свериться с TODO
 cat docs/TODO.md | head -80
 
-# 6. Прочесть этот документ (REDESIGN.md) целиком — это приоритет 0
-cat docs/REDESIGN.md
+# 6. Прочесть этот документ (HANDOFF.md) целиком — это приоритет 0
+cat docs/HANDOFF.md
 ```
 
 Перед любой Python-работой:
@@ -512,7 +527,7 @@ cat docs/REDESIGN.md
 
 ### Docs
 
-- Active: `docs/ARCHITECTURE.md`, `docs/PLAN.md`, `docs/PROGRESS.md`, `docs/TODO.md`, `docs/DEPLOY.md`, `docs/REDESIGN.md` (this file)
+- Active: `docs/ARCHITECTURE.md`, `docs/PLAN.md`, `docs/PROGRESS.md`, `docs/TODO.md`, `docs/DEPLOY.md`, `docs/HANDOFF.md` (this file)
 - Historical (read-only reference): `oltinpay/DevDocs/`
 
 ### Rotation log
