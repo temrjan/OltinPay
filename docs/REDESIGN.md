@@ -272,7 +272,7 @@ gh api repos/temrjan/OltinPay/environments
 
 **Не переписывать проект с нуля.** Решение 2026-04-24. 80% кода чистые и ценные (contracts, wallet crypto, welcome, balances, CI). Rotted — 20%, локально (api.ts + 3 frontend pages + transfers/ backend + server migration). Хирургия за 3-5 дней, rewrite за 3-5 недель = не попадает в Week 6 deadline, теряем deployed contracts + ротированные ключи + git history.
 
-**ADMIN_PRIVATE_KEY через Docker Compose `secrets:`.** Решение 2026-04-24. Env vars утекают через crash logs, `docker inspect`, error trackers (OWASP §5.1). Всё остальное — в `.env` с `chmod 600`. Деплой добавляет `docker compose config` как sanity check.
+**ADMIN_PRIVATE_KEY — в `.env` для Week 6 DEMO, `secrets:` mount post-pitch.** Решение 2026-04-24. Best practice — `docker compose secrets:` (OWASP §5.1), но миграция в pitch-ready deadline съедает 2-4 часа budget. Риск приемлем: Sepolia test-token, root-only сервер, ротированный test-admin (`0xa0A78a…`). **P1 security debt:** перенести в `secrets:` перед mainnet rollout. Деплой-скрипт добавляет `docker compose config` как sanity check против shell-env override.
 
 ---
 
@@ -376,7 +376,7 @@ gh api repos/temrjan/OltinPay/environments
 - ⏳ `gitleaks` pre-commit hook
 - ⏳ Drop `contracts/artifacts-zk/` + `cache-zk/` from git, add to `.gitignore`
 - ⏳ Normalize `oltinpay/DevDocs/standards/` vs global Codex — decide: keep, delete, or symlink
-- ⏳ Move `ADMIN_PRIVATE_KEY` from `.env` into `docker-compose.yml` `secrets:` mount (read from `/run/secrets/admin_private_key`)
+- ⏳ **[P1 security, pre-mainnet]** Move `ADMIN_PRIVATE_KEY` from `.env` into `docker-compose.yml` `secrets:` mount (read from `/run/secrets/admin_private_key`). Triggers: mainnet migration, audit, incident.
 
 ---
 

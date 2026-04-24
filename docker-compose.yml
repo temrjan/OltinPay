@@ -1,37 +1,9 @@
 services:
-  traefik:
-    image: traefik:v2.11
-    restart: unless-stopped
-    command:
-      - "--api.dashboard=true"
-      - "--log.level=WARN"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=web"
-      - "--certificatesresolvers.le.acme.email=${ACME_EMAIL}"
-      - "--certificatesresolvers.le.acme.storage=/acme.json"
-      - "--certificatesresolvers.le.acme.httpchallenge.entrypoint=web"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/acme.json:/acme.json
-    networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.middlewares.secure.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.secure.headers.forceSTSHeader=true"
-      - "traefik.http.middlewares.ratelimit.ratelimit.average=100"
-      - "traefik.http.middlewares.ratelimit.ratelimit.burst=50"
-
   postgres:
     image: postgres:16-alpine
+    container_name: oltinpay-postgres
     restart: unless-stopped
+    security_opt: [no-new-privileges:true]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${PG_PASSWORD}
@@ -48,7 +20,9 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: oltinpay-redis
     restart: unless-stopped
+    security_opt: [no-new-privileges:true]
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
@@ -62,65 +36,60 @@ services:
 
   oltinpay-api:
     build: ./oltinpay/oltinpay-api
+    container_name: oltinpay-api
     restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    command: sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:${PG_PASSWORD}@postgres:5432/oltinpay
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
       - SECRET_KEY=${SECRET_KEY}
+      - ADMIN_PRIVATE_KEY=${ADMIN_PRIVATE_KEY}
       - TELEGRAM_BOT_TOKEN=${OLTINPAY_BOT_TOKEN:-dummy_token}
       - ZNAI_CLOUD_URL=${ZNAI_CLOUD_URL:-}
       - ZNAI_CLOUD_API_KEY=${ZNAI_CLOUD_API_KEY:-}
       - CORS_ORIGINS_STR=https://app.oltinpay.com,http://localhost:3000
     networks:
-      - web
+      - proxy
       - internal
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.oltinpay-api.rule=Host(`api.oltinpay.com`)"
-      - "traefik.http.routers.oltinpay-api.entrypoints=websecure"
-      - "traefik.http.routers.oltinpay-api.tls.certresolver=le"
-      - "traefik.http.routers.oltinpay-api.middlewares=secure,ratelimit"
-      - "traefik.http.services.oltinpay-api.loadbalancer.server.port=8000"
 
   oltinpay-webapp:
     build:
       context: ./oltinpay/oltinpay-webapp
       args:
         NEXT_PUBLIC_API_URL: https://api.oltinpay.com/api/v1
+    container_name: oltinpay-webapp
     restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
     networks:
-      - web
+      - proxy
     depends_on:
       - oltinpay-api
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.oltinpay-webapp.rule=Host(`app.oltinpay.com`)"
-      - "traefik.http.routers.oltinpay-webapp.entrypoints=websecure"
-      - "traefik.http.routers.oltinpay-webapp.tls.certresolver=le"
-      - "traefik.http.routers.oltinpay-webapp.middlewares=secure"
-      - "traefik.http.services.oltinpay-webapp.loadbalancer.server.port=3000"
 
   oltinpay-bot:
     build: ./oltinpay/oltinpay-bot
+    container_name: oltinpay-bot
     restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
     environment:
       - TELEGRAM_BOT_TOKEN=${OLTINPAY_BOT_TOKEN}
       - WEBAPP_URL=https://app.oltinpay.com
     networks:
-      - web
+      - internal
 
 volumes:
   pg_data:
   redis_data:
 
 networks:
-  web:
-    name: web
+  proxy:
+    external: true
   internal:
-    name: internal
-    internal: true
