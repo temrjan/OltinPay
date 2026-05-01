@@ -3,8 +3,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from scalar_fastapi import get_scalar_api_reference
 
 # Import routers
 from src.auth.router import router as auth_router
@@ -79,3 +81,19 @@ async def health_check() -> dict[str, str]:
 async def root() -> dict[str, str]:
     """Root endpoint."""
     return {"name": settings.app_name, "version": "0.1.0"}
+
+
+@app.get("/scalar", include_in_schema=False)
+async def scalar_html() -> HTMLResponse:
+    """Interactive API reference for partners."""
+    response = get_scalar_api_reference(
+        openapi_url=app.openapi_url,
+        title=f"{settings.app_name} API Reference",
+    )
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt() -> Response:
+    return Response("User-agent: *\nDisallow: /scalar\n", media_type="text/plain")
