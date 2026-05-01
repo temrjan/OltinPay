@@ -6,6 +6,7 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network zkSyncSepolia",
+    "fund:rewards": "hardhat run scripts/fundRewardPool.ts --network zkSyncSepolia",
     "verify": "hardhat verify --network zkSyncSepolia"
   },
   "devDependencies": {
