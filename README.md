@@ -98,6 +98,7 @@ docker compose up -d --build
 
 Services exposed via Traefik:
 - `api.oltinpay.com` → oltinpay-api
+- `api.oltinpay.com/scalar` → interactive API reference (Scalar) for partner integration
 - `app.oltinpay.com` → oltinpay-webapp (Telegram Mini App)
 
 ---

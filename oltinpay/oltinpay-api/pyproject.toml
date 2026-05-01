@@ -15,6 +15,7 @@ dependencies = [
     "httpx>=0.28",
     "redis>=5.2",
     "eth-account>=0.13",
+    "scalar-fastapi==1.8.2",
 ]
 
 [project.optional-dependencies]
