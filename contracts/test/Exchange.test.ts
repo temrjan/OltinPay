@@ -1,14 +1,17 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { parseUnits } from "ethers";
+import { parseUnits, ZeroAddress } from "ethers";
 
 // Money-path constants — MUST mirror Exchange.sol.
 const GRAMS = 3110347680n; // grams per troy oz * 1e8
 const E8 = 100000000n; // 1e8
 const XAU_ANS = 330000000000n; // 3300 USD/oz @ 8 decimals
 const UZS_ANS = 7937n; // ~0.00007937 USD/UZS @ 8 decimals
-const MAX_AGE_PRICE = 900n;
+// Per-feed staleness windows, deliberately DIFFERENT so a mutant that swaps
+// maxAgeXau <-> maxAgeUzs (or points a feed at the wrong window) is caught.
+const MAX_AGE_XAU = 900n; // short: XAU is relayed frequently
+const MAX_AGE_UZS = 259200n; // 3 days: CBU posts ~daily (survives weekend gaps)
 const MAX_AGE_RESERVE = 3600n;
 const RESERVE_GRAMS = 1000000000n; // 1e9 grams — far above anything minted here
 
@@ -60,7 +63,8 @@ describe("Exchange", function () {
       await uzd.getAddress(),
       await xau.getAddress(),
       await uzs.getAddress(),
-      MAX_AGE_PRICE,
+      MAX_AGE_XAU,
+      MAX_AGE_UZS,
     );
     await exchange.waitForDeployment();
 
@@ -104,7 +108,8 @@ describe("Exchange", function () {
       await mal.getAddress(),
       await xau.getAddress(),
       await uzs.getAddress(),
-      MAX_AGE_PRICE,
+      MAX_AGE_XAU,
+      MAX_AGE_UZS,
     );
 
     const MINTER = await oltin.MINTER_ROLE();
@@ -114,6 +119,51 @@ describe("Exchange", function () {
 
     return { exchange, oltin, mal, admin, user1 };
   }
+
+  describe("constructor zero-address guards", function () {
+    // Every address arg must be non-zero, with the pinned reason "Zero address".
+    async function validArgs() {
+      const { oltin, uzd, xau, uzs } = await deploy();
+      return {
+        oltin: await oltin.getAddress(),
+        uzd: await uzd.getAddress(),
+        xau: await xau.getAddress(),
+        uzs: await uzs.getAddress(),
+      };
+    }
+
+    it("reverts when oltin is address(0)", async function () {
+      const a = await validArgs();
+      const Exchange = await ethers.getContractFactory("Exchange");
+      await expect(
+        Exchange.deploy(ZeroAddress, a.uzd, a.xau, a.uzs, MAX_AGE_XAU, MAX_AGE_UZS),
+      ).to.be.revertedWith("Zero address");
+    });
+
+    it("reverts when uzd is address(0)", async function () {
+      const a = await validArgs();
+      const Exchange = await ethers.getContractFactory("Exchange");
+      await expect(
+        Exchange.deploy(a.oltin, ZeroAddress, a.xau, a.uzs, MAX_AGE_XAU, MAX_AGE_UZS),
+      ).to.be.revertedWith("Zero address");
+    });
+
+    it("reverts when xauFeed is address(0)", async function () {
+      const a = await validArgs();
+      const Exchange = await ethers.getContractFactory("Exchange");
+      await expect(
+        Exchange.deploy(a.oltin, a.uzd, ZeroAddress, a.uzs, MAX_AGE_XAU, MAX_AGE_UZS),
+      ).to.be.revertedWith("Zero address");
+    });
+
+    it("reverts when uzsFeed is address(0)", async function () {
+      const a = await validArgs();
+      const Exchange = await ethers.getContractFactory("Exchange");
+      await expect(
+        Exchange.deploy(a.oltin, a.uzd, a.xau, ZeroAddress, MAX_AGE_XAU, MAX_AGE_UZS),
+      ).to.be.revertedWith("Zero address");
+    });
+  });
 
   describe("buy", function () {
     it("mints OLTIN by the formula and routes UZD to the treasury", async function () {
@@ -136,10 +186,10 @@ describe("Exchange", function () {
     });
 
     it("reverts when the XAU feed is stale", async function () {
-      const { exchange, uzd, xau, uzs, user1 } = await deploy();
+      const { exchange, uzd, uzs, user1 } = await deploy();
       const uzdIn = parseUnits("1000000", 18);
       await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
-      await time.increase(Number(MAX_AGE_PRICE) + 1);
+      await time.increase(Number(MAX_AGE_XAU) + 1);
       await uzs.postAnswer(UZS_ANS); // keep UZS fresh, XAU stays stale
       await expect(
         exchange.connect(user1).buy(uzdIn, 1n),
@@ -147,10 +197,12 @@ describe("Exchange", function () {
     });
 
     it("reverts when the UZS feed is stale", async function () {
-      const { exchange, uzd, xau, uzs, user1 } = await deploy();
+      const { exchange, uzd, xau, user1 } = await deploy();
       const uzdIn = parseUnits("1000000", 18);
       await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
-      await time.increase(Number(MAX_AGE_PRICE) + 1);
+      // Advance past the (much larger) UZS window; re-post XAU so ONLY UZS is
+      // stale — proving buy checks the UZS feed against maxAgeUzs, not maxAgeXau.
+      await time.increase(Number(MAX_AGE_UZS) + 1);
       await xau.postAnswer(XAU_ANS); // keep XAU fresh, UZS stays stale
       await expect(
         exchange.connect(user1).buy(uzdIn, 1n),
@@ -340,6 +392,96 @@ describe("Exchange", function () {
       await expect(
         exchange.connect(user1).sell(oltinIn, 0n),
       ).to.be.revertedWithCustomError(exchange, "ReentrancyGuardReentrantCall");
+    });
+  });
+
+  describe("price staleness boundary (two-sided)", function () {
+    // Kills a `<=` -> `<` mutant on each feed's staleness guard: age EXACTLY ==
+    // maxAge must PASS, age == maxAge + 1 must REVERT. setNextBlockTimestamp
+    // pins the exact age at the buy block.
+    it("XAU: age == maxAgeXau passes", async function () {
+      const { exchange, uzd, xau, user1 } = await deploy();
+      const uzdIn = parseUnits("1000000", 18);
+      await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
+      await xau.postAnswer(XAU_ANS);
+      const xauUpd = BigInt(await time.latest());
+      await time.setNextBlockTimestamp(Number(xauUpd + MAX_AGE_XAU));
+      await expect(exchange.connect(user1).buy(uzdIn, 1n)).to.emit(
+        exchange,
+        "Bought",
+      );
+    });
+
+    it("XAU: age == maxAgeXau + 1 reverts (price stale)", async function () {
+      const { exchange, uzd, xau, user1 } = await deploy();
+      const uzdIn = parseUnits("1000000", 18);
+      await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
+      await xau.postAnswer(XAU_ANS);
+      const xauUpd = BigInt(await time.latest());
+      await time.setNextBlockTimestamp(Number(xauUpd + MAX_AGE_XAU + 1n));
+      await expect(
+        exchange.connect(user1).buy(uzdIn, 1n),
+      ).to.be.revertedWith("price stale");
+    });
+
+    it("UZS: age == maxAgeUzs passes", async function () {
+      const { exchange, uzd, reserve, xau, uzs, user1 } = await deploy();
+      const uzdIn = parseUnits("1000000", 18);
+      await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
+      await uzs.postAnswer(UZS_ANS);
+      const uzsUpd = BigInt(await time.latest());
+      // maxAgeUzs (3 days) is well past the reserve/XAU windows, so re-post both
+      // just before the buy — ONLY the UZS age sits at its boundary.
+      await time.setNextBlockTimestamp(Number(uzsUpd + MAX_AGE_UZS - 2n));
+      await reserve.postAnswer(RESERVE_GRAMS);
+      await time.setNextBlockTimestamp(Number(uzsUpd + MAX_AGE_UZS - 1n));
+      await xau.postAnswer(XAU_ANS);
+      await time.setNextBlockTimestamp(Number(uzsUpd + MAX_AGE_UZS));
+      await expect(exchange.connect(user1).buy(uzdIn, 1n)).to.emit(
+        exchange,
+        "Bought",
+      );
+    });
+
+    it("UZS: age == maxAgeUzs + 1 reverts (price stale)", async function () {
+      const { exchange, uzd, xau, uzs, user1 } = await deploy();
+      const uzdIn = parseUnits("1000000", 18);
+      await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
+      await uzs.postAnswer(UZS_ANS);
+      const uzsUpd = BigInt(await time.latest());
+      // Re-post XAU fresh right before the buy so the revert is due to UZS only.
+      await time.setNextBlockTimestamp(Number(uzsUpd + MAX_AGE_UZS));
+      await xau.postAnswer(XAU_ANS);
+      await time.setNextBlockTimestamp(Number(uzsUpd + MAX_AGE_UZS + 1n));
+      await expect(
+        exchange.connect(user1).buy(uzdIn, 1n),
+      ).to.be.revertedWith("price stale");
+    });
+  });
+
+  describe("respects the OLTIN pause (cross-contract)", function () {
+    it("buy reverts when OLTIN is paused (mint blocked)", async function () {
+      const { exchange, oltin, uzd, admin, user1 } = await deploy();
+      const uzdIn = parseUnits("1000000", 18);
+      await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
+      await oltin.connect(admin).pause();
+      await expect(
+        exchange.connect(user1).buy(uzdIn, 1n),
+      ).to.be.revertedWithCustomError(oltin, "EnforcedPause");
+    });
+
+    it("sell reverts when OLTIN is paused (burnFrom blocked)", async function () {
+      // Buy first (unpaused) so user holds OLTIN and the treasury holds UZD.
+      const { exchange, oltin, uzd, admin, user1 } = await deploy();
+      const uzdIn = parseUnits("2000000", 18);
+      await uzd.connect(user1).approve(await exchange.getAddress(), uzdIn);
+      await exchange.connect(user1).buy(uzdIn, 1n);
+      const oltinIn = await oltin.balanceOf(user1.address);
+      await oltin.connect(user1).approve(await exchange.getAddress(), oltinIn);
+      await oltin.connect(admin).pause();
+      await expect(
+        exchange.connect(user1).sell(oltinIn, 1n),
+      ).to.be.revertedWithCustomError(oltin, "EnforcedPause");
     });
   });
 

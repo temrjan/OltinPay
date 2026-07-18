@@ -47,9 +47,11 @@ describe("OltinTokenV3", function () {
       expect(await token.totalSupply()).to.equal(0n);
     });
 
-    it("caches reserveDecimals and maxAgeReserve", async function () {
+    it("caches reserveDecimals, reserveScale and maxAgeReserve", async function () {
       const { token, reserve } = await deploy();
       expect(await token.reserveDecimals()).to.equal(0);
+      // reserveScale = 10**(18 - decimals); decimals 0 -> 1e18.
+      expect(await token.reserveScale()).to.equal(E18);
       expect(await token.maxAgeReserve()).to.equal(MAX_AGE_RESERVE);
       expect(await token.reserveFeed()).to.equal(await reserve.getAddress());
     });
@@ -87,6 +89,23 @@ describe("OltinTokenV3", function () {
   });
 
   describe("constructor PoR validation", function () {
+    it("constructs when the reserve feed reports decimals == 18 (boundary passes)", async function () {
+      // Two-sided with the >18 case below: kills a `<= 18` -> `< 18` mutant that
+      // would reject the exactly-18 boundary.
+      const [admin] = await ethers.getSigners();
+      const Mock = await ethers.getContractFactory("MockAttestor");
+      const ok = await Mock.deploy(18, 1000n, await time.latest());
+      const Token = await ethers.getContractFactory("OltinTokenV3");
+      const token = await Token.deploy(
+        await ok.getAddress(),
+        MAX_AGE_RESERVE,
+        admin.address,
+      );
+      await token.waitForDeployment();
+      expect(await token.reserveDecimals()).to.equal(18);
+      expect(await token.reserveScale()).to.equal(1n); // 10**(18-18)
+    });
+
     it("reverts when the reserve feed reports decimals > 18", async function () {
       const [admin] = await ethers.getSigners();
       const Mock = await ethers.getContractFactory("MockAttestor");
@@ -141,6 +160,29 @@ describe("OltinTokenV3", function () {
       const { token, reserve, minter, user1 } = await deploy();
       await reserve.postAnswer(1000n);
       await time.increase(Number(MAX_AGE_RESERVE) + 1);
+      await expect(
+        token.connect(minter).mint(user1.address, 1n),
+      ).to.be.revertedWith("reserve stale");
+    });
+
+    it("mints at exactly maxAgeReserve (staleness == boundary passes)", async function () {
+      // Two-sided with the +1 case below: kills a `<= maxAge` -> `< maxAge`
+      // mutant that would reject the exactly-maxAge boundary.
+      const { token, reserve, minter, user1 } = await deploy();
+      await reserve.postAnswer(1000n);
+      const upd = BigInt(await time.latest());
+      await time.setNextBlockTimestamp(Number(upd + MAX_AGE_RESERVE));
+      await expect(token.connect(minter).mint(user1.address, 1n)).to.emit(
+        token,
+        "Minted",
+      );
+    });
+
+    it("reverts one second past maxAgeReserve (staleness == boundary + 1)", async function () {
+      const { token, reserve, minter, user1 } = await deploy();
+      await reserve.postAnswer(1000n);
+      const upd = BigInt(await time.latest());
+      await time.setNextBlockTimestamp(Number(upd + MAX_AGE_RESERVE + 1n));
       await expect(
         token.connect(minter).mint(user1.address, 1n),
       ).to.be.revertedWith("reserve stale");

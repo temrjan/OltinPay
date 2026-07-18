@@ -4,7 +4,7 @@
  *   - 3x Attestor:  ReserveAttestor (decimals 0), XauUsdFeed (decimals 8),
  *                   UzsUsdFeed (decimals 8)
  *   - OltinTokenV3(reserveFeed = ReserveAttestor, maxAgeReserve, feeCollector)
- *   - Exchange(oltin, uzd, xauFeed, uzsFeed, maxAgePrice)
+ *   - Exchange(oltin, uzd, xauFeed, uzsFeed, maxAgeXau, maxAgeUzs)
  *
  * Post-deploy wiring:
  *   - grants OLTIN MINTER_ROLE to the Exchange (the Exchange is the SOLE minter)
@@ -21,9 +21,13 @@
  * Required env (contracts/.env):
  *   PRIVATE_KEY   deployer/admin (with 0x prefix)
  *   UZD_ADDRESS   existing UZD stablecoin on zkSync Sepolia
- * Optional env:
- *   MAX_AGE_RESERVE  reserve staleness window, seconds (default 3600)
- *   MAX_AGE_PRICE    price staleness window, seconds  (default 900)
+ * Optional env (all staleness windows are DEMO values — set explicitly for prod):
+ *   MAX_AGE_RESERVE  reserve staleness window, seconds (default 3600 = 1h)
+ *   MAX_AGE_XAU      XAU/USD staleness window, seconds (default 3600 = 1h;
+ *                    the XAU keeper relays frequently)
+ *   MAX_AGE_UZS      UZS/USD staleness window, seconds (default 259200 = 3 days;
+ *                    the CBU posts ~daily, so this must survive weekend/holiday
+ *                    gaps or buy/sell would revert almost all day)
  *   FEE_COLLECTOR    dormant fee sink (default = deployer)
  *   KEY_RESERVE / KEY_XAU / KEY_UZS   keeper private keys -> granted POSTER_ROLE
  */
@@ -51,8 +55,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     throw new Error("Set UZD_ADDRESS in contracts/.env (existing UZD on zkSync Sepolia)");
   }
 
+  // DEMO staleness windows (see header). Per-feed for prices: XAU refreshes
+  // often (short window); UZS is CBU-daily (long window, survives weekend gaps).
   const maxAgeReserve = BigInt(process.env.MAX_AGE_RESERVE ?? "3600"); // demo: 1h
-  const maxAgePrice = BigInt(process.env.MAX_AGE_PRICE ?? "900"); // demo: 15m
+  const maxAgeXau = BigInt(process.env.MAX_AGE_XAU ?? "3600"); // demo: 1h
+  const maxAgeUzs = BigInt(process.env.MAX_AGE_UZS ?? "259200"); // demo: 3 days
 
   const provider = new Provider(RPC_URL);
   const wallet = new Wallet(pk, provider);
@@ -62,7 +69,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("=== Deploying OltinChain V3 (Proof-of-Reserve) ===");
   console.log(`Deployer:      ${wallet.address}`);
   console.log(`UZD:           ${uzdAddress}`);
-  console.log(`maxAgeReserve: ${maxAgeReserve}s   maxAgePrice: ${maxAgePrice}s`);
+  console.log(
+    `maxAgeReserve: ${maxAgeReserve}s   maxAgeXau: ${maxAgeXau}s   maxAgeUzs: ${maxAgeUzs}s`,
+  );
 
   // --- 3x Attestor (one code, three instances) ---
   const attestorArtifact = await deployer.loadArtifact("Attestor");
@@ -96,7 +105,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     uzdAddress,
     xauAddr,
     uzsAddr,
-    maxAgePrice,
+    maxAgeXau,
+    maxAgeUzs,
   ]);
   const exchangeAddr = await exchange.getAddress();
   console.log(`Exchange (treasury):     ${exchangeAddr}`);
@@ -134,7 +144,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     ["Attestor(XAU)", xauAddr, [8]],
     ["Attestor(UZS)", uzsAddr, [8]],
     ["OltinTokenV3", oltinAddr, [reserveAddr, maxAgeReserve, feeCollector]],
-    ["Exchange", exchangeAddr, [oltinAddr, uzdAddress, xauAddr, uzsAddr, maxAgePrice]],
+    [
+      "Exchange",
+      exchangeAddr,
+      [oltinAddr, uzdAddress, xauAddr, uzsAddr, maxAgeXau, maxAgeUzs],
+    ],
   ];
   for (const [name, address, constructorArguments] of toVerify) {
     try {

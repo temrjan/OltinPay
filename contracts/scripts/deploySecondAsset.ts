@@ -19,6 +19,11 @@
  *   SECOND_MAX_AGE_RESERVE   reserve staleness window, seconds (default 86400)
  *   FEE_COLLECTOR            dormant fee sink (default = deployer)
  *   KEY_RESERVE_2            keeper private key -> granted POSTER_ROLE
+ *   SECOND_MINTER            address granted MINTER_ROLE on the second token so
+ *                            it is actually mintable (default = deployer). We do
+ *                            NOT deploy a gold-priced Exchange for a non-gold
+ *                            asset; granting MINTER to an explicit minter is the
+ *                            one-code way to make the second token live.
  */
 
 import { Wallet, Provider } from "zksync-ethers";
@@ -62,6 +67,19 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const tokenAddr = await token.getAddress();
   console.log(`${label} OltinTokenV3:            ${tokenAddr}`);
 
+  // Make the second token actually mintable. OltinTokenV3 grants NO MINTER_ROLE
+  // in its constructor, so without this grant the token is inert (mint always
+  // reverts with AccessControl) and the "gold is only the example" proof fails.
+  // We reuse the SAME OltinTokenV3 code (no factory); the PoR mint guard applies
+  // to this asset exactly as it does to OLTIN. For a non-gold asset a gold-priced
+  // Exchange makes no sense, so we grant MINTER_ROLE to an explicit minter EOA
+  // (default = deployer) rather than deploying a second Exchange.
+  const MINTER_ROLE = await token.MINTER_ROLE();
+  const minter = process.env.SECOND_MINTER ?? wallet.address;
+  const grantMinter = await token.grantRole(MINTER_ROLE, minter);
+  await grantMinter.wait();
+  console.log(`Granted ${label} OltinTokenV3 MINTER_ROLE -> ${minter}`);
+
   // Optional: grant POSTER to a dedicated keeper.
   const keeperKey = process.env.KEY_RESERVE_2;
   if (keeperKey) {
@@ -89,4 +107,10 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("\n=== Done — one code, two assets (no factory) ===");
   console.log(`SECOND_RESERVE_ATTESTOR_ADDRESS=${reserveAddr}`);
   console.log(`SECOND_ASSET_TOKEN_ADDRESS=${tokenAddr}`);
+  console.log(`SECOND_ASSET_MINTER=${minter}`);
+  console.log("\nNext (prove it mints):");
+  console.log(`1. Post a reserve:  ReserveAttestor(${reserveAddr}).postAnswer(<units>)`);
+  console.log(
+    `2. Mint from the minter (${minter}):  ${label}Token.mint(<to>, <amount <= reserve>)`,
+  );
 }

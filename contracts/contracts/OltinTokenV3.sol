@@ -33,6 +33,10 @@ contract OltinTokenV3 is ERC20, ERC20Burnable, AccessControl, Pausable {
     AggregatorV3Interface public immutable reserveFeed;
     /// @notice Cached decimals of {reserveFeed}, validated <= 18 at construction.
     uint8 public immutable reserveDecimals;
+    /// @notice Cached 10**(18 - reserveDecimals), computed once at construction
+    ///         so {mint} scales the reserve without recomputing the exponent on
+    ///         every call. Behavior is identical to `10 ** (18 - reserveDecimals)`.
+    uint256 public immutable reserveScale;
     /// @notice Max age (seconds) a reserve reading may have before it is stale.
     uint256 public immutable maxAgeReserve;
 
@@ -60,6 +64,8 @@ contract OltinTokenV3 is ERC20, ERC20Burnable, AccessControl, Pausable {
 
         reserveFeed = AggregatorV3Interface(_reserveFeed);
         reserveDecimals = d;
+        // Precompute the 18-decimal scaling factor once (d <= 18, so no underflow).
+        reserveScale = 10 ** (18 - d);
         maxAgeReserve = _maxAgeReserve;
         feeCollector = _feeCollector;
 
@@ -90,9 +96,10 @@ contract OltinTokenV3 is ERC20, ERC20Burnable, AccessControl, Pausable {
             upd <= block.timestamp && block.timestamp - upd <= maxAgeReserve,
             "reserve stale"
         );
-        // Scale the reserve up to 18 decimals (1 OLTIN wei == 1e-18 gram).
+        // Scale the reserve up to 18 decimals (1 OLTIN wei == 1e-18 gram) using
+        // the cached {reserveScale} instead of recomputing the exponent.
         require(
-            totalSupply() + amount <= uint256(r) * 10 ** (18 - reserveDecimals),
+            totalSupply() + amount <= uint256(r) * reserveScale,
             "exceeds reserve"
         );
 

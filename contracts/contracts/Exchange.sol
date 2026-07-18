@@ -28,11 +28,21 @@ interface IOltin is IERC20 {
  *        - Strict checks-effects-interactions: all validation (fresh prices,
  *          slippage, treasury balance) happens BEFORE any token movement.
  *        - Both price feeds are staleness-guarded (positive, not stale, not
- *          future-dated) via {_freshPrice}.
+ *          future-dated) via {_freshPrice}, each against its OWN max-age
+ *          ({maxAgeXau} / {maxAgeUzs}) because the feeds refresh at very
+ *          different cadences (XAU relayed frequently; UZS posted ~daily).
  *        - All fixed-point math via OpenZeppelin {Math-mulDiv} (512-bit
  *          intermediate, floored). Rounding always favors the protocol.
  *        - Burns are allowance-gated ({IOltin-burnFrom} of msg.sender only),
  *          preserving the non-custodial invariant.
+ *
+ *      DEPLOY / TESTNET LIMITATION (accepted, see PR-1 spec §5): the price/reserve
+ *      feeds are set once as {immutable} at construction and there is NO admin
+ *      rescue/migration function on this Exchange (no way to re-point a feed or
+ *      sweep the treasury). This is a deliberate, accepted limitation for the
+ *      testnet demo — it keeps the trust surface minimal and non-custodial. A
+ *      timelock-gated rescue/feed-migration path is DEFERRED to PR-4 and is
+ *      intentionally NOT added here.
  */
 contract Exchange is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -41,8 +51,13 @@ contract Exchange is ReentrancyGuard {
     IERC20 public immutable uzd;
     AggregatorV3Interface public immutable xauFeed; // XAU/USD, 8 decimals
     AggregatorV3Interface public immutable uzsFeed; // UZS/USD, 8 decimals
-    /// @notice Max age (seconds) a price reading may have before it is stale.
-    uint256 public immutable maxAgePrice;
+    /// @notice Max age (seconds) an XAU/USD reading may have before it is stale.
+    ///         XAU is relayed frequently, so this window is short.
+    uint256 public immutable maxAgeXau;
+    /// @notice Max age (seconds) a UZS/USD reading may have before it is stale.
+    ///         The CBU posts ~daily, so this window is much larger (it must
+    ///         survive weekend/holiday gaps or buy/sell would revert all day).
+    uint256 public immutable maxAgeUzs;
 
     /// @notice Grams per troy ounce, scaled by 1e8 (31.1034768 g * 1e8).
     uint256 public constant GRAMS_PER_OZ_1E8 = 3110347680;
@@ -67,7 +82,8 @@ contract Exchange is ReentrancyGuard {
         address _uzd,
         address _xauFeed,
         address _uzsFeed,
-        uint256 _maxAgePrice
+        uint256 _maxAgeXau,
+        uint256 _maxAgeUzs
     ) {
         require(
             _oltin != address(0) &&
@@ -80,7 +96,8 @@ contract Exchange is ReentrancyGuard {
         uzd = IERC20(_uzd);
         xauFeed = AggregatorV3Interface(_xauFeed);
         uzsFeed = AggregatorV3Interface(_uzsFeed);
-        maxAgePrice = _maxAgePrice;
+        maxAgeXau = _maxAgeXau;
+        maxAgeUzs = _maxAgeUzs;
     }
 
     /// @notice The UZD treasury address (this contract).
@@ -105,8 +122,8 @@ contract Exchange is ReentrancyGuard {
         returns (uint256 oltinOutWei)
     {
         require(uzdInWei > 0, "Zero amount");
-        uint256 xauAns = _freshPrice(xauFeed);
-        uint256 uzsAns = _freshPrice(uzsFeed);
+        uint256 xauAns = _freshPrice(xauFeed, maxAgeXau);
+        uint256 uzsAns = _freshPrice(uzsFeed, maxAgeUzs);
 
         // oltinOutWei = uzdInWei * uzsAns * GRAMS_PER_OZ_1E8 / (1e8 * xauAns)
         // Group the two SMALL factors (uzsAns * GRAMS_PER_OZ_1E8) so the large
@@ -142,8 +159,8 @@ contract Exchange is ReentrancyGuard {
         returns (uint256 uzdOutWei)
     {
         require(oltinInWei > 0, "Zero amount");
-        uint256 xauAns = _freshPrice(xauFeed);
-        uint256 uzsAns = _freshPrice(uzsFeed);
+        uint256 xauAns = _freshPrice(xauFeed, maxAgeXau);
+        uint256 uzsAns = _freshPrice(uzsFeed, maxAgeUzs);
 
         // uzdOutWei = oltinInWei * xauAns * 1e8 / (GRAMS_PER_OZ_1E8 * uzsAns)
         // Group (xauAns * 1e8) so the large product (oltinInWei * ...) uses the
@@ -166,9 +183,11 @@ contract Exchange is ReentrancyGuard {
     }
 
     /// @dev Returns the positive answer or reverts if non-positive / stale /
-    ///      future-dated. `upd <= block.timestamp` is checked before the
-    ///      subtraction to avoid an underflow on a future-dated reading.
-    function _freshPrice(AggregatorV3Interface feed)
+    ///      future-dated. Each feed is checked against its OWN `maxAge`
+    ///      ({maxAgeXau} for XAU, {maxAgeUzs} for UZS). `upd <= block.timestamp`
+    ///      is checked before the subtraction to avoid an underflow on a
+    ///      future-dated reading.
+    function _freshPrice(AggregatorV3Interface feed, uint256 maxAge)
         internal
         view
         returns (uint256)
@@ -177,7 +196,7 @@ contract Exchange is ReentrancyGuard {
         require(
             answer > 0 &&
                 upd <= block.timestamp &&
-                block.timestamp - upd <= maxAgePrice,
+                block.timestamp - upd <= maxAge,
             "price stale"
         );
         return uint256(answer);

@@ -13,6 +13,12 @@
  * Optional env:
  *   CBU_API_URL            default https://cbu.uz/ru/arkhiv-kursov-valyut/json/
  *   ZKSYNC_RPC_URL         default https://sepolia.era.zksync.dev
+ *   MAX_JUMP_BPS           max deviation vs the current on-chain answer before
+ *                          we refuse to post, in basis points (default 1000 =
+ *                          10%) — a guard against posting a wild/garbage rate
+ *   MIN_DELTA              skip posting when |new - on-chain| <= this (in feed
+ *                          units, 8 decimals) to avoid empty/no-op L2 txs
+ *                          (default 0 = skip only when identical)
  */
 
 import { Wallet, Provider, Contract } from "zksync-ethers";
@@ -20,6 +26,7 @@ import { Wallet, Provider, Contract } from "zksync-ethers";
 const ATTESTOR_ABI = [
   "function postAnswer(int256 answer)",
   "function decimals() view returns (uint8)",
+  "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
 ];
 
 // UZS/USD is quoted at 8 decimals: answer = round( 1e8 / (UZS per USD) ).
@@ -50,6 +57,8 @@ async function main() {
   const apiUrl =
     process.env.CBU_API_URL ?? "https://cbu.uz/ru/arkhiv-kursov-valyut/json/";
   const zkRpc = process.env.ZKSYNC_RPC_URL ?? "https://sepolia.era.zksync.dev";
+  const maxJumpBps = BigInt(process.env.MAX_JUMP_BPS ?? "1000"); // 10%
+  const minDelta = BigInt(process.env.MIN_DELTA ?? "0"); // skip if |Δ| <= this
 
   console.log("=== UZS/USD keeper ===");
 
@@ -71,6 +80,31 @@ async function main() {
     throw new Error(
       `Decimals mismatch: expected ${PRICE_DECIMALS}, attestor reports ${attDecimals}`,
     );
+  }
+
+  // 3. Compare against the current on-chain answer before spending a tx.
+  const current = BigInt((await attestor.latestRoundData())[1]);
+  if (current > 0n) {
+    const delta = answer > current ? answer - current : current - answer;
+    // F9/F10: skip an unchanged reading (within epsilon) — avoids an empty L2 tx.
+    if (delta <= minDelta) {
+      console.log(
+        `On-chain answer unchanged (current=${current}, new=${answer}, |Δ|=${delta} <= ε=${minDelta}). Skipping post.`,
+      );
+      return;
+    }
+    // F12/F14: refuse to post a wild deviation instead of posting a bad rate.
+    const jumpBps = (delta * 10000n) / current;
+    if (jumpBps > maxJumpBps) {
+      console.log(
+        `SKIP: deviation ${jumpBps}bps exceeds MAX_JUMP_BPS=${maxJumpBps} ` +
+          `(current=${current}, new=${answer}). Refusing to post a wild value.`,
+      );
+      return;
+    }
+    console.log(`Deviation OK: ${jumpBps}bps (<= ${maxJumpBps}bps).`);
+  } else {
+    console.log("No prior on-chain answer (first post) — deviation guard skipped.");
   }
 
   console.log(`Posting answer=${answer} to UzsUsdFeed ${attestorAddress} as ${wallet.address}`);

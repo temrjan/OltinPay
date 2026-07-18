@@ -17,6 +17,12 @@
  *   ZKSYNC_RPC_URL         default https://sepolia.era.zksync.dev
  *   MAX_SOURCE_AGE         max age (s) of the mainnet reading before we refuse
  *                          to relay (default 3600)
+ *   MAX_JUMP_BPS           max deviation vs the current on-chain answer before
+ *                          we refuse to post, in basis points (default 1000 =
+ *                          10%) — a guard against relaying a wild/garbage value
+ *   MIN_DELTA              skip posting when |new - on-chain| <= this (in feed
+ *                          units, 8 decimals) to avoid empty/no-op L2 txs
+ *                          (default 0 = skip only when identical)
  */
 
 import { JsonRpcProvider, Contract as EthersContract } from "ethers";
@@ -30,6 +36,7 @@ const AGGREGATOR_ABI = [
 const ATTESTOR_ABI = [
   "function postAnswer(int256 answer)",
   "function decimals() view returns (uint8)",
+  "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
 ];
 
 function requireEnv(name: string): string {
@@ -45,6 +52,8 @@ async function main() {
   const keyXau = requireEnv("KEY_XAU");
   const zkRpc = process.env.ZKSYNC_RPC_URL ?? "https://sepolia.era.zksync.dev";
   const maxSourceAge = BigInt(process.env.MAX_SOURCE_AGE ?? "3600");
+  const maxJumpBps = BigInt(process.env.MAX_JUMP_BPS ?? "1000"); // 10%
+  const minDelta = BigInt(process.env.MIN_DELTA ?? "0"); // skip if |Δ| <= this
 
   console.log("=== XAU/USD keeper ===");
 
@@ -78,6 +87,32 @@ async function main() {
     throw new Error(
       `Decimals mismatch: source ${feedDecimals} vs attestor ${attDecimals}`,
     );
+  }
+
+  // 4. Compare against the current on-chain answer before spending a tx.
+  const current = BigInt((await attestor.latestRoundData())[1]);
+  const next = BigInt(answer);
+  if (current > 0n) {
+    const delta = next > current ? next - current : current - next;
+    // F9/F10: skip an unchanged reading (within epsilon) — avoids an empty L2 tx.
+    if (delta <= minDelta) {
+      console.log(
+        `On-chain answer unchanged (current=${current}, new=${next}, |Δ|=${delta} <= ε=${minDelta}). Skipping post.`,
+      );
+      return;
+    }
+    // F12/F14: refuse to relay a wild deviation instead of posting a bad price.
+    const jumpBps = (delta * 10000n) / current;
+    if (jumpBps > maxJumpBps) {
+      console.log(
+        `SKIP: deviation ${jumpBps}bps exceeds MAX_JUMP_BPS=${maxJumpBps} ` +
+          `(current=${current}, new=${next}). Refusing to relay a wild value.`,
+      );
+      return;
+    }
+    console.log(`Deviation OK: ${jumpBps}bps (<= ${maxJumpBps}bps).`);
+  } else {
+    console.log("No prior on-chain answer (first post) — deviation guard skipped.");
   }
 
   console.log(`Posting answer=${answer} to XauUsdFeed ${attestorAddress} as ${wallet.address}`);
