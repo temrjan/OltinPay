@@ -1,17 +1,23 @@
 name: Deploy to 7demo
 
+# Manual-only for now (2026-07-18). Auto-deploy on push is disabled because:
+#   1. DEPLOY_* secrets were never configured — every push-triggered run
+#      failed at `ssh-keyscan -H ""` since April.
+#   2. The live demo stack actually runs from /opt/oltinchain (hand-assembled,
+#      not a git clone), whose containers already own the names oltinpay-api
+#      and oltinpay-webapp. A deploy into /opt/oltinpay as written below would
+#      collide with them and could take the live vitrina down.
+# Re-enable the push trigger only after the server is migrated to the
+# git-driven /opt/oltinpay stack and the secrets are set in the
+# `production` environment.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - '.gitignore'
   workflow_dispatch: {}
 
 concurrency:
   group: deploy-main
   cancel-in-progress: false
+
+permissions: {}
 
 jobs:
   deploy:
