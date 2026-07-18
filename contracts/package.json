@@ -9,7 +9,6 @@
     "deploy:v3": "hardhat deploy-zksync --network zkSyncSepolia --script deployV3.ts",
     "deploy:second": "hardhat deploy-zksync --network zkSyncSepolia --script deploySecondAsset.ts",
     "keeper:xau": "hardhat run scripts/keeper-xau.ts --network zkSyncSepolia",
-    "keeper:uzs": "hardhat run scripts/keeper-uzs.ts --network zkSyncSepolia",
     "fund:rewards": "hardhat run scripts/fundRewardPool.ts --network zkSyncSepolia",
     "verify": "hardhat verify --network zkSyncSepolia"
   },

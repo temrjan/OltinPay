@@ -9,16 +9,20 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+
+# Import all models so they register on Base.metadata. NOTE: src.exchange and
+# src.staking have NO models module on disk — importing them broke every alembic
+# command (ModuleNotFoundError). They are intentionally absent here.
 from src.balances.models import Balance  # noqa: F401
+from src.bank.models import BankDeposit, ReserveAttestation  # noqa: F401
 from src.config import settings
 from src.contacts.models import FavoriteContact  # noqa: F401
 from src.database import Base
-from src.exchange.models import Order, Trade  # noqa: F401
-from src.staking.models import StakingDeposit, StakingReward  # noqa: F401
+from src.indexer.models import ChainEvent  # noqa: F401
 from src.transfers.models import Transfer  # noqa: F401
-
-# Import all models to register them with Base
 from src.users.models import User  # noqa: F401
+from src.welcome.models import WelcomeClaim  # noqa: F401
+from src.withdrawals.models import Withdrawal  # noqa: F401
 
 config = context.config
 

@@ -12,21 +12,31 @@ from scalar_fastapi import get_scalar_api_reference
 from src.auth.router import router as auth_router
 from src.aylin.router import router as aylin_router
 from src.balances.router import router as balances_router
+from src.bank.router import router as bank_router
 from src.config import settings
 from src.contacts.router import router as contacts_router
 from src.database import engine
+from src.deposits.router import router as deposits_router
+from src.indexer.poller import indexer
+from src.indexer.router import router as transactions_router
+from src.por.router import router as por_router
 from src.staking.router import router as staking_router
 from src.transfers.router import router as transfers_router
 from src.users.router import router as users_router
 from src.welcome.router import router as welcome_router
+from src.withdrawals.router import router as withdrawals_router
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan events."""
-    # Startup
+    # Startup — kick off the chain indexer poller (single writer per process).
+    if settings.indexer_enabled:
+        await indexer.start()
     yield
-    # Shutdown
+    # Shutdown — stop the poller before disposing the engine.
+    if settings.indexer_enabled:
+        await indexer.stop()
     await engine.dispose()
 
 
@@ -64,6 +74,18 @@ def create_app() -> FastAPI:
     app.include_router(welcome_router, prefix=f"{prefix}/welcome", tags=["welcome"])
     app.include_router(contacts_router, prefix=f"{prefix}/contacts", tags=["contacts"])
     app.include_router(aylin_router, prefix=f"{prefix}/aylin", tags=["aylin"])
+
+    # PR-2 — bank connector, PoR/rates/quote, user deposits/withdrawals, tx feed.
+    app.include_router(bank_router, prefix=f"{prefix}/bank", tags=["bank"])
+    app.include_router(
+        withdrawals_router, prefix=f"{prefix}/withdrawals", tags=["withdrawals"]
+    )
+    app.include_router(deposits_router, prefix=f"{prefix}/deposits", tags=["deposits"])
+    app.include_router(
+        transactions_router, prefix=f"{prefix}/transactions", tags=["transactions"]
+    )
+    # PoR / rates / quote live at the API root (/por, /por/history, /rates, /quote).
+    app.include_router(por_router, prefix=prefix, tags=["public"])
 
     return app
 

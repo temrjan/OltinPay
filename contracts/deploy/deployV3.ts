@@ -168,7 +168,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(`EXCHANGE_ADDRESS=${exchangeAddr}`);
   console.log("\nNext:");
   console.log("1. Post an initial reserve:  ReserveAttestor.postAnswer(<grams>)");
-  console.log("2. Start keepers:            npm run keeper:xau ; npm run keeper:uzs");
+  console.log("2. Start the XAU keeper:      npm run keeper:xau");
+  console.log("   (UZS is posted by the API via POST /api/v1/bank/fx — keeper-uzs retired)");
   console.log(
     `3. Seed the treasury for sell demos: transfer UZD to the Exchange (${exchangeAddr}).`,
   );

@@ -1,7 +1,7 @@
 """Integration tests for /api/v1/welcome endpoints.
 
-send_admin_mint is patched so the tests never touch the real RPC and
-never require ADMIN_PRIVATE_KEY to be configured.
+The SignerPool send helper (send_via) is patched so the tests never touch the
+real RPC and never require a role key to be configured.
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ async def test_claim_success(
     client: AsyncClient, wallet_user: dict[str, Any]
 ) -> None:
     with patch(
-        "src.welcome.service.send_admin_mint",
+        "src.welcome.service.send_via",
         new=AsyncMock(return_value=FAKE_TX),
     ):
         response = await client.post(CLAIM, headers=wallet_user["headers"])
@@ -100,7 +100,7 @@ async def test_claim_idempotent_conflict(
     client: AsyncClient, wallet_user: dict[str, Any]
 ) -> None:
     with patch(
-        "src.welcome.service.send_admin_mint",
+        "src.welcome.service.send_via",
         new=AsyncMock(return_value=FAKE_TX),
     ):
         first = await client.post(CLAIM, headers=wallet_user["headers"])
@@ -132,7 +132,7 @@ async def test_status_after_claim(
     client: AsyncClient, wallet_user: dict[str, Any]
 ) -> None:
     with patch(
-        "src.welcome.service.send_admin_mint",
+        "src.welcome.service.send_via",
         new=AsyncMock(return_value=FAKE_TX),
     ):
         await client.post(CLAIM, headers=wallet_user["headers"])
