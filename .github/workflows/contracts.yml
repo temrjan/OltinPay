@@ -4,15 +4,19 @@ on:
   push:
     branches: [main]
     paths:
-      - 'contracts/contracts/**'
-      - 'contracts/test/**'
-      - 'contracts/hardhat.config.ts'
-      - 'contracts/package.json'
+      - 'contracts/**'
       - '.github/workflows/contracts.yml'
   pull_request:
     paths:
-      - 'contracts/contracts/**'
-      - 'contracts/test/**'
+      - 'contracts/**'
+      - '.github/workflows/contracts.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -21,9 +25,9 @@ jobs:
       run:
         working-directory: contracts
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -31,10 +35,17 @@ jobs:
 
       - run: npm ci
 
-      # Hardhat EVM compile + tests (UZD + OltinStaking run in the plain EVM VM,
-      # no zksolc needed for the suite).
+      # Plain EVM compile + the FULL test suite (runs in the Hardhat EVM VM).
+      # Never pin an explicit file list here: new test files must gate CI
+      # automatically.
       - name: Compile
         run: npx hardhat compile
 
       - name: Test
-        run: npx hardhat test test/UZD.test.ts test/OltinStaking.test.ts
+        run: npx hardhat test
+
+      # EraVM (zksolc) compile — the path used for the real zkSync Sepolia
+      # deploy, which plain `hardhat compile` does not exercise. Requires no
+      # PRIVATE_KEY (accounts list is empty without it).
+      - name: Compile (zksolc / EraVM)
+        run: npx hardhat compile --network zkSyncSepolia
