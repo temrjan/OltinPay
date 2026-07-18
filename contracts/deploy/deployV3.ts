@@ -57,9 +57,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   // DEMO staleness windows (see header). Per-feed for prices: XAU refreshes
   // often (short window); UZS is CBU-daily (long window, survives weekend gaps).
-  const maxAgeReserve = BigInt(process.env.MAX_AGE_RESERVE ?? "3600"); // demo: 1h
-  const maxAgeXau = BigInt(process.env.MAX_AGE_XAU ?? "3600"); // demo: 1h
-  const maxAgeUzs = BigInt(process.env.MAX_AGE_UZS ?? "259200"); // demo: 3 days
+  // Number (not BigInt) — values are tiny and must stay JSON-serializable for
+  // hardhat-zksync's deployment-saver; ethers coerces number -> uint256 fine.
+  const maxAgeReserve = Number(process.env.MAX_AGE_RESERVE ?? "3600"); // demo: 1h
+  const maxAgeXau = Number(process.env.MAX_AGE_XAU ?? "3600"); // demo: 1h
+  const maxAgeUzs = Number(process.env.MAX_AGE_UZS ?? "259200"); // demo: 3 days
 
   const provider = new Provider(RPC_URL);
   const wallet = new Wallet(pk, provider);
