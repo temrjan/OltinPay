@@ -34,9 +34,27 @@ Copy `.env.example` to `.env` and fill in:
 | --- | --- | --- |
 | `API_URL` | server | Base URL of the OltinChain API (PR-2), e.g. `https://api.example.com/api/v1`. |
 | `BANK_HMAC_SECRET` | server | Shared with the API's `BANK_HMAC_SECRET`; signs bank requests. |
-| `CONSOLE_OPERATOR_PASSWORD` | server | Non-trivial password gating `/bank`. |
+| `CONSOLE_OPERATOR_PASSWORD` | server | Gates `/bank`. **Must be ≥24 random chars** — see Security. |
 
 None are `NEXT_PUBLIC_*` — all stay server-side.
+
+## Security
+
+The `/bank` operator gate is checked server-side on every request but has **no
+rate-limiting or lockout** — anyone who can reach `/api/bank/*` could brute-force
+the password at network speed. On a testnet demo there are no currency values
+behind the gate (Sepolia UZD/OLTIN), so the impact is spam, not loss. The
+accepted mitigation (ratified) is a **high-entropy password**, a deploy
+invariant:
+
+- Set `CONSOLE_OPERATOR_PASSWORD` to **≥24 random characters**
+  (e.g. `openssl rand -base64 24`) — brute-force is then infeasible with no
+  rate-limiter.
+- An in-memory rate-limiter is deliberately NOT built: on serverless (Vercel)
+  it is per-instance and ineffective (same class as the API's single-writer
+  nonce store); a real one needs KV/Redis — over-engineering for a testnet demo.
+- Optional belt-and-suspenders: Vercel deployment protection / edge auth in
+  front of `/bank` (deploy-level, no code).
 
 ## Develop
 
