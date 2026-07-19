@@ -10,7 +10,12 @@ from sqlalchemy.exc import IntegrityError
 
 from src.common.exceptions import BadRequestException, ConflictException
 from src.config import settings
-from src.infrastructure.admin_tx import AdminUnconfigured, send_admin_mint
+from src.infrastructure.signer_pool import (
+    Role,
+    SignerUnconfigured,
+    encode_mint_calldata,
+    send_via,
+)
 from src.welcome.models import WelcomeClaim
 
 if TYPE_CHECKING:
@@ -66,15 +71,17 @@ async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
         await db.rollback()
         raise ConflictException("Welcome bonus already claimed") from exc
 
-    # Step 2 — broadcast. On failure, rollback the reservation so the
-    # user can retry without an orphan row pinning the unique slot.
+    # Step 2 — broadcast via the KEY_BANK_OPS signer (the sole UZD minter, so
+    # the welcome mint shares one serialized nonce stream with bank deposits).
+    # On failure, rollback the reservation so the user can retry without an
+    # orphan row pinning the unique slot.
     try:
-        tx_hash = await send_admin_mint(
-            contract=settings.uzd_contract_address,
-            recipient=wallet,
-            amount_wei=BONUS_AMOUNT_WEI,
+        tx_hash = await send_via(
+            Role.BANK_OPS,
+            settings.uzd_contract_address,
+            encode_mint_calldata(wallet, BONUS_AMOUNT_WEI),
         )
-    except AdminUnconfigured as exc:
+    except SignerUnconfigured as exc:
         await db.rollback()
         raise BadRequestException(str(exc)) from exc
     except Exception:

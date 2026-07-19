@@ -33,6 +33,32 @@ def pad_address(address: str) -> str:
     return address[2:].lower().rjust(64, "0")
 
 
+async def rpc_request(
+    method: str, params: list[Any], *, client: httpx.AsyncClient | None = None
+) -> Any:
+    """Execute an arbitrary JSON-RPC ``method`` and return its raw ``result``.
+
+    Used for calls beyond ``eth_call`` (e.g. ``eth_getLogs``, ``eth_blockNumber``).
+    Raises RpcError on node-reported errors. The caller is responsible for
+    narrowing/validating the ``Any`` result.
+    """
+    payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
+    owns_client = client is None
+    if client is None:
+        client = httpx.AsyncClient(timeout=10.0)
+    try:
+        response = await client.post(settings.zksync_rpc_url, json=payload)
+        response.raise_for_status()
+        body: dict[str, Any] = response.json()
+    finally:
+        if owns_client:
+            await client.aclose()
+
+    if "error" in body:
+        raise RpcError(f"RPC error: {body['error']}")
+    return body.get("result")
+
+
 async def eth_call(to: str, data: str, *, client: httpx.AsyncClient | None = None) -> str:
     """Execute an `eth_call` against `to` with hex-encoded `data`.
 
