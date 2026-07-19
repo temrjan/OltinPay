@@ -146,11 +146,10 @@ async def get_quote(side: QuoteSide | None, amount: Decimal | None) -> QuoteResp
         raise BadRequestException("side is required when amount is provided")
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        xau = await chain_read.latest_round_data(
-            settings.xau_feed_address, client=client
-        )
-        uzs = await chain_read.latest_round_data(
-            settings.uzs_feed_address, client=client
+        # Two independent feed reads — gather (P2), matching get_por/get_rates.
+        xau, uzs = await asyncio.gather(
+            chain_read.latest_round_data(settings.xau_feed_address, client=client),
+            chain_read.latest_round_data(settings.uzs_feed_address, client=client),
         )
 
     if xau.answer <= 0 or uzs.answer <= 0:

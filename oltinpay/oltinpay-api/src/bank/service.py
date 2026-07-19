@@ -27,6 +27,7 @@ from src.common.exceptions import (
 )
 from src.config import settings
 from src.infrastructure import chain_read
+from src.infrastructure.db_lock import lock_user
 from src.infrastructure.signer_pool import (
     Role,
     SignerUnconfigured,
@@ -226,6 +227,13 @@ async def confirm_withdrawal(db: AsyncSession, withdrawal_id: UUID) -> Withdrawa
     user_id = withdrawal.user_id
     amount_wei = int(withdrawal.amount_wei)
 
+    # Serialize all create/confirm ops for this user (BLOCKER B1): the solvency
+    # cap below sums confirmed withdrawals vs deposits then acts; a per-user
+    # advisory lock makes that read-then-burn race-free (two concurrent confirms
+    # under READ COMMITTED would otherwise both pass the cap). Held for this
+    # transaction, released at commit/rollback. No-op on SQLite.
+    await lock_user(db, user_id)
+
     # Atomic claim: only one caller can move pending -> confirmed. RETURNING gives
     # a typed "did I win the claim?" signal (works on Postgres and SQLite 3.35+).
     claimed = (
@@ -249,11 +257,11 @@ async def confirm_withdrawal(db: AsyncSession, withdrawal_id: UUID) -> Withdrawa
     # OltinPay has minted to this user via bank deposits. The pending->confirmed
     # flip above is already applied, so summing CONFIRMED withdrawals includes
     # THIS one; if that total exceeds the user's net deposits, roll the flip back
-    # and refuse (no burn). This is the authoritative check — confirms are
-    # serialized behind the single KEY_BANK_OPS writer, so the read-then-burn is
-    # race-free under the deploy invariant. Amounts are compared in whole-token
-    # units (deposit amount_uzs is 1:1 with minted UZD; withdrawal amount_uzd is
-    # burned UZD) to avoid summing wei strings.
+    # and refuse (no burn). This read-then-burn is race-free because lock_user()
+    # above serializes all of this user's create/confirm ops (BLOCKER B1) — the
+    # KEY_BANK_OPS signer lock only serializes the broadcast, not this DB check.
+    # Amounts are compared in whole-token units (deposit amount_uzs is 1:1 with
+    # minted UZD; withdrawal amount_uzd is burned UZD) to avoid summing wei strings.
     deposited = (
         await db.execute(
             select(func.coalesce(func.sum(BankDeposit.amount_uzs), 0)).where(

@@ -20,6 +20,7 @@ from eth_utils import to_int
 from src.config import settings
 from src.infrastructure.signer_pool import (
     NonceManagedSigner,
+    SignerError,
     encode_mint_calldata,
 )
 
@@ -44,9 +45,15 @@ def _nonce_of(raw_tx_hex: str) -> int:
 class _RpcStub:
     """Stateful JSON-RPC handler for respx."""
 
-    def __init__(self, start_nonce: int, fail_first_send: bool = False) -> None:
+    def __init__(
+        self,
+        start_nonce: int,
+        fail_first_send: bool = False,
+        receipt_status: str = "0x1",
+    ) -> None:
         self.chain_nonce = start_nonce
         self.fail_first_send = fail_first_send
+        self.receipt_status = receipt_status
         self.calls: dict[str, int] = {}
         self.sent_nonces: list[int] = []
         self._send_count = 0
@@ -77,6 +84,16 @@ class _RpcStub:
                 )
             self.sent_nonces.append(_nonce_of(raw))
             return _res("0x" + f"{self._send_count:064x}")
+        if method == "eth_getTransactionReceipt":
+            # B2: the signer polls for a mined receipt and requires status==1.
+            return httpx.Response(
+                200,
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "result": {"status": self.receipt_status},
+                },
+            )
         raise AssertionError(f"unexpected RPC method: {method}")
 
 
@@ -135,3 +152,26 @@ async def test_resync_on_nonce_too_low() -> None:
     assert stub.calls["eth_sendRawTransaction"] == 2  # failed + retried
     assert stub.sent_nonces == [6]  # retried with the re-synced nonce
     assert signer._nonce == 7
+
+
+@pytest.mark.asyncio
+async def test_send_raises_on_reverted_receipt() -> None:
+    """BLOCKER B2: a mined-but-reverted tx (status 0x0) must raise, not succeed.
+
+    ``eth_sendRawTransaction`` only confirms mempool acceptance; a reverted burn/
+    mint would otherwise be reported as success and desync the DB from chain. The
+    nonce still advances (a reverted tx consumes it on-chain), keeping the local
+    counter in step.
+    """
+    signer = NonceManagedSigner(Account.from_key(TEST_KEY))
+    stub = _RpcStub(start_nonce=3, receipt_status="0x0")
+    data = encode_mint_calldata(RECIPIENT, 10**18)
+
+    with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+        mock.post("").mock(side_effect=stub)
+        with pytest.raises(SignerError, match="reverted"):
+            await signer.send(CONTRACT, data)
+
+    assert stub.calls["eth_sendRawTransaction"] == 1
+    assert stub.calls["eth_getTransactionReceipt"] == 1
+    assert signer._nonce == 4  # advanced past the reverted-but-mined tx

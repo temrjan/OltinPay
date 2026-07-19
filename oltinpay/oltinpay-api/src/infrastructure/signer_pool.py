@@ -59,6 +59,10 @@ MINT_SELECTOR = "0x40c10f19"  # mint(address,uint256)
 ADMIN_BURN_SELECTOR = "0x06dd0419"  # adminBurn(address,uint256)  (BURNER_ROLE)
 POST_ANSWER_SELECTOR = "0xd7fc7b18"  # postAnswer(int256)
 
+# Receipt polling (BLOCKER B2): a mempool-accepted tx can still revert on-chain.
+RECEIPT_TIMEOUT_SEC = 60.0  # zkSync Sepolia mines in seconds; generous ceiling
+RECEIPT_POLL_SEC = 2.0
+
 
 class Role(StrEnum):
     """A writing role, each mapped to its own private key in settings."""
@@ -192,22 +196,24 @@ class NonceManagedSigner:
         assert self._nonce is not None  # invariant guaranteed by send()
         nonce = self._nonce
 
-        gas_price_hex = await _rpc("eth_gasPrice", [], client)
+        # Three independent reads — gather to shrink how long the per-key lock is
+        # held (P1). maxPriorityFeePerGas may be unsupported -> tolerated below.
+        gas_price_hex, est_hex, priority_hex = await asyncio.gather(
+            _rpc("eth_gasPrice", [], client),
+            _rpc(
+                "eth_estimateGas",
+                [{"from": self.address, "to": contract, "data": data}],
+                client,
+            ),
+            _rpc("eth_maxPriorityFeePerGas", [], client),
+        )
         if not isinstance(gas_price_hex, str):
             raise SignerError("Unexpected RPC response for gasPrice")
-        base_fee = int(gas_price_hex, 16)
-
-        est_hex = await _rpc(
-            "eth_estimateGas",
-            [{"from": self.address, "to": contract, "data": data}],
-            client,
-        )
         if not isinstance(est_hex, str):
             raise SignerError("Unexpected RPC response for estimateGas")
+        base_fee = int(gas_price_hex, 16)
         # 20% headroom — EraVM estimation is usually tight but can spike.
         gas_limit = int(est_hex, 16) * 12 // 10
-
-        priority_hex = await _rpc("eth_maxPriorityFeePerGas", [], client)
         max_priority = int(priority_hex, 16) if isinstance(priority_hex, str) else 0
         # Standard formula: inclusion even if base_fee doubles.
         max_fee = base_fee * 2 + max_priority
@@ -227,8 +233,11 @@ class NonceManagedSigner:
         raw_hex = "0x" + signed.raw_transaction.hex()
 
         tx_hash = await self._send_raw(raw_hex, client)
-        # Only advance the counter once the node accepted the transaction.
+        # A mempool-accepted tx consumes the nonce even if it later reverts, so
+        # advance the counter now. Then require a successful mined receipt
+        # (BLOCKER B2) — a reverted mint/burn must NOT be reported as success.
         self._nonce = nonce + 1
+        await self._wait_for_receipt(tx_hash, client)
         logger.info(
             "signer_tx_sent address=%s to=%s nonce=%s tx=%s",
             self.address,
@@ -259,6 +268,33 @@ class NonceManagedSigner:
         if not isinstance(result, str):
             raise SignerError(f"Unexpected sendRawTransaction result: {result!r}")
         return result
+
+    async def _wait_for_receipt(
+        self, tx_hash: str, client: httpx.AsyncClient
+    ) -> dict[str, object]:
+        """Poll until the tx is mined and require ``status == 1`` (BLOCKER B2).
+
+        ``eth_sendRawTransaction`` only confirms mempool acceptance; a mint/burn
+        can still revert on-chain (e.g. ``adminBurn`` on an insufficient
+        balance). Without this, a reverted tx would be reported as success and
+        the DB (a CONFIRMED withdrawal / a deposit row) would permanently diverge
+        from chain. Raises :class:`SignerError` on revert or if no receipt
+        appears within :data:`RECEIPT_TIMEOUT_SEC`.
+        """
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + RECEIPT_TIMEOUT_SEC
+        while True:
+            receipt = await _rpc("eth_getTransactionReceipt", [tx_hash], client)
+            if isinstance(receipt, dict):
+                status = receipt.get("status")
+                if isinstance(status, str) and int(status, 16) == 1:
+                    return receipt
+                raise SignerError(
+                    f"transaction reverted (status={status!r}): {tx_hash}"
+                )
+            if loop.time() >= deadline:
+                raise SignerError(f"receipt not mined within timeout: {tx_hash}")
+            await asyncio.sleep(RECEIPT_POLL_SEC)
 
 
 # --------------------------------------------------------------------------- #

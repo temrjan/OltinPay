@@ -29,6 +29,7 @@ from sqlalchemy.orm import selectinload
 
 from src.bank.models import BankDeposit
 from src.common.exceptions import BadRequestException
+from src.infrastructure.db_lock import lock_user
 from src.withdrawals.models import Withdrawal, WithdrawalStatus
 
 if TYPE_CHECKING:
@@ -88,6 +89,11 @@ async def create_withdrawal(
     if amount_uzd <= 0:
         raise BadRequestException("amount_uzd must be positive")
 
+    # Serialize this user's create/confirm ops (BLOCKER B1): the deposit-backed
+    # cap below sums-then-acts, so without a per-user lock two concurrent creates
+    # could both pass under Postgres READ COMMITTED. Held until this request's
+    # transaction commits/rolls back. No-op on SQLite (see db_lock.lock_user).
+    await lock_user(db, user.id)
     available = await available_to_withdraw(db, user.id)
     if amount_uzd > available:
         raise BadRequestException(
