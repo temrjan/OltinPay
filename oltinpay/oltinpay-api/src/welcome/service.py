@@ -12,6 +12,7 @@ from src.common.exceptions import BadRequestException, ConflictException
 from src.config import settings
 from src.infrastructure.signer_pool import (
     Role,
+    SignerReceiptTimeout,
     SignerUnconfigured,
     encode_mint_calldata,
     send_via,
@@ -84,6 +85,17 @@ async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
     except SignerUnconfigured as exc:
         await db.rollback()
         raise BadRequestException(str(exc)) from exc
+    except SignerReceiptTimeout as exc:
+        # A-prime (mint-symmetry): outcome UNKNOWN — keep the reserved slot so a
+        # retry can't mint a SECOND welcome bonus if the timed-out tx later
+        # mines. The user_id unique slot stays claimed; a retry gets 409. Same
+        # keep-reservation contract as bank.create_deposit.
+        claim.tx_hash = exc.tx_hash.lower()
+        await db.commit()
+        raise ConflictException(
+            "Mint outcome unknown (no receipt within the timeout); welcome "
+            "bonus reserved for reconciliation. Do not retry."
+        ) from exc
     except Exception:
         await db.rollback()
         raise

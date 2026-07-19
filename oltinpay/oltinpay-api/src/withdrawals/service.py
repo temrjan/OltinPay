@@ -46,12 +46,15 @@ async def available_to_withdraw(db: AsyncSession, user_id: UUID) -> int:
     """Net UZD the user may still withdraw = deposited minus outstanding.
 
     ``deposited`` is the sum of the user's confirmed bank-deposit amounts (each
-    UZS deposit mints an equal number of UZD, 1:1). ``outstanding`` is the sum of
-    the user's pending + confirmed withdrawals (each will burn, or has burned,
-    that many UZD). The difference is the OltinPay-minted UZD not yet spoken for
-    by a withdrawal. Comparison is done in whole-token units on the ``BigInteger``
-    columns (``amount_uzs`` / ``amount_uzd``) — never on the wei strings, which
-    overflow SQLite's 64-bit integers.
+    UZS deposit mints an equal number of UZD, 1:1). ``outstanding`` is the sum
+    of the user's pending + confirmed + reconcile withdrawals (each will burn,
+    has burned, or MAY have burned that many UZD — a RECONCILE burn's outcome is
+    unknown and is counted conservatively as having happened; see the
+    ``withdrawals.models`` RECONCILE invariant). The difference is the
+    OltinPay-minted UZD not yet spoken for by a withdrawal. Comparison is done
+    in whole-token units on the ``BigInteger`` columns (``amount_uzs`` /
+    ``amount_uzd``) — never on the wei strings, which overflow SQLite's 64-bit
+    integers.
     """
     deposited = (
         await db.execute(
@@ -65,7 +68,13 @@ async def available_to_withdraw(db: AsyncSession, user_id: UUID) -> int:
             select(func.coalesce(func.sum(Withdrawal.amount_uzd), 0)).where(
                 Withdrawal.user_id == user_id,
                 Withdrawal.status.in_(
-                    [WithdrawalStatus.PENDING.value, WithdrawalStatus.CONFIRMED.value]
+                    [
+                        WithdrawalStatus.PENDING.value,
+                        WithdrawalStatus.CONFIRMED.value,
+                        # Maybe-burned (unknown outcome) — counted conservatively
+                        # so a parked burn can't free up cap for another one.
+                        WithdrawalStatus.RECONCILE.value,
+                    ]
                 ),
             )
         )

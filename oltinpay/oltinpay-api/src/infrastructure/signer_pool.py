@@ -10,13 +10,14 @@ Design (spec §3 — Design-A):
   * One EOA per role — ``KEY_BANK_OPS`` (UZD mint/burn), ``KEY_RESERVE``
     (ReserveAttestor.postAnswer), ``KEY_UZS`` (UzsUsdFeed.postAnswer) and
     ``KEY_XAU`` (external keeper only — the API never signs XAU).
-  * Each signer serializes its sends behind an ``asyncio.Lock`` and keeps the
-    nonce in a **local counter**: initialised from
+  * Each signer serializes its BROADCASTS behind an ``asyncio.Lock`` and keeps
+    the nonce in a **local counter**: initialised from
     ``eth_getTransactionCount(addr, "latest")`` on first use, incremented after
     every successful ``eth_sendRawTransaction`` and re-synced from "latest" when
     the node reports "nonce too low" (a stale counter after a restart or an
-    out-of-band transaction). Exactly ONE in-flight transaction per key by
-    construction, so nonces can never race.
+    out-of-band transaction). Exactly ONE broadcast at a time per key by
+    construction, so nonces can never race; the mined-receipt wait (B2) happens
+    AFTER the lock is released (B2a), so receipt waits may overlap.
 
 Deploy invariant (A1, ratified): exactly ONE writing process per key. The API
 runs single-worker and ``keeper-uzs`` is retired, so ``/fx`` is the sole
@@ -89,6 +90,31 @@ class SignerError(RuntimeError):
     """Raised when a signed transaction could not be built or broadcast."""
 
 
+class SignerRevertError(SignerError):
+    """The tx mined but reverted (receipt status == 0) — a DETERMINISTIC failure.
+
+    Nothing was minted/burned on-chain; callers may safely roll their DB
+    reservation back and allow a retry.
+    """
+
+    def __init__(self, message: str, tx_hash: str) -> None:
+        super().__init__(message)
+        self.tx_hash = tx_hash
+
+
+class SignerReceiptTimeout(SignerError):
+    """No receipt within the deadline — the outcome is UNKNOWN (may mine later).
+
+    Callers must NOT treat this as "nothing happened": rolling a withdrawal back
+    to PENDING here would allow a re-confirm and a double burn if the tx mines
+    later. Park the row for reconciliation instead (see bank.service).
+    """
+
+    def __init__(self, message: str, tx_hash: str) -> None:
+        super().__init__(message)
+        self.tx_hash = tx_hash
+
+
 class _NonceTooLow(RuntimeError):
     """Internal: the node rejected the tx because the local nonce is stale."""
 
@@ -156,11 +182,12 @@ async def _rpc(method: str, params: list[object], client: httpx.AsyncClient) -> 
 
 
 class NonceManagedSigner:
-    """A single EOA whose sends are serialized with a local nonce counter.
+    """A single EOA whose broadcasts are serialized with a local nonce counter.
 
-    One in-flight transaction at a time (per-key ``asyncio.Lock``). The nonce is
-    lazily initialised from "latest", advanced on success, and re-synced once on
-    a "nonce too low" error.
+    One in-flight BROADCAST at a time (per-key ``asyncio.Lock``); receipt waits
+    run outside the lock and may overlap (B2a). The nonce is lazily initialised
+    from "latest", advanced on success, and re-synced once on a "nonce too low"
+    error.
     """
 
     def __init__(self, account: LocalAccount) -> None:
@@ -170,19 +197,31 @@ class NonceManagedSigner:
         self._nonce: int | None = None
 
     async def send(self, contract: str, data: str) -> str:
-        async with self._lock, httpx.AsyncClient(timeout=15.0) as client:
-            if self._nonce is None:
-                self._nonce = await self._fetch_latest_nonce(client)
-            try:
-                return await self._build_sign_send(contract, data, client)
-            except _NonceTooLow:
-                # Local counter drifted (restart / external tx). Re-sync from
-                # the chain and retry exactly once.
-                self._nonce = await self._fetch_latest_nonce(client)
-                logger.warning(
-                    "signer_nonce_resync address=%s nonce=%s", self.address, self._nonce
-                )
-                return await self._build_sign_send(contract, data, client)
+        # The client is opened OUTSIDE the lock: it must survive the lock
+        # release below so the receipt poll can keep using it (B2a).
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # Critical section — everything that touches the nonce runs under
+            # the per-key lock: read/init, sign, broadcast, advance.
+            async with self._lock:
+                if self._nonce is None:
+                    self._nonce = await self._fetch_latest_nonce(client)
+                try:
+                    tx_hash = await self._build_sign_send(contract, data, client)
+                except _NonceTooLow:
+                    # Local counter drifted (restart / external tx). Re-sync
+                    # from the chain and retry exactly once.
+                    self._nonce = await self._fetch_latest_nonce(client)
+                    logger.warning(
+                        "signer_nonce_resync address=%s nonce=%s",
+                        self.address,
+                        self._nonce,
+                    )
+                    tx_hash = await self._build_sign_send(contract, data, client)
+            # Lock released: the nonce is already advanced, so the next send can
+            # broadcast nonce+1 while this one waits for its receipt (B2a). The
+            # mined-receipt requirement itself is BLOCKER B2 — do not remove.
+            await self._wait_for_receipt(tx_hash, client)
+            return tx_hash
 
     async def _fetch_latest_nonce(self, client: httpx.AsyncClient) -> int:
         raw = await _rpc("eth_getTransactionCount", [self.address, "latest"], client)
@@ -234,10 +273,9 @@ class NonceManagedSigner:
 
         tx_hash = await self._send_raw(raw_hex, client)
         # A mempool-accepted tx consumes the nonce even if it later reverts, so
-        # advance the counter now. Then require a successful mined receipt
-        # (BLOCKER B2) — a reverted mint/burn must NOT be reported as success.
+        # advance the counter now. The mined-receipt requirement (BLOCKER B2)
+        # runs in send() AFTER the lock is released (B2a).
         self._nonce = nonce + 1
-        await self._wait_for_receipt(tx_hash, client)
         logger.info(
             "signer_tx_sent address=%s to=%s nonce=%s tx=%s",
             self.address,
@@ -278,8 +316,12 @@ class NonceManagedSigner:
         can still revert on-chain (e.g. ``adminBurn`` on an insufficient
         balance). Without this, a reverted tx would be reported as success and
         the DB (a CONFIRMED withdrawal / a deposit row) would permanently diverge
-        from chain. Raises :class:`SignerError` on revert or if no receipt
-        appears within :data:`RECEIPT_TIMEOUT_SEC`.
+        from chain. Outcomes are distinguished (B2b):
+
+        * receipt with ``status != 1`` -> :class:`SignerRevertError`
+          (deterministic failure — nothing happened on-chain);
+        * no receipt within :data:`RECEIPT_TIMEOUT_SEC` ->
+          :class:`SignerReceiptTimeout` (outcome UNKNOWN — may mine later).
         """
         loop = asyncio.get_running_loop()
         deadline = loop.time() + RECEIPT_TIMEOUT_SEC
@@ -289,11 +331,13 @@ class NonceManagedSigner:
                 status = receipt.get("status")
                 if isinstance(status, str) and int(status, 16) == 1:
                     return receipt
-                raise SignerError(
-                    f"transaction reverted (status={status!r}): {tx_hash}"
+                raise SignerRevertError(
+                    f"transaction reverted (status={status!r}): {tx_hash}", tx_hash
                 )
             if loop.time() >= deadline:
-                raise SignerError(f"receipt not mined within timeout: {tx_hash}")
+                raise SignerReceiptTimeout(
+                    f"receipt not mined within timeout: {tx_hash}", tx_hash
+                )
             await asyncio.sleep(RECEIPT_POLL_SEC)
 
 
@@ -341,6 +385,8 @@ __all__ = [
     "Role",
     "Signer",
     "SignerError",
+    "SignerReceiptTimeout",
+    "SignerRevertError",
     "SignerUnconfigured",
     "encode_admin_burn_calldata",
     "encode_mint_calldata",

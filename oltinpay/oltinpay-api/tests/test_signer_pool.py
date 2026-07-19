@@ -18,9 +18,11 @@ from eth_account import Account
 from eth_utils import to_int
 
 from src.config import settings
+from src.infrastructure import signer_pool
 from src.infrastructure.signer_pool import (
     NonceManagedSigner,
-    SignerError,
+    SignerReceiptTimeout,
+    SignerRevertError,
     encode_mint_calldata,
 )
 
@@ -30,7 +32,7 @@ CONTRACT = "0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32"
 RECIPIENT = "0xA0A78aA9B9619fbc3bC12b5756442BD7A7D6779e"
 
 
-def _res(result: str) -> httpx.Response:
+def _res(result: str | None) -> httpx.Response:
     return httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": result})
 
 
@@ -50,10 +52,16 @@ class _RpcStub:
         start_nonce: int,
         fail_first_send: bool = False,
         receipt_status: str = "0x1",
+        receipt_never: bool = False,
     ) -> None:
         self.chain_nonce = start_nonce
         self.fail_first_send = fail_first_send
         self.receipt_status = receipt_status
+        # "Not mined yet" simulation: globally (receipt_never) or per-hash
+        # (hold_receipts — the B2a lock-release test parks tx #1's receipt).
+        self.receipt_never = receipt_never
+        self.hold_receipts: set[str] = set()
+        self.tx_hashes: list[str] = []  # hashes of successful broadcasts
         self.calls: dict[str, int] = {}
         self.sent_nonces: list[int] = []
         self._send_count = 0
@@ -83,9 +91,14 @@ class _RpcStub:
                     },
                 )
             self.sent_nonces.append(_nonce_of(raw))
-            return _res("0x" + f"{self._send_count:064x}")
+            tx_hash = "0x" + f"{self._send_count:064x}"
+            self.tx_hashes.append(tx_hash)
+            return _res(tx_hash)
         if method == "eth_getTransactionReceipt":
             # B2: the signer polls for a mined receipt and requires status==1.
+            tx = json.loads(request.content)["params"][0]
+            if self.receipt_never or tx in self.hold_receipts:
+                return _res(None)  # not mined yet
             return httpx.Response(
                 200,
                 json={
@@ -169,9 +182,79 @@ async def test_send_raises_on_reverted_receipt() -> None:
 
     with respx.mock(base_url=settings.zksync_rpc_url) as mock:
         mock.post("").mock(side_effect=stub)
-        with pytest.raises(SignerError, match="reverted"):
+        # B2b: a revert is the DETERMINISTIC subclass (callers may roll back).
+        with pytest.raises(SignerRevertError, match="reverted") as excinfo:
             await signer.send(CONTRACT, data)
 
+    assert excinfo.value.tx_hash == stub.tx_hashes[0]
     assert stub.calls["eth_sendRawTransaction"] == 1
     assert stub.calls["eth_getTransactionReceipt"] == 1
     assert signer._nonce == 4  # advanced past the reverted-but-mined tx
+
+
+@pytest.mark.asyncio
+async def test_send_raises_timeout_when_receipt_never_arrives(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """B2b: no receipt by the deadline -> SignerReceiptTimeout (outcome UNKNOWN).
+
+    The exception carries the broadcast tx hash so callers can park the DB row
+    for reconciliation instead of rolling back to a re-confirmable state. The
+    nonce stays advanced — the mempool-accepted tx consumed it.
+    """
+    monkeypatch.setattr(signer_pool, "RECEIPT_TIMEOUT_SEC", 0.05)
+    monkeypatch.setattr(signer_pool, "RECEIPT_POLL_SEC", 0.01)
+    signer = NonceManagedSigner(Account.from_key(TEST_KEY))
+    stub = _RpcStub(start_nonce=0, receipt_never=True)
+    data = encode_mint_calldata(RECIPIENT, 10**18)
+
+    with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+        mock.post("").mock(side_effect=stub)
+        with pytest.raises(SignerReceiptTimeout, match="timeout") as excinfo:
+            await signer.send(CONTRACT, data)
+
+    assert excinfo.value.tx_hash == stub.tx_hashes[0]
+    assert stub.calls["eth_sendRawTransaction"] == 1
+    assert stub.calls["eth_getTransactionReceipt"] >= 1
+    assert signer._nonce == 1  # nonce consumed by the broadcast
+
+
+@pytest.mark.asyncio
+async def test_receipt_wait_releases_the_key_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """B2a: while send #1 waits for its receipt, send #2 must broadcast nonce+1.
+
+    The stub parks tx #1's receipt ("not mined yet") behind ``hold_receipts``;
+    send #2 runs under a hard ``wait_for`` deadline. With the receipt wait
+    inside the per-key lock (old structure) send #2 blocks on the lock until
+    the deadline -> TimeoutError (red); with the lock released after
+    broadcast+nonce++ it completes while #1 is still waiting (green).
+    """
+    monkeypatch.setattr(signer_pool, "RECEIPT_POLL_SEC", 0.01)
+    signer = NonceManagedSigner(Account.from_key(TEST_KEY))
+    stub = _RpcStub(start_nonce=0)
+    data = encode_mint_calldata(RECIPIENT, 10**18)
+    # tx #1's hash is deterministic (first broadcast) — park it BEFORE sending
+    # so there is no window in which its receipt could resolve as mined.
+    first_hash = "0x" + f"{1:064x}"
+    stub.hold_receipts.add(first_hash)
+
+    with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+        mock.post("").mock(side_effect=stub)
+        task1 = asyncio.create_task(signer.send(CONTRACT, data))
+        try:
+            # Wait until tx #1 is actually broadcast (deterministic ordering).
+            while not stub.tx_hashes:
+                await asyncio.sleep(0.005)
+            # send #2 must complete while #1 is still parked on its receipt.
+            tx2 = await asyncio.wait_for(signer.send(CONTRACT, data), timeout=2.0)
+            assert not task1.done()  # #1 still waiting for its held receipt
+        finally:
+            stub.hold_receipts.clear()  # release #1 whichever way the test went
+        tx1 = await asyncio.wait_for(task1, timeout=2.0)
+
+    assert tx1 == first_hash
+    assert tx2 != tx1
+    assert stub.sent_nonces == [0, 1]  # nonce+1 broadcast during #1's wait
+    assert signer._nonce == 2

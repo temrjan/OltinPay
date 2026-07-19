@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from src.config import settings
+from src.infrastructure.signer_pool import SignerReceiptTimeout
 from src.users.models import User
 
 CLAIM = "/api/v1/welcome/claim"
@@ -108,6 +109,31 @@ async def test_claim_idempotent_conflict(
 
         second = await client.post(CLAIM, headers=wallet_user["headers"])
         assert second.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_claim_receipt_timeout_keeps_reservation(
+    client: AsyncClient, wallet_user: dict[str, Any]
+) -> None:
+    """A-prime: a timed-out welcome mint (outcome UNKNOWN) keeps the reserved
+    user_id slot so a retry is refused (409) instead of minting a SECOND bonus
+    if the timed-out tx later mines."""
+    with patch(
+        "src.welcome.service.send_via",
+        new=AsyncMock(side_effect=SignerReceiptTimeout("no receipt", FAKE_TX)),
+    ) as mock_send:
+        first = await client.post(CLAIM, headers=wallet_user["headers"])
+    assert first.status_code == 409
+    assert "reconciliation" in first.json()["detail"]
+    assert mock_send.call_count == 1
+
+    with patch(
+        "src.welcome.service.send_via",
+        new=AsyncMock(return_value=FAKE_TX),
+    ) as mock_retry:
+        retry = await client.post(CLAIM, headers=wallet_user["headers"])
+    assert retry.status_code == 409  # already claimed
+    mock_retry.assert_not_called()  # no SECOND welcome mint
 
 
 @pytest.mark.asyncio
