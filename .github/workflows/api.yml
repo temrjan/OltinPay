@@ -21,6 +21,23 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Real Postgres so the BLOCKER-B1 advisory-lock regression guard
+    # (tests/test_concurrency_pg.py) actually runs — it is skipped on SQLite and
+    # under no TEST_PG_URL, which is exactly how the race originally shipped.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: oltinpay/oltinpay-api
@@ -41,8 +58,13 @@ jobs:
       - name: Mypy (my modules)
         run: mypy --ignore-missing-imports src/infrastructure/ src/balances/ src/bank/ src/por/ src/withdrawals/ src/indexer/ src/deposits/ src/welcome/ src/users/schemas.py src/users/router.py src/users/service.py src/main.py
 
-      - name: Pytest
+      # Full suite — NEVER a pinned file list (new test files must gate CI
+      # automatically; a pinned list is how test_concurrency_pg / test_deposits
+      # went ungated). conftest builds an in-memory SQLite for the unit tests;
+      # TEST_PG_URL points the PG-only tests at the service container above.
+      - name: Pytest (full suite)
         env:
           SECRET_KEY: ci-test-secret
           DATABASE_URL: postgresql+asyncpg://test:test@localhost/test
-        run: pytest tests/test_rpc.py tests/test_blockchain.py tests/test_users_wallet.py tests/test_balances_onchain.py tests/test_auth.py tests/test_welcome.py tests/test_bank.py tests/test_signer_pool.py tests/test_por.py tests/test_indexer.py tests/test_withdrawals.py -v
+          TEST_PG_URL: postgresql+asyncpg://test:test@localhost:5432/test
+        run: pytest -q

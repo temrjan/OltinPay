@@ -66,7 +66,7 @@ class TestUserSearch:
     """Tests for user search."""
 
     @pytest.mark.asyncio
-    async def test_search_users(self, client: AsyncClient, test_user, _second_user):
+    async def test_search_users(self, client: AsyncClient, test_user, second_user):
         """Test searching users by oltin_id prefix."""
         response = await client.get(
             "/api/v1/users/search",
