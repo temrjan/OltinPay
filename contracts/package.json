@@ -8,6 +8,7 @@
     "deploy:testnet": "hardhat run scripts/deploy.ts --network zkSyncSepolia",
     "deploy:v3": "hardhat deploy-zksync --network zkSyncSepolia --script deployV3.ts",
     "deploy:second": "hardhat deploy-zksync --network zkSyncSepolia --script deploySecondAsset.ts",
+    "deploy:4a": "hardhat deploy-zksync --network zkSyncSepolia --script deployPaymasterStaking.ts",
     "keeper:xau": "hardhat run scripts/keeper-xau.ts --network zkSyncSepolia",
     "fund:rewards": "hardhat run scripts/fundRewardPool.ts --network zkSyncSepolia",
     "verify": "hardhat verify --network zkSyncSepolia"
