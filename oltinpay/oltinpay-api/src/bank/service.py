@@ -81,6 +81,15 @@ async def post_attestation(
     except SignerUnconfigured as exc:
         await db.rollback()
         raise BadRequestException(str(exc)) from exc
+    except SignerReceiptTimeout as exc:
+        # A-prime (mint-symmetry): outcome UNKNOWN — keep the reservation so the
+        # auditRef stays claimed and a retry can't re-post (see create_deposit).
+        row.tx_hash = exc.tx_hash.lower()
+        await db.commit()
+        raise ConflictException(
+            "Attestation outcome unknown (no receipt within the timeout); "
+            "reserved for reconciliation. Do not retry."
+        ) from exc
     except Exception:
         await db.rollback()
         raise
@@ -190,6 +199,21 @@ async def create_deposit(
     except SignerUnconfigured as exc:
         await db.rollback()
         raise BadRequestException(str(exc)) from exc
+    except SignerReceiptTimeout as exc:
+        # A-prime (deposit double-mint, security blocker): the mint's outcome is
+        # UNKNOWN — no receipt by the deadline, but the tx may still mine.
+        # Rolling back would release the bankTxId idempotency key and let a
+        # retry mint a SECOND time (uncollateralized UZD against one fiat
+        # deposit). Keep the reservation (row committed with the broadcast hash)
+        # so the key stays claimed; a retry gets 409. The phantom-cap half
+        # (deposit counted but mint unconfirmed) is self-limiting and settled by
+        # the PR-4 reconciler.
+        row.tx_hash = exc.tx_hash.lower()
+        await db.commit()
+        raise ConflictException(
+            "Mint outcome unknown (no receipt within the timeout); deposit "
+            "reserved for reconciliation. Do not retry."
+        ) from exc
     except Exception:
         await db.rollback()
         raise

@@ -31,8 +31,9 @@ from sqlalchemy.ext.asyncio import (
 from src.bank import service as bank_service
 from src.bank.deps import compute_signature
 from src.bank.models import BankDeposit, ReserveAttestation
+from src.common.exceptions import ConflictException
 from src.config import settings
-from src.infrastructure.signer_pool import Role, SignerError
+from src.infrastructure.signer_pool import Role, SignerError, SignerReceiptTimeout
 from src.users.models import User
 from src.withdrawals import service as withdrawals_service
 
@@ -447,3 +448,87 @@ async def test_attestation_rolls_back_on_broadcast_failure(
     with patch("src.bank.service.send_via", new=AsyncMock(return_value=FAKE_TX)):
         row = await bank_service.post_attestation(db_session, 1000, "AUD-FAIL")
     assert row.tx_hash == FAKE_TX
+
+
+# --------------------------------------------------------------------------- #
+# A-prime — mint/post receipt-timeout keeps the reservation (no double-mint)    #
+# --------------------------------------------------------------------------- #
+@pytest.mark.asyncio
+async def test_deposit_receipt_timeout_keeps_reservation(
+    wallet_user: User, db_session: AsyncSession
+) -> None:
+    """A timed-out mint (outcome UNKNOWN) must NOT roll back: rolling back frees
+    the bankTxId and a retry would mint a SECOND uncollateralized UZD if the
+    timed-out tx later mines. The reservation is kept (with the broadcast hash)
+    so a retry is refused (409) before any second mint."""
+    user_id = wallet_user.id
+
+    with (
+        patch(
+            "src.bank.service.send_via",
+            new=AsyncMock(side_effect=SignerReceiptTimeout("no receipt", FAKE_TX)),
+        ) as mock_send,
+        pytest.raises(ConflictException, match="reconciliation"),
+    ):
+        await bank_service.create_deposit(
+            db_session,
+            user_id=user_id,
+            oltin_id=None,
+            amount_uzs=5000,
+            bank_tx_id="BTX-TMO",
+        )
+    assert mock_send.call_count == 1
+
+    row = (
+        await db_session.execute(
+            select(BankDeposit).where(BankDeposit.bank_tx_id == "BTX-TMO")
+        )
+    ).scalar_one()
+    assert row.tx_hash == FAKE_TX.lower()  # reservation kept for reconciliation
+
+    with (
+        patch(
+            "src.bank.service.send_via", new=AsyncMock(return_value=FAKE_TX)
+        ) as mock_retry,
+        pytest.raises(ConflictException, match="already processed"),
+    ):
+        await bank_service.create_deposit(
+            db_session,
+            user_id=user_id,
+            oltin_id=None,
+            amount_uzs=5000,
+            bank_tx_id="BTX-TMO",
+        )
+    mock_retry.assert_not_called()  # no SECOND on-chain mint
+
+
+@pytest.mark.asyncio
+async def test_attestation_receipt_timeout_keeps_reservation(
+    db_session: AsyncSession,
+) -> None:
+    """Same keep-reservation guarantee for attestations: a timed-out postAnswer
+    keeps its auditRef so a retry is refused rather than re-posting."""
+    with (
+        patch(
+            "src.bank.service.send_via",
+            new=AsyncMock(side_effect=SignerReceiptTimeout("no receipt", FAKE_TX)),
+        ),
+        pytest.raises(ConflictException, match="reconciliation"),
+    ):
+        await bank_service.post_attestation(db_session, 1000, "AUD-TMO")
+
+    row = (
+        await db_session.execute(
+            select(ReserveAttestation).where(ReserveAttestation.audit_ref == "AUD-TMO")
+        )
+    ).scalar_one()
+    assert row.tx_hash == FAKE_TX.lower()
+
+    with (
+        patch(
+            "src.bank.service.send_via", new=AsyncMock(return_value=FAKE_TX)
+        ) as mock_retry,
+        pytest.raises(ConflictException, match="already processed"),
+    ):
+        await bank_service.post_attestation(db_session, 1000, "AUD-TMO")
+    mock_retry.assert_not_called()
