@@ -30,6 +30,7 @@ from src.infrastructure import chain_read
 from src.infrastructure.db_lock import lock_user
 from src.infrastructure.signer_pool import (
     Role,
+    SignerReceiptTimeout,
     SignerUnconfigured,
     encode_admin_burn_calldata,
     encode_mint_calldata,
@@ -255,13 +256,16 @@ async def confirm_withdrawal(db: AsyncSession, withdrawal_id: UUID) -> Withdrawa
     # target (user.wallet_address) is bound with no proof of ownership, so an
     # unchecked burn could destroy a third party's UZD. Refuse to burn more than
     # OltinPay has minted to this user via bank deposits. The pending->confirmed
-    # flip above is already applied, so summing CONFIRMED withdrawals includes
-    # THIS one; if that total exceeds the user's net deposits, roll the flip back
-    # and refuse (no burn). This read-then-burn is race-free because lock_user()
-    # above serializes all of this user's create/confirm ops (BLOCKER B1) — the
-    # KEY_BANK_OPS signer lock only serializes the broadcast, not this DB check.
-    # Amounts are compared in whole-token units (deposit amount_uzs is 1:1 with
-    # minted UZD; withdrawal amount_uzd is burned UZD) to avoid summing wei strings.
+    # flip above is already applied, so summing CONFIRMED+RECONCILE withdrawals
+    # includes THIS one; if that total exceeds the user's net deposits, roll the
+    # flip back and refuse (no burn). RECONCILE rows are maybe-burned (unknown
+    # outcome) and count conservatively as burned — otherwise a parked burn
+    # would free up cap and the bank could pay fiat twice for one deposit. This
+    # read-then-burn is race-free because lock_user() above serializes all of
+    # this user's create/confirm ops (BLOCKER B1) — the KEY_BANK_OPS signer lock
+    # only serializes the broadcast, not this DB check. Amounts are compared in
+    # whole-token units (deposit amount_uzs is 1:1 with minted UZD; withdrawal
+    # amount_uzd is burned UZD) to avoid summing wei strings.
     deposited = (
         await db.execute(
             select(func.coalesce(func.sum(BankDeposit.amount_uzs), 0)).where(
@@ -273,7 +277,12 @@ async def confirm_withdrawal(db: AsyncSession, withdrawal_id: UUID) -> Withdrawa
         await db.execute(
             select(func.coalesce(func.sum(Withdrawal.amount_uzd), 0)).where(
                 Withdrawal.user_id == user_id,
-                Withdrawal.status == WithdrawalStatus.CONFIRMED.value,
+                Withdrawal.status.in_(
+                    [
+                        WithdrawalStatus.CONFIRMED.value,
+                        WithdrawalStatus.RECONCILE.value,
+                    ]
+                ),
             )
         )
     ).scalar_one()
@@ -293,7 +302,29 @@ async def confirm_withdrawal(db: AsyncSession, withdrawal_id: UUID) -> Withdrawa
     except SignerUnconfigured as exc:
         await db.rollback()
         raise BadRequestException(str(exc)) from exc
+    except SignerReceiptTimeout as exc:
+        # B2b: the burn's outcome is UNKNOWN — no receipt by the deadline, but
+        # the tx may still mine. Rolling back to PENDING would allow a
+        # re-confirm and a double burn, so park the row as RECONCILE with the
+        # broadcast hash. Until the PR-4 reconciler settles it against the
+        # chain it is neither confirmable nor rejectable and still counts
+        # against the solvency cap (see withdrawals.models).
+        await db.execute(
+            update(Withdrawal)
+            .where(Withdrawal.id == withdrawal_id)
+            .values(
+                status=WithdrawalStatus.RECONCILE.value,
+                tx_hash=exc.tx_hash.lower(),
+            )
+        )
+        await db.commit()
+        raise ConflictException(
+            "Burn outcome unknown (no receipt within the timeout); withdrawal "
+            "parked for reconciliation. Do not retry."
+        ) from exc
     except Exception:
+        # Includes SignerRevertError: the burn deterministically did NOT happen
+        # (reverted on-chain), so releasing the row back to PENDING is safe.
         await db.rollback()
         raise
 

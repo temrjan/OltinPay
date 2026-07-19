@@ -24,7 +24,12 @@ from src.bank import service as bank_service
 from src.bank.models import BankDeposit
 from src.common.exceptions import BadRequestException, ConflictException
 from src.config import settings
-from src.infrastructure.signer_pool import Role, SignerError
+from src.infrastructure.signer_pool import (
+    Role,
+    SignerError,
+    SignerReceiptTimeout,
+    SignerRevertError,
+)
 from src.users.models import User
 from src.withdrawals import service as withdrawals_service
 from src.withdrawals.models import Withdrawal, WithdrawalStatus
@@ -271,3 +276,170 @@ async def test_confirm_burn_failure_rolls_back(db_session: AsyncSession) -> None
     assert refreshed is not None
     assert refreshed.status == WithdrawalStatus.PENDING.value
     assert refreshed.tx_hash is None
+
+
+# --------------------------------------------------------------------------- #
+# B2b — unknown-outcome burns park as RECONCILE (never back to PENDING)         #
+# --------------------------------------------------------------------------- #
+@pytest.mark.asyncio
+async def test_confirm_receipt_timeout_parks_reconcile(
+    db_session: AsyncSession,
+) -> None:
+    """An unknown-outcome burn (receipt timeout) must NOT return the withdrawal
+    to PENDING — the tx may still mine, and a re-confirm would burn twice. It
+    parks as RECONCILE with the broadcast hash and is no longer confirmable."""
+    user = await _make_user(db_session, wallet=WALLET, tg=69_000, oid="tmoutuser")
+    await _seed_deposit(db_session, user.id, 1_000_000)
+    withdrawal = await withdrawals_service.create_withdrawal(db_session, user, 5000)
+    await db_session.commit()
+    withdrawal_id = withdrawal.id
+
+    with (
+        patch(
+            "src.bank.service.send_via",
+            new=AsyncMock(
+                side_effect=SignerReceiptTimeout("receipt not mined", FAKE_TX)
+            ),
+        ) as mock_send,
+        pytest.raises(ConflictException, match="reconciliation"),
+    ):
+        await bank_service.confirm_withdrawal(db_session, withdrawal_id)
+
+    refreshed = await withdrawals_service.get_withdrawal(db_session, withdrawal_id)
+    assert refreshed is not None
+    assert refreshed.status == WithdrawalStatus.RECONCILE.value
+    assert refreshed.tx_hash == FAKE_TX  # kept for the PR-4 reconciler
+
+    # Not re-confirmable: the pending-guard refuses -> no second burn.
+    with (
+        patch(
+            "src.bank.service.send_via", new=AsyncMock(return_value=FAKE_TX)
+        ) as mock_second,
+        pytest.raises(ConflictException),
+    ):
+        await bank_service.confirm_withdrawal(db_session, withdrawal_id)
+    mock_second.assert_not_called()
+    assert mock_send.call_count == 1  # burn attempted exactly once
+
+
+@pytest.mark.asyncio
+async def test_reconcile_not_rejectable(db_session: AsyncSession) -> None:
+    """RECONCILE is terminal until the PR-4 reconciler: rejecting it would
+    release cap for a burn that may have happened."""
+    user = await _make_user(db_session, wallet=WALLET, tg=69_100, oid="norejrec")
+    withdrawal = Withdrawal(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        amount_uzd=100,
+        amount_wei=str(100 * 10**18),
+        status=WithdrawalStatus.RECONCILE.value,
+        tx_hash="0x" + "d" * 64,
+    )
+    db_session.add(withdrawal)
+    await db_session.commit()
+
+    with pytest.raises(ConflictException):
+        await bank_service.reject_withdrawal(db_session, withdrawal.id)
+
+
+@pytest.mark.asyncio
+async def test_confirm_revert_rolls_back_to_pending(db_session: AsyncSession) -> None:
+    """A DETERMINISTIC on-chain failure (SignerRevertError — nothing burned)
+    keeps the retry semantics: the row goes back to PENDING."""
+    user = await _make_user(db_session, wallet=WALLET, tg=69_200, oid="revuser")
+    await _seed_deposit(db_session, user.id, 1_000_000)
+    withdrawal = await withdrawals_service.create_withdrawal(db_session, user, 5000)
+    await db_session.commit()
+    withdrawal_id = withdrawal.id  # capture before the internal rollback expires it
+
+    with (
+        patch(
+            "src.bank.service.send_via",
+            new=AsyncMock(
+                side_effect=SignerRevertError("transaction reverted", FAKE_TX)
+            ),
+        ),
+        pytest.raises(SignerRevertError),
+    ):
+        await bank_service.confirm_withdrawal(db_session, withdrawal_id)
+
+    refreshed = await withdrawals_service.get_withdrawal(db_session, withdrawal_id)
+    assert refreshed is not None
+    assert refreshed.status == WithdrawalStatus.PENDING.value
+    assert refreshed.tx_hash is None
+
+
+# --------------------------------------------------------------------------- #
+# Mandatory #1 (review) — RECONCILE counts as maybe-burned in the solvency cap  #
+# --------------------------------------------------------------------------- #
+@pytest.mark.asyncio
+async def test_reconcile_counts_as_outstanding_in_create_cap(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    """Deposit 100 + RECONCILE 100 -> available 0 -> a new create is rejected.
+
+    Without this the parked (maybe-burned) withdrawal frees up cap and the bank
+    pays fiat twice for one deposit."""
+    user = await _make_user(db_session, wallet=WALLET, tg=69_300, oid="reccapcr")
+    await _seed_deposit(db_session, user.id, 100)
+    db_session.add(
+        Withdrawal(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            amount_uzd=100,
+            amount_wei=str(100 * 10**18),
+            status=WithdrawalStatus.RECONCILE.value,
+            tx_hash="0x" + "d" * 64,
+        )
+    )
+    await db_session.commit()
+    headers = {"Authorization": f"Bearer {_make_token(user.id)}"}
+
+    response = await client.post(
+        "/api/v1/withdrawals", json={"amount_uzd": 100}, headers=headers
+    )
+    assert response.status_code == 400  # RECONCILE consumed the whole cap
+
+
+@pytest.mark.asyncio
+async def test_reconcile_counts_as_burned_in_confirm_cap(
+    db_session: AsyncSession,
+) -> None:
+    """Deposit 100 + RECONCILE 100 + a PENDING 100 (seeded past the create cap)
+    -> confirm must refuse and not burn: the maybe-burned RECONCILE already
+    consumed the deposit backing."""
+    user = await _make_user(db_session, wallet=WALLET, tg=69_400, oid="reccapcf")
+    await _seed_deposit(db_session, user.id, 100)
+    db_session.add(
+        Withdrawal(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            amount_uzd=100,
+            amount_wei=str(100 * 10**18),
+            status=WithdrawalStatus.RECONCILE.value,
+            tx_hash="0x" + "d" * 64,
+        )
+    )
+    pending = Withdrawal(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        amount_uzd=100,
+        amount_wei=str(100 * 10**18),
+        status=WithdrawalStatus.PENDING.value,
+    )
+    db_session.add(pending)
+    await db_session.commit()
+    pending_id = pending.id  # capture before the internal rollback expires it
+
+    with (
+        patch(
+            "src.bank.service.send_via", new=AsyncMock(return_value=FAKE_TX)
+        ) as mock_send,
+        pytest.raises(BadRequestException),
+    ):
+        await bank_service.confirm_withdrawal(db_session, pending_id)
+
+    mock_send.assert_not_called()  # refused BEFORE any on-chain burn
+    refreshed = await withdrawals_service.get_withdrawal(db_session, pending_id)
+    assert refreshed is not None
+    assert refreshed.status == WithdrawalStatus.PENDING.value  # flip rolled back

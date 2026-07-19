@@ -5,6 +5,22 @@ the user's UZD on-chain, ``pending`` -> ``confirmed``) or rejects it
 (``pending`` -> ``rejected``, no on-chain effect). State transitions are
 one-way, guarded so a withdrawal is burned at most once.
 
+RECONCILE invariant (B2b): if the burn's receipt does not arrive within the
+signer's deadline the outcome is UNKNOWN — the tx may still mine later. Such a
+withdrawal is parked as ``reconcile`` (with the broadcast ``tx_hash``) instead
+of being rolled back to ``pending``. It is then:
+
+1. NOT re-confirmable and NOT rejectable — the ``status == pending`` guards
+   refuse it, so a later-mined burn can never be burned a second time.
+2. Counted as MAYBE-BURNED in the deposit-backed solvency cap — it is included
+   in ``outstanding`` at create time and in ``burned`` at confirm time
+   (conservative: an unknown burn is treated as having happened; otherwise a
+   RECONCILE row would free up cap and the bank could pay fiat twice for one
+   deposit).
+3. Terminal until the PR-4 reconciler settles it against the chain by its
+   ``tx_hash``: -> ``confirmed`` if the tx mined successfully, or released if
+   the tx was dropped from the mempool.
+
 Accepted limitation (spec §8): there is NO on-chain UZD lock between the user's
 request and the bank's confirm — the user could move the UZD in that window. A
 full on-chain escrow lock is deferred to PR-4.
@@ -35,11 +51,14 @@ if TYPE_CHECKING:
 
 
 class WithdrawalStatus(StrEnum):
-    """Withdrawal lifecycle state."""
+    """Withdrawal lifecycle state (see the RECONCILE invariant above)."""
 
     PENDING = "pending"
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
+    # Burn broadcast but no receipt by the deadline — outcome unknown, parked
+    # for the PR-4 reconciler. Counts as maybe-burned in the solvency cap.
+    RECONCILE = "reconcile"
 
 
 class Withdrawal(Base):
