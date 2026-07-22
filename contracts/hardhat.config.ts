@@ -11,6 +11,15 @@ const config: HardhatUserConfig = {
     hardhat: {
       zksync: false,
     },
+    // In-memory zkSync VM (anvil-zksync), started by `npx hardhat node-zksync`.
+    // This is the ONLY place account abstraction actually runs: bootloader
+    // validation, paymasterParams and the gas refund exist here and do NOT
+    // exist in the plain-EVM `hardhat` network. Used by test-vm/.
+    inMemoryNode: {
+      url: "http://127.0.0.1:8011",
+      ethNetwork: "localhost",
+      zksync: true,
+    },
     zkSyncSepolia: {
       url: "https://sepolia.era.zksync.dev",
       ethNetwork: "sepolia",
