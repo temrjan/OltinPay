@@ -139,6 +139,12 @@ describe("OltinPaymaster — zkSync VM end-to-end", function () {
 
     const req = transferRequest(f, ethers.parseEther("1"));
     const { gasLimit, maxFeePerGas } = await f.gasParams(req);
+    // Step 1 of the client contract, on the live VM: preflight. It must return
+    // the same fee the transaction is actually charged, from an account that
+    // has approved nothing yet.
+    const preflight: bigint = await (f.paymaster as any).checkSponsorship(
+      f.user.address, f.tokenAddress, gasLimit, maxFeePerGas,
+    );
     // The client sizes minimalAllowance from quoteFee — never from a formula
     // mirrored off-chain (it drifts on the first setRate/setFeeConfig).
     const quoted: bigint = await (f.paymaster as any).quoteFee(gasLimit, maxFeePerGas);
@@ -167,6 +173,7 @@ describe("OltinPaymaster — zkSync VM end-to-end", function () {
     // with itself even if the formula were wrong).
     expect(feeCharged, "fee matches the off-chain mirror").to.equal(expectedFee(prefunded));
     expect(feeCharged, "quote equals what was charged").to.equal(quoted);
+    expect(preflight, "preflight equals what was charged").to.equal(feeCharged);
     expect(await f.token.balanceOf(f.pmAddress)).to.equal(feeCharged);
     expect(
       userTokenBefore - (await f.token.balanceOf(f.user.address)),

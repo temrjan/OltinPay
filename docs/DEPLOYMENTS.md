@@ -24,12 +24,42 @@
 
 | Contract | Address |
 |---|---|
-| **OltinPaymaster (fixed)** | _pending deploy — filled in after the Gate-2 review_ |
+| **OltinPaymaster (fixed)** | `0x817ED8bd0C92703785CbCC500440840603DA0Bb4` |
 
-Operating notes once deployed:
+Deployed 2026-07-22, funded 0.01 ETH (recovered from the retired paymaster).
+**The rate expires 2026-08-21T17:08:33Z** — after that sponsorship stops until
+`setRate` is called. That is after the 10 August deadline, so it will not fire
+during the contest window.
+
+Verified by reading the chain, not by trusting the deploy script's output:
+- deployed bytecode == locally compiled artifact, keccak
+  `0x10cd4d24faef13fb0d4f5522ffadc43b521d01bf27853a66e9c15274bf48ffad` on both sides;
+- `oltinToken()` == V3 OLTIN, `owner()` == deployer, `paused()` false;
+- rate 18e18 inside bounds [1.8e18, 180e18], caps 5e14 / 5e14 / 5e15;
+- allowlist true for OLTIN / UZD / Exchange / staking, false for anything else;
+- live `eth_call` probes: `checkSponsorship` returns 258679734705000 for a sample
+  transaction and reverts `TargetNotSponsored` / `PerTxCapExceeded` on the
+  refusal paths.
+- Explorer source verification still pending (`hardhat verify` reports a bytecode
+  mismatch it cannot resolve for zksolc builds — the same flakiness noted for the
+  V3 stack). The keccak comparison above is what currently establishes that the
+  deployed code is the reviewed code; retry `npm run verify` later.
+
+⚠️ NOT yet proven on production: a live gasless transaction end-to-end. OLTIN
+has no supply and the price feeds have never been posted, so the smoke test is a
+named acceptance item of PR-4d. Until it passes, this paymaster is proven by the
+zkSync VM suite, not by prod.
+
+Operating notes:
 - The fee is pegged to the gas being sponsored. **A client MUST size
   `minimalAllowance` from `quoteFee(gasLimit, maxFeePerGas)`** — never from a
-  formula mirrored off-chain, which drifts on the first `setRate`.
+  formula mirrored off-chain, which drifts on the first `setRate`. **Approve with
+  a margin, not the exact quote:** only the fee is ever taken, over-approving
+  costs nothing, and an exact match turns any config change between preflight and
+  inclusion into a silent hang.
+- **Preflight with `checkSponsorship(from, to, gasLimit, maxFeePerGas)`.** It runs
+  the same rules as validation and returns the fee, so a refusal arrives as a
+  typed error instead of silence.
 - **A sponsored transaction cannot be auto-estimated.** `zks_estimateFee` probes
   with the maximum gas limit (~9.3e15 wei of implied ETH), which any meaningful
   per-transaction cap refuses. The client must send an **explicit `gasLimit`**:
@@ -53,7 +83,7 @@ transaction list silently misses deployments). 19 deployments in total.
 
 | Address | What it is | Why it is dead |
 |---|---|---|
-| `0x77B0afE91F15A9AAb065c5a49b8199D38884dE8F` | OltinPaymaster #1 | **NEVER FUND — drainable.** Its fee came from the user-supplied `minAllowance` while it paid the real gas: anyone could empty it for dust. Its ETH was swept, but `receive()` is open, so any new funding is drainable again. Replaced by the PR-4a′ paymaster. |
+| `0x77B0afE91F15A9AAb065c5a49b8199D38884dE8F` | OltinPaymaster #1 | **NEVER FUND — drainable.** Its fee came from the user-supplied `minAllowance` while it paid the real gas: anyone could empty it for dust. Swept to the deployer 2026-07-22 (balance confirmed 0 on chain), but `receive()` is open, so any new funding is drainable again. Replaced by `0x817ED8bd…0Bb4`. |
 | `0x63e537A3a150d06035151E29904C1640181C8314` | OltinStaking | Immutably bound to the V2 token |
 | `0xA7E92168517864359B6Fa9e2247B01e0280A7dAa` | OLTIN V1 (2025-12-26) | Superseded; supply 2985 |
 | `0x4A56B78DBFc2E6c914f5413B580e86ee1A474347` | OLTIN V2 | Superseded; supply 3280. The webapp still points here (`contracts.ts`) — PR-4c moves it to V3 |

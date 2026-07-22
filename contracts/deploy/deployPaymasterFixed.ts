@@ -27,6 +27,11 @@
  *   STAKING_ADDRESS      OltinStaking V3  (default: docs/DEPLOYMENTS.md)
  *   OLD_PAYMASTER        paymaster to sweep before funding the new one
  *   PAYMASTER_FUND_ETH   initial ETH funding for the new paymaster (default 0.01)
+ *   PAYMASTER_ADDRESS    finish an ALREADY deployed paymaster (allowlist + fund
+ *                        + sanity) instead of deploying another one. Use this
+ *                        when a run died after the deploy transaction: a second
+ *                        deploy would leave an orphan contract on chain, and
+ *                        orphans are how "which address is live?" gets lost.
  */
 
 import { Wallet, Provider, Contract } from "zksync-ethers";
@@ -90,11 +95,24 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   }
 
   // --- 2. Deploy the fixed paymaster --------------------------------------- //
-  console.log("\nDeploying OltinPaymaster (fixed)...");
   const artifact = await deployer.loadArtifact("OltinPaymaster");
-  const paymaster = await deployer.deploy(artifact, [...paymasterArgs(oltinAddress)]);
-  const paymasterAddress = await paymaster.getAddress();
-  console.log("OltinPaymaster:", paymasterAddress);
+  // hardhat-zksync writes the deployment record with JSON.stringify, which
+  // throws on BigInt — the same failure PR #6 fixed for deployV3. The contract
+  // deploys first and the saver dies afterwards, so the crash leaves a live
+  // orphan. Pass decimal strings: ethers accepts them for uint256.
+  const args = paymasterArgs(oltinAddress).map((a) =>
+    typeof a === "bigint" ? a.toString() : a,
+  );
+
+  let paymasterAddress = process.env.PAYMASTER_ADDRESS ?? "";
+  if (paymasterAddress) {
+    console.log("\nFinishing the already deployed paymaster:", paymasterAddress);
+  } else {
+    console.log("\nDeploying OltinPaymaster (fixed)...");
+    const paymaster = await deployer.deploy(artifact, args);
+    paymasterAddress = await paymaster.getAddress();
+    console.log("OltinPaymaster:", paymasterAddress);
+  }
 
   // --- 3. Allowlist our own contracts -------------------------------------- //
   const targets: Array<[string, string]> = [
@@ -110,13 +128,19 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     console.log(`  sponsored target: ${label} ${target}`);
   }
 
-  // --- 4. Fund it ----------------------------------------------------------- //
-  console.log(`\nFunding paymaster with ${fundEth} ETH...`);
-  const fundTx = await wallet.sendTransaction({
-    to: paymasterAddress,
-    value: hre.ethers.parseEther(fundEth),
-  });
-  await fundTx.wait();
+  // --- 4. Fund it (top up to the target, so a re-run is idempotent) --------- //
+  const target = hre.ethers.parseEther(fundEth);
+  const current = await provider.getBalance(paymasterAddress);
+  if (current < target) {
+    console.log(`\nFunding paymaster: ${hre.ethers.formatEther(current)} -> ${fundEth} ETH...`);
+    const fundTx = await wallet.sendTransaction({
+      to: paymasterAddress,
+      value: target - current,
+    });
+    await fundTx.wait();
+  } else {
+    console.log(`\nPaymaster already holds ${hre.ethers.formatEther(current)} ETH — no top-up.`);
+  }
 
   // --- 5. Sanity: read back what we wired, fail loudly ---------------------- //
   const read = new Contract(paymasterAddress, artifact.abi, provider);
@@ -126,8 +150,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     throw new Error(`oltinToken() mismatch: ${boundToken} != ${oltinAddress}`);
   }
   const balance = await provider.getBalance(paymasterAddress);
-  if (balance !== hre.ethers.parseEther(fundEth)) {
-    throw new Error(`balance mismatch: ${balance} wei (expected ${fundEth} ETH)`);
+  if (balance < target) {
+    throw new Error(`balance too low: ${balance} wei (expected >= ${fundEth} ETH)`);
   }
   for (const [label, target] of targets) {
     if (!(await read.sponsoredTarget(target))) {
@@ -177,7 +201,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   try {
     await hre.run("verify:verify", {
       address: paymasterAddress,
-      constructorArguments: [...paymasterArgs(oltinAddress)],
+      constructorArguments: args,
     });
     console.log("Explorer verification: OK");
   } catch (e) {

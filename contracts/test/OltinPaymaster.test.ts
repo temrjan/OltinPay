@@ -847,7 +847,12 @@ describe("OltinPaymaster", function () {
       expect(quote).to.be.greaterThanOrEqual(MIN_FEE_OLTIN * 10n);
     });
 
-    it("the deployment rate sits inside its own bounds", function () {
+    it("the bounds are derived from the rate, not chosen independently", function () {
+      // Checking only "rate is inside its bounds" would pass with RATE = 100e18
+      // against bounds built for 18e18 — exactly the fat finger this block
+      // exists to catch. The bounds must BE the rate's x100 span.
+      expect(MIN_RATE).to.equal(RATE / 10n);
+      expect(MAX_RATE).to.equal(RATE * 10n);
       expect(RATE).to.be.greaterThan(MIN_RATE);
       expect(RATE).to.be.lessThan(MAX_RATE);
     });
