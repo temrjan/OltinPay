@@ -49,3 +49,61 @@ jobs:
       # PRIVATE_KEY (accounts list is empty without it).
       - name: Compile (zksolc / EraVM)
         run: npx hardhat compile --network zkSyncSepolia
+
+  # The plain-EVM suite above cannot execute account abstraction: it impersonates
+  # the bootloader. The paymaster's real behaviour (validation by the bootloader,
+  # paymasterParams, the gas refund) only exists on the zkSync VM, so it gets its
+  # own job against a local anvil-zksync node. Without this, test-vm/ would exist
+  # and never run — the exact failure mode PR #4 and PR #9 were opened to fix.
+  vm-test:
+    name: zkSync VM (paymaster e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      # Pinned: the plugin otherwise resolves the latest anvil-zksync release,
+      # which would make this job drift without a commit.
+      ANVIL_ZKSYNC_VERSION: '0.6.11'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: contracts/package-lock.json
+
+      - run: npm ci
+
+      # Cache the node binary so a CDN hiccup does not fail the build.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/hardhat-nodejs/zksync-memory-node
+          key: ${{ runner.os }}-anvil-zksync-${{ env.ANVIL_ZKSYNC_VERSION }}
+
+      - name: Start anvil-zksync
+        run: |
+          nohup npx hardhat node-zksync --tag "$ANVIL_ZKSYNC_VERSION" --quiet \
+            > /tmp/anvil-zksync.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -s -m 2 -X POST http://127.0.0.1:8011 \
+                 -H 'content-type: application/json' \
+                 -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' \
+                 | grep -q result; then
+              echo "anvil-zksync ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "anvil-zksync did not become ready in 60s"
+          cat /tmp/anvil-zksync.log
+          exit 1
+
+      - name: VM suite (zksolc compile + e2e)
+        run: npm run test:vm
+
+      - name: Node log (on failure)
+        if: failure()
+        run: cat /tmp/anvil-zksync.log
