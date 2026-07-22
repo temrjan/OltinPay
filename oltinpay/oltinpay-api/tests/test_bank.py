@@ -182,6 +182,32 @@ async def test_unconfigured_secret_returns_503(
     assert resp.status_code == 503
 
 
+@pytest.mark.asyncio
+async def test_non_integer_timestamp_rejected(client: AsyncClient) -> None:
+    """A non-numeric X-Bank-Timestamp is rejected (401), not a 500 from int()."""
+    body = json.dumps({"uzsPerUsd": 12500, "source": "CBU"}).encode()
+    headers = _headers(body)
+    headers["X-Bank-Timestamp"] = "not-a-number"
+    resp = await client.post("/api/v1/bank/fx", content=body, headers=headers)
+    assert resp.status_code == 401
+    assert "Timestamp" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "drop", ["X-Bank-Signature", "X-Bank-Timestamp", "X-Bank-Nonce"]
+)
+async def test_single_missing_header_rejected(
+    client: AsyncClient, drop: str
+) -> None:
+    """Each auth header is individually required — dropping any one -> 401."""
+    body = json.dumps({"uzsPerUsd": 12500, "source": "CBU"}).encode()
+    headers = _headers(body)
+    del headers[drop]
+    resp = await client.post("/api/v1/bank/fx", content=body, headers=headers)
+    assert resp.status_code == 401
+
+
 # --------------------------------------------------------------------------- #
 # attestations                                                                 #
 # --------------------------------------------------------------------------- #
