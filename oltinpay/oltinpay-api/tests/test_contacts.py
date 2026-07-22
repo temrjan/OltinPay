@@ -41,7 +41,7 @@ class TestFavoriteContacts:
         assert response.json() == []
 
     @pytest.mark.asyncio
-    async def test_add_favorite(self, client: AsyncClient, test_user, _second_user):
+    async def test_add_favorite(self, client: AsyncClient, test_user, second_user):
         """Test adding a contact to favorites."""
         response = await client.post(
             "/api/v1/contacts/favorites",
@@ -57,7 +57,7 @@ class TestFavoriteContacts:
 
     @pytest.mark.asyncio
     async def test_add_favorite_with_at_sign(
-        self, client: AsyncClient, test_user, _second_user
+        self, client: AsyncClient, test_user, second_user
     ):
         """Test adding favorite with @ prefix."""
         response = await client.post(
@@ -95,7 +95,7 @@ class TestFavoriteContacts:
 
     @pytest.mark.asyncio
     async def test_add_favorite_duplicate(
-        self, client: AsyncClient, test_user, _second_user
+        self, client: AsyncClient, test_user, second_user
     ):
         """Test adding same contact twice fails."""
         # Add first time
@@ -116,7 +116,7 @@ class TestFavoriteContacts:
         assert "already" in response.json()["detail"]
 
     @pytest.mark.asyncio
-    async def test_remove_favorite(self, client: AsyncClient, test_user, _second_user):
+    async def test_remove_favorite(self, client: AsyncClient, test_user, second_user):
         """Test removing contact from favorites."""
         # Add favorite
         add_response = await client.post(
@@ -153,13 +153,13 @@ class TestFavoriteContacts:
 
     @pytest.mark.asyncio
     async def test_remove_other_user_favorite(
-        self, client: AsyncClient, test_user, _second_user
+        self, client: AsyncClient, test_user, second_user
     ):
         """Test removing another user's favorite fails."""
-        # Add favorite as _second_user
+        # Add favorite as second_user
         add_response = await client.post(
             "/api/v1/contacts/favorites",
-            headers=_second_user["headers"],
+            headers=second_user["headers"],
             json={"oltin_id": "testuser"},
         )
         favorite_id = add_response.json()["id"]
