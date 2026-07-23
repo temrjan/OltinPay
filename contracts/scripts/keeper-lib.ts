@@ -351,7 +351,9 @@ export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
     const ts = Date.parse(p.lastUpdatedAt);
     if (Number.isNaN(ts)) continue;
     const age = nowSeconds - BigInt(Math.floor(ts / 1000));
-    if (age < 0n || age > maxTokenPriceAge) continue;
+    // age < 0 (quote stamped slightly ahead of the block clock) is fresh —
+    // API clocks run ahead of the latest block timestamp by seconds.
+    if (age > maxTokenPriceAge) continue;
     valid.push({ symbol: p.symbol, value });
   }
 

@@ -267,6 +267,17 @@ describe("keeper decideGoldPrice (median + chainlink liveness detector)", functi
     expect(unreadable.reason).to.match(/infra outage/i);
   });
 
+  it("should accept a quote stamped slightly ahead of the block clock (API clock skew)", function () {
+    // Prices API stamps quotes at response time; its clock can run ahead of
+    // the latest L1 block timestamp by seconds. A near-future quote is fresh,
+    // not garbage.
+    const futureQuote: TokenUsdPrice = { symbol: "PAXG", valueRaw: "4037.4", lastUpdatedAt: "2026-07-23T18:25:00.000Z" };
+    const pastBlock = base.nowSeconds - 60n; // block time slightly behind the quote
+    const d = decideGoldPrice({ ...base, prices: [futureQuote], nowSeconds: pastBlock });
+    expect(d.action).to.equal("post");
+    if (d.action === "post") expect(d.price).to.equal(4037_40000000n);
+  });
+
   it("should discard out-of-range and stale quotes instead of relaying them", function () {
     const crazy: TokenUsdPrice = { symbol: "PAXG", valueRaw: "5", lastUpdatedAt: paxg.lastUpdatedAt };
     const d1 = decideGoldPrice({ ...base, prices: [crazy, xaut] });
