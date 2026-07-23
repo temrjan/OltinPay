@@ -261,3 +261,85 @@ export function parsePositiveInt(raw: string, name: string): bigint {
   }
   return v;
 }
+
+// === P1-E: 24/7 gold price (median of tokenized gold) + CBU age verdict ===
+
+export interface TokenUsdPrice {
+  symbol: string;
+  /** Decimal string as returned by the API, e.g. "4037.4". */
+  valueRaw: string;
+  /** ISO timestamp of the quote. */
+  lastUpdatedAt: string;
+}
+
+/**
+ * Validate the Alchemy Prices API (tokens/by-symbol) envelope. Verified live
+ * 2026-07-23: { data: [{ symbol, prices: [{ currency: "usd", value, lastUpdatedAt }] }] }.
+ * Keeps only USD quotes; throws on shape violations (untrusted external input).
+ */
+export function parsePricesBySymbolResponse(json: unknown): TokenUsdPrice[] {
+  if (typeof json !== "object" || json === null || !Array.isArray((json as { data?: unknown }).data)) {
+    throw new Error("prices response is not an object with a data array");
+  }
+  const out: TokenUsdPrice[] = [];
+  for (const entry of (json as { data: unknown[] }).data) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    if (typeof e.symbol !== "string" || !Array.isArray(e.prices)) continue;
+    for (const p of e.prices as unknown[]) {
+      if (typeof p !== "object" || p === null) continue;
+      const price = p as Record<string, unknown>;
+      if (
+        typeof price.currency === "string" &&
+        price.currency.toLowerCase() === "usd" &&
+        typeof price.value === "string" &&
+        typeof price.lastUpdatedAt === "string"
+      ) {
+        out.push({ symbol: e.symbol, valueRaw: price.value, lastUpdatedAt: price.lastUpdatedAt });
+      }
+    }
+  }
+  return out;
+}
+
+export type GoldPriceDecision =
+  | { action: "post"; price: bigint; reason: string }
+  | { action: "refuse"; reason: string };
+
+export interface GoldPriceInput {
+  prices: TokenUsdPrice[];
+  /** "now" in seconds — the mainnet block timestamp (shared clock). */
+  nowSeconds: bigint;
+  /** Max age of a token quote before it counts as dead, seconds. */
+  maxTokenPriceAge: bigint;
+  /** Sane range for a gold price, scaled 1e8. */
+  minSaneUsd: bigint;
+  maxSaneUsd: bigint;
+  /** Age of the Chainlink reading, seconds; undefined = could not read it. */
+  chainlinkAgeSeconds: bigint | undefined;
+  /** Chainlink counts as fresh at or below this age, seconds. */
+  chainlinkFreshAge: bigint;
+}
+
+/** STUB (commit A): real logic lands with the implementation commit. */
+export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
+  void input;
+  return { action: "refuse", reason: "not implemented" };
+}
+
+export type CbuAgeVerdict =
+  | { level: "ok" }
+  | { level: "warn"; message: string }
+  | { level: "refuse"; reason: string };
+
+/** STUB (commit A): pre-fix semantics — refuse beyond 7 days, no warn tier. */
+export function checkCbuAge(ageDays: number, warnDays: number, maxDays: number): CbuAgeVerdict {
+  void warnDays;
+  if (ageDays < 0) {
+    return { level: "refuse", reason: `CBU rate date is in the future (${ageDays} days)` };
+  }
+  if (ageDays > maxDays) {
+    return { level: "refuse", reason: `CBU rate is ${ageDays} days old (> ${maxDays}) — API looks broken` };
+  }
+  return { level: "ok" };
+}
