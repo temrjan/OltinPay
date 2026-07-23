@@ -68,8 +68,9 @@ export async function run(): Promise<number> {
   console.log("=== UZS/USD keeper ===");
 
   // 1. Read the CBU rate. External input is untrusted: shape-check, then
-  //    parse the decimal without floats.
-  const res = await fetch(cbuUrl);
+  //    parse the decimal without floats. Bounded wait: a hung CBU must not
+  //    hang keeper:all (and through it, the other feeds).
+  const res = await fetch(cbuUrl, { signal: AbortSignal.timeout(30_000) });
   if (!res.ok) {
     console.error(`REFUSE: CBU API returned HTTP ${res.status}`);
     return EXIT_FAILED;
