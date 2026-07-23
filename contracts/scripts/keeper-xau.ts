@@ -23,7 +23,8 @@
  *   SOURCE_WARN_AGE        age (s) above which we relay with a "source heartbeat
  *                          exceeded" warning in the log (default 82800 = 23h)
  *   MAX_JUMP_BPS           max deviation vs the current on-chain answer before
- *                          we skip, in basis points (default 1000 = 10%)
+ *                          we refuse (needs a human), in basis points
+ *                          (default 1000 = 10%)
  *   MIN_DELTA              skip posting when |new - on-chain| <= this (in feed
  *                          units, 8 decimals) UNLESS the heartbeat is due
  *                          (default 0 = skip only when identical)

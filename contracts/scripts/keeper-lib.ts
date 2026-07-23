@@ -63,9 +63,15 @@ export function decidePost(input: DecideInput): Decision {
     }
     const jumpBps = (delta * 10000n) / current;
     if (jumpBps > maxJumpBps) {
+      // A wild deviation is never a harmless skip: the source is broken or
+      // spoofed, or the market really moved past our guard (a UZS devaluation
+      // is exactly that case). Both need a human, and a "skip" would report
+      // green while the on-chain price goes stale — a silent death.
       return {
-        action: "skip",
-        reason: `wild deviation ${jumpBps}bps exceeds maxJumpBps=${maxJumpBps} (current=${current}, new=${next})`,
+        action: "refuse",
+        reason:
+          `wild deviation ${jumpBps}bps exceeds maxJumpBps=${maxJumpBps} ` +
+          `(current=${current}, new=${next}) — refusing to relay; needs a human`,
       };
     }
     return { action: "post", reason: `deviation ${jumpBps}bps within guard` };
@@ -247,7 +253,7 @@ export function cbuRateAgeDays(dateRaw: string, now: Date): number {
 export function parsePositiveInt(raw: string, name: string): bigint {
   const trimmed = raw.trim();
   if (!/^\d+$/.test(trimmed)) {
-    throw new Error(`${name} is not a non-negative integer: ${JSON.stringify(raw)}`);
+    throw new Error(`${name} is not a valid integer: ${JSON.stringify(raw)}`);
   }
   const v = BigInt(trimmed);
   if (v <= 0n) {

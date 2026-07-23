@@ -18,7 +18,8 @@
  *                          a 3-day-old Monday rate is normal; this guard
  *                          catches a broken API, not a weekend)
  *   MAX_JUMP_BPS           max deviation vs the current on-chain answer before
- *                          we skip, in basis points (default 1000 = 10%)
+ *                          we refuse (needs a human), in basis points
+ *                          (default 1000 = 10%)
  *   MIN_DELTA              skip posting when |new - on-chain| <= this (in feed
  *                          units, 8 decimals) UNLESS the heartbeat is due
  *                          (default 0)

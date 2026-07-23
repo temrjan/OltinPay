@@ -47,9 +47,19 @@ describe("keeper decidePost", function () {
     expect(d.reason).to.match(/deviation 250bps/);
   });
 
-  it("should skip a wild deviation beyond the jump guard instead of relaying it", function () {
+  it("should refuse a wild deviation beyond the jump guard instead of relaying it", function () {
     const d = decidePost({ ...base, next: base.current * 2n }); // +100%
-    expect(d.action).to.equal("skip");
+    expect(d.action).to.equal("refuse");
+    expect(d.reason).to.match(/wild deviation/);
+  });
+
+  it("should refuse a wild deviation even when the heartbeat is due — guard beats heartbeat", function () {
+    const d = decidePost({
+      ...base,
+      next: base.current * 2n,
+      now: base.currentUpdatedAt + 3600n, // heartbeat is due
+    });
+    expect(d.action).to.equal("refuse");
     expect(d.reason).to.match(/wild deviation/);
   });
 
