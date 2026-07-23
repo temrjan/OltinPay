@@ -13,10 +13,10 @@
  *   CBU_URL                default https://cbu.uz/ru/arkhiv-kursov-valyut/json/USD/
  *   ZKSYNC_RPC_URL         default https://sepolia.era.zksync.dev
  *   MAX_CB_AGE_DAYS        max age (days) of the CBU rate before we declare the
- *                          API broken and refuse (default 7 — the CBU
- *                          republishes the last business day over weekends, so
- *                          a 3-day-old Monday rate is normal; this guard
- *                          catches a broken API, not a weekend)
+ *                          API broken and refuse (default 14; P1-E)
+ *   CB_WARN_AGE_DAYS       age (days) above which we WARN and still relay —
+ *                          the CBU republishes the last business day over
+ *                          weekends/holidays, that is normal (default 3)
  *   MAX_JUMP_BPS           max deviation vs the current on-chain answer before
  *                          we refuse (needs a human), in basis points
  *                          (default 1000 = 10%)
@@ -37,6 +37,7 @@ import {
   parseCbuResponse,
   parseDecimalToScaledInt,
   cbuRateAgeDays,
+  checkCbuAge,
   chainNowSeconds,
   EXIT_POSTED,
   EXIT_SKIPPED,
@@ -61,7 +62,8 @@ export async function run(): Promise<number> {
   const cbuUrl =
     process.env.CBU_URL ?? "https://cbu.uz/ru/arkhiv-kursov-valyut/json/USD/";
   const zkRpc = process.env.ZKSYNC_RPC_URL ?? "https://sepolia.era.zksync.dev";
-  const maxCbAgeDays = Number(process.env.MAX_CB_AGE_DAYS ?? "7");
+  const maxCbAgeDays = Number(process.env.MAX_CB_AGE_DAYS ?? "14");
+  const cbWarnAgeDays = Number(process.env.CB_WARN_AGE_DAYS ?? "3");
   const maxJumpBps = BigInt(process.env.MAX_JUMP_BPS ?? "1000"); // 10%
   const minDelta = BigInt(process.env.MIN_DELTA ?? "0");
   const heartbeatAge = BigInt(process.env.HEARTBEAT_AGE_UZS ?? "86400");
@@ -85,18 +87,17 @@ export async function run(): Promise<number> {
   }
   console.log(`CBU USD rate: ${rateRaw} (effective ${dateRaw}) -> ${next} (dec 8)`);
 
-  // 2. Guard the source age. Calendar dates only — the local clock is fine
-  //    here (a day of skew cannot produce a false refusal at a 7-day guard).
+  // 2. Guard the source age. The CBU republishes the last business day over
+  //    weekends/holidays — that is normal: an aged rate warns and relays,
+  //    only a many-days-stale rate means a broken API.
   const ageDays = cbuRateAgeDays(dateRaw, new Date());
-  if (ageDays > maxCbAgeDays) {
-    console.error(
-      `REFUSE: CBU rate is ${ageDays} days old (> ${maxCbAgeDays}) — API looks broken`,
-    );
+  const verdict = checkCbuAge(ageDays, cbWarnAgeDays, maxCbAgeDays);
+  if (verdict.level === "refuse") {
+    console.error(`REFUSE: ${verdict.reason}`);
     return EXIT_FAILED;
   }
-  if (ageDays < 0) {
-    console.error(`REFUSE: CBU rate date is in the future: ${dateRaw}`);
-    return EXIT_FAILED;
+  if (verdict.level === "warn") {
+    console.log(`WARN: ${verdict.message}`);
   }
 
   // 3. Relay target.

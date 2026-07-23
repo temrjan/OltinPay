@@ -321,10 +321,67 @@ export interface GoldPriceInput {
   chainlinkFreshAge: bigint;
 }
 
-/** STUB (commit A): real logic lands with the implementation commit. */
+/**
+ * Median-of-tokens gold price with the Chainlink liveness detector (P1-E).
+ * No price cross-check against Chainlink by design (Captain's call): Chainlink
+ * only tells "we are broken" (tokens dead, chainlink fresh) from "infra
+ * outage" (both dead). Quotes are validated: parseable, within the sane
+ * range, and fresh against the shared L1 block clock.
+ */
 export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
-  void input;
-  return { action: "refuse", reason: "not implemented" };
+  const {
+    prices,
+    nowSeconds,
+    maxTokenPriceAge,
+    minSaneUsd,
+    maxSaneUsd,
+    chainlinkAgeSeconds,
+    chainlinkFreshAge,
+  } = input;
+
+  const valid: { symbol: string; value: bigint }[] = [];
+  for (const p of prices) {
+    let value: bigint;
+    try {
+      value = parseDecimalToScaledInt(p.valueRaw, 8);
+    } catch {
+      continue;
+    }
+    if (value < minSaneUsd || value > maxSaneUsd) continue;
+    const ts = Date.parse(p.lastUpdatedAt);
+    if (Number.isNaN(ts)) continue;
+    const age = nowSeconds - BigInt(Math.floor(ts / 1000));
+    if (age < 0n || age > maxTokenPriceAge) continue;
+    valid.push({ symbol: p.symbol, value });
+  }
+
+  if (valid.length === 0) {
+    if (chainlinkAgeSeconds !== undefined && chainlinkAgeSeconds <= chainlinkFreshAge) {
+      return {
+        action: "refuse",
+        reason: `token sources dead, chainlink alive (age ${chainlinkAgeSeconds}s) — WE are broken`,
+      };
+    }
+    return { action: "refuse", reason: "both token sources and chainlink dead — infra outage" };
+  }
+
+  const values = valid.map((v) => v.value).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const mid = Math.floor(values.length / 2);
+  const median =
+    values.length % 2 === 1 ? values[mid] : (values[mid - 1] + values[mid]) / 2n;
+
+  if (valid.length === 1) {
+    return {
+      action: "post",
+      price: median,
+      reason: `degraded to single source ${valid[0].symbol} (${valid[0].value})`,
+    };
+  }
+  return {
+    action: "post",
+    price: median,
+    reason: `median of ${valid.length} sources (${valid.map((v) => v.symbol).join("+")}) = ${median}`,
+  };
 }
 
 export type CbuAgeVerdict =
@@ -332,14 +389,20 @@ export type CbuAgeVerdict =
   | { level: "warn"; message: string }
   | { level: "refuse"; reason: string };
 
-/** STUB (commit A): pre-fix semantics — refuse beyond 7 days, no warn tier. */
+/**
+ * CBU rate-age verdict (P1-E). The Central Bank republishes the last business
+ * day over weekends/holidays — that is normal, so an aged rate is a WARN with
+ * relay, not a refusal. Only a many-days-stale rate means the API is broken.
+ */
 export function checkCbuAge(ageDays: number, warnDays: number, maxDays: number): CbuAgeVerdict {
-  void warnDays;
   if (ageDays < 0) {
     return { level: "refuse", reason: `CBU rate date is in the future (${ageDays} days)` };
   }
   if (ageDays > maxDays) {
     return { level: "refuse", reason: `CBU rate is ${ageDays} days old (> ${maxDays}) — API looks broken` };
+  }
+  if (ageDays > warnDays) {
+    return { level: "warn", message: `CBU rate is ${ageDays} days old (> ${warnDays}) — weekend/holidays, relaying last known` };
   }
   return { level: "ok" };
 }
