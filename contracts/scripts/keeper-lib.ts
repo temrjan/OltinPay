@@ -261,3 +261,160 @@ export function parsePositiveInt(raw: string, name: string): bigint {
   }
   return v;
 }
+
+// === P1-E: 24/7 gold price (median of tokenized gold) + CBU age verdict ===
+
+export interface TokenUsdPrice {
+  symbol: string;
+  /** Decimal string as returned by the API, e.g. "4037.4". */
+  valueRaw: string;
+  /** ISO timestamp of the quote. */
+  lastUpdatedAt: string;
+}
+
+/**
+ * Validate the Alchemy Prices API (tokens/by-symbol) envelope. Verified live
+ * 2026-07-23: { data: [{ symbol, prices: [{ currency: "usd", value, lastUpdatedAt }] }] }.
+ * Keeps only USD quotes; throws on shape violations (untrusted external input).
+ */
+export function parsePricesBySymbolResponse(json: unknown): TokenUsdPrice[] {
+  if (typeof json !== "object" || json === null || !Array.isArray((json as { data?: unknown }).data)) {
+    throw new Error("prices response is not an object with a data array");
+  }
+  const out: TokenUsdPrice[] = [];
+  for (const entry of (json as { data: unknown[] }).data) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const e = entry as Record<string, unknown>;
+    if (typeof e.symbol !== "string" || !Array.isArray(e.prices)) continue;
+    for (const p of e.prices as unknown[]) {
+      if (typeof p !== "object" || p === null) continue;
+      const price = p as Record<string, unknown>;
+      if (
+        typeof price.currency === "string" &&
+        price.currency.toLowerCase() === "usd" &&
+        typeof price.value === "string" &&
+        typeof price.lastUpdatedAt === "string"
+      ) {
+        out.push({ symbol: e.symbol, valueRaw: price.value, lastUpdatedAt: price.lastUpdatedAt });
+      }
+    }
+  }
+  return out;
+}
+
+export type GoldPriceDecision =
+  | { action: "post"; price: bigint; reason: string }
+  | { action: "refuse"; reason: string };
+
+export interface GoldPriceInput {
+  prices: TokenUsdPrice[];
+  /** "now" in seconds — the mainnet block timestamp (shared clock).
+   *  undefined = the L1 clock is unreadable, freshness is unprovable. */
+  nowSeconds: bigint | undefined;
+  /** Max age of a token quote before it counts as dead, seconds. */
+  maxTokenPriceAge: bigint;
+  /** Sane range for a gold price, scaled 1e8. */
+  minSaneUsd: bigint;
+  maxSaneUsd: bigint;
+  /** Age of the Chainlink reading, seconds; undefined = could not read it. */
+  chainlinkAgeSeconds: bigint | undefined;
+  /** Chainlink counts as fresh at or below this age, seconds. */
+  chainlinkFreshAge: bigint;
+}
+
+/**
+ * Median-of-tokens gold price with the Chainlink liveness detector (P1-E).
+ * No price cross-check against Chainlink by design (Captain's call): Chainlink
+ * only tells "we are broken" (tokens dead, chainlink fresh) from "infra
+ * outage" (both dead). Quotes are validated: parseable, within the sane
+ * range, and fresh against the shared L1 block clock.
+ */
+export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
+  const {
+    prices,
+    nowSeconds,
+    maxTokenPriceAge,
+    minSaneUsd,
+    maxSaneUsd,
+    chainlinkAgeSeconds,
+    chainlinkFreshAge,
+  } = input;
+
+  const valid: { symbol: string; value: bigint }[] = [];
+  if (nowSeconds === undefined) {
+    // No shared clock: freshness is unprovable. Refusing beats publishing an
+    // unverified price into a money feed (fail-open via negative ages).
+    return {
+      action: "refuse",
+      reason: "no shared clock (L1 block time unreadable) — freshness unprovable",
+    };
+  }
+  const now = nowSeconds;
+  for (const p of prices) {
+    let value: bigint;
+    try {
+      value = parseDecimalToScaledInt(p.valueRaw, 8);
+    } catch {
+      continue;
+    }
+    if (value < minSaneUsd || value > maxSaneUsd) continue;
+    const ts = Date.parse(p.lastUpdatedAt);
+    if (Number.isNaN(ts)) continue;
+    const age = now - BigInt(Math.floor(ts / 1000));
+    // age < 0 (quote stamped slightly ahead of the block clock) is fresh —
+    // API clocks run ahead of the latest block timestamp by seconds.
+    if (age > maxTokenPriceAge) continue;
+    valid.push({ symbol: p.symbol, value });
+  }
+
+  if (valid.length === 0) {
+    if (chainlinkAgeSeconds !== undefined && chainlinkAgeSeconds <= chainlinkFreshAge) {
+      return {
+        action: "refuse",
+        reason: `token sources dead, chainlink alive (age ${chainlinkAgeSeconds}s) — WE are broken`,
+      };
+    }
+    return { action: "refuse", reason: "both token sources and chainlink dead — infra outage" };
+  }
+
+  const values = valid.map((v) => v.value).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  const mid = Math.floor(values.length / 2);
+  const median =
+    values.length % 2 === 1 ? values[mid] : (values[mid - 1] + values[mid]) / 2n;
+
+  if (valid.length === 1) {
+    return {
+      action: "post",
+      price: median,
+      reason: `degraded to single source ${valid[0].symbol} (${valid[0].value})`,
+    };
+  }
+  return {
+    action: "post",
+    price: median,
+    reason: `median of ${valid.length} sources (${valid.map((v) => v.symbol).join("+")}) = ${median}`,
+  };
+}
+
+export type CbuAgeVerdict =
+  | { level: "ok" }
+  | { level: "warn"; message: string }
+  | { level: "refuse"; reason: string };
+
+/**
+ * CBU rate-age verdict (P1-E). The Central Bank republishes the last business
+ * day over weekends/holidays — that is normal, so an aged rate is a WARN with
+ * relay, not a refusal. Only a many-days-stale rate means the API is broken.
+ */
+export function checkCbuAge(ageDays: number, warnDays: number, maxDays: number): CbuAgeVerdict {
+  if (ageDays < 0) {
+    return { level: "refuse", reason: `CBU rate date is in the future (${ageDays} days)` };
+  }
+  if (ageDays > maxDays) {
+    return { level: "refuse", reason: `CBU rate is ${ageDays} days old (> ${maxDays}) — API looks broken` };
+  }
+  if (ageDays > warnDays) {
+    return { level: "warn", message: `CBU rate is ${ageDays} days old (> ${warnDays}) — weekend/holidays, relaying last known` };
+  }
+  return { level: "ok" };
+}

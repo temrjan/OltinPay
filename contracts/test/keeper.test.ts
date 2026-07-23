@@ -8,6 +8,11 @@ import {
   parseDecimalToScaledInt,
   cbuRateAgeDays,
   parsePositiveInt,
+  parsePricesBySymbolResponse,
+  decideGoldPrice,
+  checkCbuAge,
+  type TokenUsdPrice,
+  type GoldPriceInput,
   type BlockTimestampProvider,
   type DecideInput,
 } from "../scripts/keeper-lib";
@@ -195,5 +200,119 @@ describe("keeper parsePositiveInt (RESERVE_GRAMS)", function () {
     expect(() => parsePositiveInt("-5", "RESERVE_GRAMS")).to.throw();
     expect(() => parsePositiveInt("0", "RESERVE_GRAMS")).to.throw();
     expect(() => parsePositiveInt("abc", "RESERVE_GRAMS")).to.throw();
+  });
+});
+
+describe("keeper parsePricesBySymbolResponse (Alchemy)", function () {
+  it("should parse a live-shaped by-symbol response keeping only USD quotes", function () {
+    const body = {
+      data: [
+        { symbol: "PAXG", prices: [{ currency: "usd", value: "4037.4", lastUpdatedAt: "2026-07-23T18:13:20.037Z" }] },
+        { symbol: "XAUT", prices: [{ currency: "usd", value: "4043.4", lastUpdatedAt: "2026-07-23T18:13:20.566Z" }] },
+      ],
+    };
+    const out = parsePricesBySymbolResponse(body);
+    expect(out).to.have.length(2);
+    expect(out[0]).to.deep.equal({ symbol: "PAXG", valueRaw: "4037.4", lastUpdatedAt: "2026-07-23T18:13:20.037Z" });
+  });
+
+  it("should reject malformed payloads instead of trusting them", function () {
+    expect(() => parsePricesBySymbolResponse(null)).to.throw();
+    expect(() => parsePricesBySymbolResponse([])).to.throw();
+    expect(() => parsePricesBySymbolResponse({})).to.throw();
+    expect(parsePricesBySymbolResponse({ data: [{ symbol: "PAXG", prices: [{ currency: "usdt", value: "1" }] }] })).to.have.length(0);
+  });
+});
+
+describe("keeper decideGoldPrice (median + chainlink liveness detector)", function () {
+  const paxg: TokenUsdPrice = { symbol: "PAXG", valueRaw: "4037.4", lastUpdatedAt: "2026-07-23T18:13:20.037Z" };
+  const xaut: TokenUsdPrice = { symbol: "XAUT", valueRaw: "4043.4", lastUpdatedAt: "2026-07-23T18:13:20.566Z" };
+  const base: GoldPriceInput = {
+    prices: [paxg, xaut],
+    nowSeconds: 1784831000n, // ~18:23 UTC 2026-07-23, quotes are ~10 min old
+    maxTokenPriceAge: 3600n,
+    minSaneUsd: 100_00000000n,
+    maxSaneUsd: 100000_00000000n,
+    chainlinkAgeSeconds: 3600n,
+    chainlinkFreshAge: 82800n,
+  };
+
+  it("should post the median (average of two) when both sources are valid", function () {
+    const d = decideGoldPrice(base);
+    expect(d.action).to.equal("post");
+    if (d.action === "post") expect(d.price).to.equal(4040_40000000n); // (4037.4 + 4043.4) / 2
+  });
+
+  it("should post a single valid source with a degraded warning", function () {
+    const d = decideGoldPrice({ ...base, prices: [paxg] });
+    expect(d.action).to.equal("post");
+    if (d.action === "post") {
+      expect(d.price).to.equal(4037_40000000n);
+      expect(d.reason).to.match(/degraded to single source PAXG/);
+    }
+  });
+
+  it("should refuse as 'we are broken' when tokens are dead but chainlink is fresh", function () {
+    const d = decideGoldPrice({ ...base, prices: [], chainlinkAgeSeconds: 3600n });
+    expect(d.action).to.equal("refuse");
+    expect(d.reason).to.match(/we are broken/i);
+  });
+
+  it("should refuse as 'infra outage' when tokens are dead and chainlink is stale or unreadable", function () {
+    const stale = decideGoldPrice({ ...base, prices: [], chainlinkAgeSeconds: 90000n });
+    expect(stale.action).to.equal("refuse");
+    expect(stale.reason).to.match(/infra outage/i);
+    const unreadable = decideGoldPrice({ ...base, prices: [], chainlinkAgeSeconds: undefined });
+    expect(unreadable.action).to.equal("refuse");
+    expect(unreadable.reason).to.match(/infra outage/i);
+  });
+
+  it("should refuse when the shared L1 clock is unavailable, even with live token quotes", function () {
+    // Freshness is unprovable without a shared clock: an unreadable L1 block
+    // time must NOT fail open into "everything is fresh forever".
+    const d = decideGoldPrice({ ...base, nowSeconds: undefined });
+    expect(d.action).to.equal("refuse");
+    expect(d.reason).to.match(/clock/i);
+  });
+
+  it("should accept a quote stamped slightly ahead of the block clock (API clock skew)", function () {
+    // Prices API stamps quotes at response time; its clock can run ahead of
+    // the latest L1 block timestamp by seconds. A near-future quote is fresh,
+    // not garbage.
+    const futureQuote: TokenUsdPrice = { symbol: "PAXG", valueRaw: "4037.4", lastUpdatedAt: "2026-07-23T18:25:00.000Z" };
+    // Quote stamped 18:25:00; block clock ~1 minute behind it.
+    const pastBlock = BigInt(Math.floor(Date.UTC(2026, 6, 23, 18, 24, 0) / 1000));
+    const d = decideGoldPrice({ ...base, prices: [futureQuote], nowSeconds: pastBlock });
+    expect(d.action).to.equal("post");
+    if (d.action === "post") expect(d.price).to.equal(4037_40000000n);
+  });
+
+  it("should discard out-of-range and stale quotes instead of relaying them", function () {
+    const crazy: TokenUsdPrice = { symbol: "PAXG", valueRaw: "5", lastUpdatedAt: paxg.lastUpdatedAt };
+    const d1 = decideGoldPrice({ ...base, prices: [crazy, xaut] });
+    expect(d1.action).to.equal("post");
+    if (d1.action === "post") expect(d1.price).to.equal(4043_40000000n); // crazy discarded
+    const staleQuote: TokenUsdPrice = { symbol: "PAXG", valueRaw: "4037.4", lastUpdatedAt: "2026-07-22T18:13:20.000Z" };
+    const d2 = decideGoldPrice({ ...base, prices: [staleQuote] });
+    expect(d2.action).to.equal("refuse"); // stale quote = dead source
+  });
+});
+
+describe("keeper checkCbuAge (P1-E: warn-and-relay)", function () {
+  it("should warn and relay a 5-day-old rate (holidays), not refuse", function () {
+    const v = checkCbuAge(5, 3, 14);
+    expect(v.level).to.equal("warn");
+  });
+
+  it("should refuse a rate older than 14 days as a broken API", function () {
+    expect(checkCbuAge(15, 3, 14).level).to.equal("refuse");
+  });
+
+  it("should be ok for an ordinary 1-day-old weekday rate", function () {
+    expect(checkCbuAge(1, 3, 14).level).to.equal("ok");
+  });
+
+  it("should refuse a future-dated rate", function () {
+    expect(checkCbuAge(-1, 3, 14).level).to.equal("refuse");
   });
 });
