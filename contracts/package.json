@@ -12,7 +12,10 @@
     "deploy:second": "hardhat deploy-zksync --network zkSyncSepolia --script deploySecondAsset.ts",
     "deploy:4a": "hardhat deploy-zksync --network zkSyncSepolia --script deployPaymasterStaking.ts",
     "deploy:4a-prime": "hardhat deploy-zksync --network zkSyncSepolia --script deployPaymasterFixed.ts",
-    "keeper:xau": "hardhat run scripts/keeper-xau.ts --network zkSyncSepolia",
+    "keeper:xau": "ts-node scripts/keeper-xau.ts",
+    "keeper:uzs": "ts-node scripts/keeper-uzs.ts",
+    "keeper:reserve": "ts-node scripts/keeper-reserve.ts",
+    "keeper:all": "ts-node scripts/keeper-all.ts",
     "fund:rewards": "hardhat run scripts/fundRewardPool.ts --network zkSyncSepolia",
     "verify": "hardhat verify --network zkSyncSepolia"
   },
