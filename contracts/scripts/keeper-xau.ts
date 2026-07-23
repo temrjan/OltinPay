@@ -4,29 +4,47 @@
  * Sepolia via postAnswer(). The Attestor self-stamps updatedAt on-chain, so this
  * keeper only forwards the raw answer.
  *
- * Run periodically (e.g. every few minutes):
- *   npx hardhat run scripts/keeper-xau.ts --network zkSyncSepolia
- * or:  npm run keeper:xau
+ * Runs via the shared runner (one wallet, one nonce stream):
+ *   npm run keeper:all
+ * or standalone (manual runs):
+ *   npm run keeper:xau
  *
  * Required env (contracts/.env):
- *   MAINNET_RPC_URL        Ethereum mainnet RPC (reads Chainlink)
+ *   MAINNET_RPC_URL        Ethereum mainnet RPC, keyed provider (reads Chainlink)
  *   XAU_FEED_ADDRESS       Chainlink XAU/USD aggregator on mainnet
  *   XAU_ATTESTOR_ADDRESS   our XauUsdFeed Attestor on zkSync Sepolia
  *   KEY_XAU                POSTER private key for XauUsdFeed (0x-prefixed)
  * Optional env:
  *   ZKSYNC_RPC_URL         default https://sepolia.era.zksync.dev
- *   MAX_SOURCE_AGE         max age (s) of the mainnet reading before we refuse
- *                          to relay (default 3600)
+ *   MAX_SOURCE_AGE         max age (s) of the mainnet reading before we declare
+ *                          the source broken and refuse (default 259200 = 72h;
+ *                          never below 26h — the Chainlink heartbeat of 22h20m
+ *                          legitimately leaves readings ~22h old on weekends)
+ *   SOURCE_WARN_AGE        age (s) above which we relay with a "source heartbeat
+ *                          exceeded" warning in the log (default 82800 = 23h)
  *   MAX_JUMP_BPS           max deviation vs the current on-chain answer before
- *                          we refuse to post, in basis points (default 1000 =
- *                          10%) — a guard against relaying a wild/garbage value
+ *                          we skip, in basis points (default 1000 = 10%)
  *   MIN_DELTA              skip posting when |new - on-chain| <= this (in feed
- *                          units, 8 decimals) to avoid empty/no-op L2 txs
+ *                          units, 8 decimals) UNLESS the heartbeat is due
  *                          (default 0 = skip only when identical)
+ *   HEARTBEAT_AGE          force a post when the on-chain reading reaches this
+ *                          age (s), even if the value is unchanged
+ *                          (default 1800 = half of maxAgeXau)
+ *
+ * Exit codes: 0 = posted, 2 = deliberate skip, 1 = refusal/error.
  */
 
+import "dotenv/config";
 import { JsonRpcProvider, Contract as EthersContract } from "ethers";
 import { Wallet, Provider, Contract } from "zksync-ethers";
+import {
+  decidePost,
+  checkSourceAge,
+  chainNowSeconds,
+  EXIT_POSTED,
+  EXIT_SKIPPED,
+  EXIT_FAILED,
+} from "./keeper-lib";
 
 const AGGREGATOR_ABI = [
   "function decimals() view returns (uint8)",
@@ -45,15 +63,17 @@ function requireEnv(name: string): string {
   return v;
 }
 
-async function main() {
+export async function run(): Promise<number> {
   const mainnetRpc = requireEnv("MAINNET_RPC_URL");
   const feedAddress = requireEnv("XAU_FEED_ADDRESS");
   const attestorAddress = requireEnv("XAU_ATTESTOR_ADDRESS");
   const keyXau = requireEnv("KEY_XAU");
   const zkRpc = process.env.ZKSYNC_RPC_URL ?? "https://sepolia.era.zksync.dev";
-  const maxSourceAge = BigInt(process.env.MAX_SOURCE_AGE ?? "3600");
+  const maxSourceAge = BigInt(process.env.MAX_SOURCE_AGE ?? "259200"); // 72h
+  const sourceWarnAge = BigInt(process.env.SOURCE_WARN_AGE ?? "82800"); // 23h
   const maxJumpBps = BigInt(process.env.MAX_JUMP_BPS ?? "1000"); // 10%
-  const minDelta = BigInt(process.env.MIN_DELTA ?? "0"); // skip if |Δ| <= this
+  const minDelta = BigInt(process.env.MIN_DELTA ?? "0");
+  const heartbeatAge = BigInt(process.env.HEARTBEAT_AGE ?? "1800");
 
   console.log("=== XAU/USD keeper ===");
 
@@ -65,16 +85,29 @@ async function main() {
 
   console.log(`Chainlink XAU/USD: answer=${answer} (dec ${feedDecimals}) round=${roundId}`);
 
-  // 2. Guard the source reading before relaying.
-  if (answer <= 0n) throw new Error(`Refusing to relay non-positive answer: ${answer}`);
-  if (feedDecimals !== 8n) {
-    throw new Error(`Expected 8-decimal XAU feed, got ${feedDecimals}`);
+  // 2. Guard the source reading before relaying. The source clock is the
+  //    mainnet block timestamp, not the local clock.
+  if (answer <= 0n) {
+    console.error(`REFUSE: non-positive answer: ${answer}`);
+    return EXIT_FAILED;
   }
-  const now = BigInt(Math.floor(Date.now() / 1000));
-  if (updatedAt > now) throw new Error(`Source updatedAt is in the future: ${updatedAt}`);
-  const age = now - updatedAt;
-  if (age > maxSourceAge) {
-    throw new Error(`Source reading is stale: age ${age}s > ${maxSourceAge}s`);
+  if (feedDecimals !== 8n) {
+    console.error(`REFUSE: expected 8-decimal XAU feed, got ${feedDecimals}`);
+    return EXIT_FAILED;
+  }
+  const l1Now = await chainNowSeconds(mainnet);
+  if (updatedAt > l1Now) {
+    console.error(`REFUSE: source updatedAt is in the future: ${updatedAt}`);
+    return EXIT_FAILED;
+  }
+  const sourceAge = l1Now - BigInt(updatedAt);
+  const verdict = checkSourceAge(sourceAge, maxSourceAge, sourceWarnAge);
+  if (verdict.level === "refuse") {
+    console.error(`REFUSE: ${verdict.reason}`);
+    return EXIT_FAILED;
+  }
+  if (verdict.level === "warn") {
+    console.log(`WARN: ${verdict.message}`);
   }
 
   // 3. Relay to our XauUsdFeed Attestor on zkSync Sepolia.
@@ -84,45 +117,42 @@ async function main() {
 
   const attDecimals: bigint = await attestor.decimals();
   if (attDecimals !== feedDecimals) {
-    throw new Error(
-      `Decimals mismatch: source ${feedDecimals} vs attestor ${attDecimals}`,
+    console.error(
+      `REFUSE: decimals mismatch: source ${feedDecimals} vs attestor ${attDecimals}`,
     );
+    return EXIT_FAILED;
   }
 
-  // 4. Compare against the current on-chain answer before spending a tx.
-  const current = BigInt((await attestor.latestRoundData())[1]);
-  const next = BigInt(answer);
-  if (current > 0n) {
-    const delta = next > current ? next - current : current - next;
-    // F9/F10: skip an unchanged reading (within epsilon) — avoids an empty L2 tx.
-    if (delta <= minDelta) {
-      console.log(
-        `On-chain answer unchanged (current=${current}, new=${next}, |Δ|=${delta} <= ε=${minDelta}). Skipping post.`,
-      );
-      return;
-    }
-    // F12/F14: refuse to relay a wild deviation instead of posting a bad price.
-    const jumpBps = (delta * 10000n) / current;
-    if (jumpBps > maxJumpBps) {
-      console.log(
-        `SKIP: deviation ${jumpBps}bps exceeds MAX_JUMP_BPS=${maxJumpBps} ` +
-          `(current=${current}, new=${next}). Refusing to relay a wild value.`,
-      );
-      return;
-    }
-    console.log(`Deviation OK: ${jumpBps}bps (<= ${maxJumpBps}bps).`);
-  } else {
-    console.log("No prior on-chain answer (first post) — deviation guard skipped.");
-  }
+  // 4. Decide. The on-chain age is measured against the L2 block timestamp.
+  const [, current, , currentUpdatedAt] = await attestor.latestRoundData();
+  const now = await chainNowSeconds(zk);
+  const decision = decidePost({
+    current: BigInt(current),
+    currentUpdatedAt: BigInt(currentUpdatedAt),
+    next: BigInt(answer),
+    now,
+    minDelta,
+    maxJumpBps,
+    heartbeatAge,
+  });
+  console.log(`Decision: ${decision.action} — ${decision.reason}`);
+  if (decision.action === "skip") return EXIT_SKIPPED;
+  if (decision.action === "refuse") return EXIT_FAILED;
 
+  // 5. Post.
   console.log(`Posting answer=${answer} to XauUsdFeed ${attestorAddress} as ${wallet.address}`);
   const tx = await attestor.postAnswer(answer);
   console.log(`  tx: ${tx.hash}`);
   await tx.wait();
   console.log("  ✓ Posted");
+  return EXIT_POSTED;
 }
 
-main().catch((e: unknown) => {
-  console.error(e instanceof Error ? e.message : e);
-  process.exit(1);
-});
+if (require.main === module) {
+  run()
+    .then((code) => process.exit(code))
+    .catch((e: unknown) => {
+      console.error(e instanceof Error ? e.message : e);
+      process.exit(EXIT_FAILED);
+    });
+}
