@@ -308,8 +308,9 @@ export type GoldPriceDecision =
 
 export interface GoldPriceInput {
   prices: TokenUsdPrice[];
-  /** "now" in seconds — the mainnet block timestamp (shared clock). */
-  nowSeconds: bigint;
+  /** "now" in seconds — the mainnet block timestamp (shared clock).
+   *  undefined = the L1 clock is unreadable, freshness is unprovable. */
+  nowSeconds: bigint | undefined;
   /** Max age of a token quote before it counts as dead, seconds. */
   maxTokenPriceAge: bigint;
   /** Sane range for a gold price, scaled 1e8. */
@@ -340,6 +341,7 @@ export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
   } = input;
 
   const valid: { symbol: string; value: bigint }[] = [];
+  const now = nowSeconds ?? 0n; // STUB (commit A): undefined clock still fails open
   for (const p of prices) {
     let value: bigint;
     try {
@@ -350,7 +352,7 @@ export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
     if (value < minSaneUsd || value > maxSaneUsd) continue;
     const ts = Date.parse(p.lastUpdatedAt);
     if (Number.isNaN(ts)) continue;
-    const age = nowSeconds - BigInt(Math.floor(ts / 1000));
+    const age = now - BigInt(Math.floor(ts / 1000));
     // age < 0 (quote stamped slightly ahead of the block clock) is fresh —
     // API clocks run ahead of the latest block timestamp by seconds.
     if (age > maxTokenPriceAge) continue;

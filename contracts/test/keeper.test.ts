@@ -267,6 +267,14 @@ describe("keeper decideGoldPrice (median + chainlink liveness detector)", functi
     expect(unreadable.reason).to.match(/infra outage/i);
   });
 
+  it("should refuse when the shared L1 clock is unavailable, even with live token quotes", function () {
+    // Freshness is unprovable without a shared clock: an unreadable L1 block
+    // time must NOT fail open into "everything is fresh forever".
+    const d = decideGoldPrice({ ...base, nowSeconds: undefined });
+    expect(d.action).to.equal("refuse");
+    expect(d.reason).to.match(/clock/i);
+  });
+
   it("should accept a quote stamped slightly ahead of the block clock (API clock skew)", function () {
     // Prices API stamps quotes at response time; its clock can run ahead of
     // the latest L1 block timestamp by seconds. A near-future quote is fresh,
