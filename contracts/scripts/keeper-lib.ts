@@ -341,7 +341,15 @@ export function decideGoldPrice(input: GoldPriceInput): GoldPriceDecision {
   } = input;
 
   const valid: { symbol: string; value: bigint }[] = [];
-  const now = nowSeconds ?? 0n; // STUB (commit A): undefined clock still fails open
+  if (nowSeconds === undefined) {
+    // No shared clock: freshness is unprovable. Refusing beats publishing an
+    // unverified price into a money feed (fail-open via negative ages).
+    return {
+      action: "refuse",
+      reason: "no shared clock (L1 block time unreadable) — freshness unprovable",
+    };
+  }
+  const now = nowSeconds;
   for (const p of prices) {
     let value: bigint;
     try {

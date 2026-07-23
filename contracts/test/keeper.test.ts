@@ -280,7 +280,8 @@ describe("keeper decideGoldPrice (median + chainlink liveness detector)", functi
     // the latest L1 block timestamp by seconds. A near-future quote is fresh,
     // not garbage.
     const futureQuote: TokenUsdPrice = { symbol: "PAXG", valueRaw: "4037.4", lastUpdatedAt: "2026-07-23T18:25:00.000Z" };
-    const pastBlock = base.nowSeconds - 60n; // block time slightly behind the quote
+    // Quote stamped 18:25:00; block clock ~1 minute behind it.
+    const pastBlock = BigInt(Math.floor(Date.UTC(2026, 6, 23, 18, 24, 0) / 1000));
     const d = decideGoldPrice({ ...base, prices: [futureQuote], nowSeconds: pastBlock });
     expect(d.action).to.equal("post");
     if (d.action === "post") expect(d.price).to.equal(4037_40000000n);

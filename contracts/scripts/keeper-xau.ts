@@ -95,10 +95,9 @@ export async function run(): Promise<number> {
 
   const mainnet = new JsonRpcProvider(mainnetRpc);
 
-  // 1. Shared clock: the L1 block timestamp. If it is unreachable, token
-  //    quotes cannot be freshness-validated either (age < 0 discards them),
-  //    which funnels into the detector path below.
-  let nowL1 = 0n;
+  // 1. Shared clock: the L1 block timestamp. If it is unreadable, freshness
+  //    is unprovable — decideGoldPrice refuses below (no fail-open).
+  let nowL1: bigint | undefined;
   try {
     nowL1 = await chainNowSeconds(mainnet);
   } catch (e: unknown) {
@@ -107,7 +106,7 @@ export async function run(): Promise<number> {
 
   // 2. Chainlink — liveness detector only. Never compared on price.
   let chainlinkAgeSeconds: bigint | undefined;
-  if (nowL1 > 0n) {
+  if (nowL1 !== undefined) {
     try {
       const feed = new EthersContract(feedAddress, AGGREGATOR_ABI, mainnet);
       const [roundId, answer, , updatedAt] = await feed.latestRoundData();
