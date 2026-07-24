@@ -1,7 +1,9 @@
 /**
  * UZS/USD keeper. Reads the official Central Bank of Uzbekistan JSON rate
- * (sum per 1 USD) and relays it (8 decimals) to our UzsUsdFeed {Attestor} on
- * zkSync Sepolia via postAnswer().
+ * (sum per 1 USD) and relays its INVERSE — USD per 1 UZS, 8 decimals — to our
+ * UzsUsdFeed {Attestor} on zkSync Sepolia via postAnswer(). Feed semantics
+ * verified against Exchange.sol tests and oltinpay-api bank/service.py
+ * (answer = round(1e8 / uzsPerUsd)).
  *
  * Runs via the shared runner:  npm run keeper:all
  * or standalone (manual runs): npm run keeper:uzs
@@ -38,6 +40,7 @@ import {
   parseDecimalToScaledInt,
   cbuRateAgeDays,
   checkCbuAge,
+  usdPerUzsFromRate,
   chainNowSeconds,
   EXIT_POSTED,
   EXIT_SKIPPED,
@@ -80,12 +83,14 @@ export async function run(): Promise<number> {
   }
   const body: unknown = await res.json();
   const { rateRaw, dateRaw } = parseCbuResponse(body);
-  const next = parseDecimalToScaledInt(rateRaw, 8);
+  // Feed canonical semantics: USD per 1 UZS @ 8 decimals (NOT sum per USD) —
+  // matches Exchange.sol's money math and oltinpay-api bank/service.py.
+  const next = usdPerUzsFromRate(parseDecimalToScaledInt(rateRaw, 8));
   if (next <= 0n) {
     console.error(`REFUSE: non-positive CBU rate: ${rateRaw}`);
     return EXIT_FAILED;
   }
-  console.log(`CBU USD rate: ${rateRaw} (effective ${dateRaw}) -> ${next} (dec 8)`);
+  console.log(`CBU USD rate: ${rateRaw} som/USD (effective ${dateRaw}) -> ${next} (USD/UZS dec 8)`);
 
   // 2. Guard the source age. The CBU republishes the last business day over
   //    weekends/holidays — that is normal: an aged rate warns and relays,

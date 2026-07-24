@@ -214,6 +214,17 @@ export interface CbuRate {
 }
 
 /**
+ * Convert a CBU rate (sum per 1 USD, 8 decimals) into the feed's canonical
+ * semantics: **USD per 1 UZS at 8 decimals** (= 1e16 / rate). Matches
+ * Exchange.sol's money math and oltinpay-api bank/service.py
+ * (`answer = round(1e8 / uzsPerUsd)`).
+ */
+export function usdPerUzsFromRate(rateE8: bigint): bigint {
+  if (rateE8 <= 0n) throw new Error(`rate must be positive, got ${rateE8}`);
+  return (10_000_000_000_000_000n + rateE8 / 2n) / rateE8;
+}
+
+/**
  * Validate the CBU JSON envelope. External input is untrusted: shape-check
  * before touching values (verified live 2026-07-23: array of objects with
  * string Rate and Date fields).
