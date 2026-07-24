@@ -312,7 +312,13 @@ describe("keeper checkCbuAge (P1-E: warn-and-relay)", function () {
     expect(checkCbuAge(1, 3, 14).level).to.equal("ok");
   });
 
-  it("should refuse a future-dated rate", function () {
-    expect(checkCbuAge(-1, 3, 14).level).to.equal("refuse");
+  it("should accept a next-day rate published in advance (age -1)", function () {
+    // The CBU publishes tomorrow's rate in the evening (UTC+5) — a -1 age is
+    // the API working as designed, not a broken clock.
+    expect(checkCbuAge(-1, 3, 14).level).to.equal("ok");
+  });
+
+  it("should refuse a rate dated further in the future than tomorrow", function () {
+    expect(checkCbuAge(-2, 3, 14).level).to.equal("refuse");
   });
 });

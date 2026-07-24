@@ -405,10 +405,12 @@ export type CbuAgeVerdict =
  * CBU rate-age verdict (P1-E). The Central Bank republishes the last business
  * day over weekends/holidays — that is normal, so an aged rate is a WARN with
  * relay, not a refusal. Only a many-days-stale rate means the API is broken.
+ * An age of -1 is also normal: the CBU publishes tomorrow's rate in advance
+ * (evening, UTC+5). Anything further in the future is a broken clock.
  */
 export function checkCbuAge(ageDays: number, warnDays: number, maxDays: number): CbuAgeVerdict {
-  if (ageDays < 0) {
-    return { level: "refuse", reason: `CBU rate date is in the future (${ageDays} days)` };
+  if (ageDays < -1) {
+    return { level: "refuse", reason: `CBU rate date is too far in the future (${ageDays} days)` };
   }
   if (ageDays > maxDays) {
     return { level: "refuse", reason: `CBU rate is ${ageDays} days old (> ${maxDays}) — API looks broken` };
