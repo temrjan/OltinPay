@@ -16,6 +16,7 @@
     "keeper:uzs": "ts-node scripts/keeper-uzs.ts",
     "keeper:reserve": "ts-node scripts/keeper-reserve.ts",
     "keeper:all": "ts-node scripts/keeper-all.ts",
+    "seed:demo": "ts-node scripts/seed-demo.ts",
     "fund:rewards": "hardhat run scripts/fundRewardPool.ts --network zkSyncSepolia",
     "verify": "hardhat verify --network zkSyncSepolia"
   },
