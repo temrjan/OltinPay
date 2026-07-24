@@ -54,6 +54,9 @@ OltinPay/
 
 ## Deployed contracts (zkSync Sepolia, chainId 300)
 
+> ⚠️ Таблица ниже — эпоха V2 (легаси, ключи не у команды). **Актуальный стек
+> V3.1 (PoR, живой money-path) — в `docs/DEPLOYMENTS.md`.**
+
 | Contract | Address |
 |----------|---------|
 | OltinTokenV2 (OLTIN) | `0x4A56B78DBFc2E6c914f5413B580e86ee1A474347` |

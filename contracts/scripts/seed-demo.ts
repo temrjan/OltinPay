@@ -2,8 +2,8 @@
  * Demo-bank seed (P1-C, "Ступень 1 — оно живое"). Drives the full money loop
  * on zkSync Sepolia with the REAL contracts and live feeds:
  *
- *   1. Mint UZD to the bank (deployer) and three demo clients (KEY_BANK_OPS is
- *      the sole UZD minter).
+ *   1. Mint UZD to the bank (deployer — the UZD minter in V3.1) and three
+ *      demo clients.
  *   2. Fund the clients with a little ETH for gas.
  *   3. PROBE buy (1M UZD) — unit semantics check: the Bought event's oltinOut
  *      must match the off-chain formula against the live feeds (±0.5% for feed
@@ -19,9 +19,10 @@
  * testnet as long as it is deliberate.
  *
  * Required env (contracts/.env):
- *   PRIVATE_KEY     deployer = the "bank" (holds OLTIN admin, pays gas)
- *   KEY_BANK_OPS    sole UZD minter (the live API's bank-ops signer)
+ *   PRIVATE_KEY     deployer = the "bank" (UZD minter, OLTIN admin, pays gas)
  *   DEMO_KEY_1..3   demo client keys (generated once, addresses in docs)
+ *   UZD_ADDRESS     UZD token (V3.1)
+ *   EXCHANGE_ADDRESS  Exchange (V3.1)
  * Optional env:
  *   ZKSYNC_RPC_URL  default https://sepolia.era.zksync.dev
  *   SLIPPAGE_BPS    min-out tolerance for buys/sells (default 200 = 2%)
@@ -34,8 +35,6 @@ import { Wallet, Provider, Contract } from "zksync-ethers";
 import type { TransactionResponse } from "zksync-ethers/build/types";
 
 const OLTIN = "0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5";
-const UZD = "0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32";
-const EXCHANGE = "0xc367D7761Cc2A1b4D15475017136085E3EF74e0C";
 const XAU_FEED = "0xe0AFc7eD0c6028b8172C2b108624168d235e8BFD";
 const UZS_FEED = "0x637347fd661cFFAE9B562aFA394A392214fa24aD";
 const RESERVE_FEED = "0x9413F60295dcf7D81fcb69eE256029900B107d1B";
@@ -90,8 +89,9 @@ async function main(): Promise<number> {
   const slippageBps = BigInt(process.env.SLIPPAGE_BPS ?? "200"); // 2%
   const zk = new Provider(zkRpc);
   const bank = new Wallet(requireEnv("PRIVATE_KEY"), zk);
-  const bankOps = new Wallet(requireEnv("KEY_BANK_OPS"), zk);
   const clients = [1, 2, 3].map((i) => new Wallet(requireEnv(`DEMO_KEY_${i}`), zk));
+  const UZD = requireEnv("UZD_ADDRESS");
+  const EXCHANGE = requireEnv("EXCHANGE_ADDRESS");
 
   const uzd = new Contract(UZD, ERC20_ABI, zk);
   const oltin = new Contract(OLTIN, ERC20_ABI, zk);
@@ -131,11 +131,11 @@ async function main(): Promise<number> {
   console.log(`BEFORE: supply=${before.supply} treasury=${before.treasury} bankUzd=${before.bankUzd}`);
 
   // 1. Mint UZD (bank + clients).
-  console.log("\n[1] Mint UZD via KEY_BANK_OPS");
-  const uzdAsOps = uzd.connect(bankOps) as Contract;
-  await mined(await uzdAsOps.mint(bank.address, BANK_UZD), "mint bank UZD");
+  console.log("\n[1] Mint UZD (deployer is the UZD minter in V3.1)");
+  const uzdAsBank = uzd.connect(bank) as Contract;
+  await mined(await uzdAsBank.mint(bank.address, BANK_UZD), "mint bank UZD");
   for (const [i, c] of clients.entries()) {
-    await mined(await uzdAsOps.mint(c.address, CLIENT_UZD[i]), `mint client ${i + 1} UZD`);
+    await mined(await uzdAsBank.mint(c.address, CLIENT_UZD[i]), `mint client ${i + 1} UZD`);
   }
 
   // 2. Fund clients with gas.
@@ -148,7 +148,6 @@ async function main(): Promise<number> {
   console.log("\n[3] Probe buy 1M UZD (unit check)");
   let prices = await livePrices();
   const probeExpected = expectedBuy(PROBE_UZD, prices.xau, prices.uzs);
-  const uzdAsBank = uzd.connect(bank) as Contract;
   const exchangeAsBank = exchange.connect(bank) as Contract;
   await mined(await uzdAsBank.approve(EXCHANGE, PROBE_UZD), "approve probe");
   const probeTx = await exchangeAsBank.buy(PROBE_UZD, minOut(probeExpected));

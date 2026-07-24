@@ -48,9 +48,9 @@ class Settings(BaseSettings):
     zksync_rpc_url: str = "https://sepolia.era.zksync.dev"
     zksync_chain_id: int = 300
     oltin_contract_address: str = "0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5"
-    uzd_contract_address: str = "0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32"
+    uzd_contract_address: str = "0x51232fd0065bD2ca50551761Acef476E3CDf02aA"
     staking_contract_address: str = "0x63e537A3a150d06035151E29904C1640181C8314"
-    exchange_address: str = "0xc367D7761Cc2A1b4D15475017136085E3EF74e0C"
+    exchange_address: str = "0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9"
     reserve_attestor_address: str = "0x9413F60295dcf7D81fcb69eE256029900B107d1B"
     xau_feed_address: str = "0xe0AFc7eD0c6028b8172C2b108624168d235e8BFD"
     uzs_feed_address: str = "0x637347fd661cFFAE9B562aFA394A392214fa24aD"
