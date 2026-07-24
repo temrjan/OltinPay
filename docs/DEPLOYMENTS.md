@@ -72,10 +72,12 @@ Verified by reading the chain, not by trusting the deploy script's output:
   V3 stack). The keccak comparison above is what currently establishes that the
   deployed code is the reviewed code; retry `npm run verify` later.
 
-⚠️ NOT yet proven on production: a live gasless transaction end-to-end. OLTIN
-has no supply and the price feeds have never been posted, so the smoke test is a
-named acceptance item of PR-4d. Until it passes, this paymaster is proven by the
-zkSync VM suite, not by prod.
+✅ **PROVEN ON PRODUCTION 2026-07-24 (P1-D):** live gasless transfer 1 g OLTIN,
+tx `0xb86555c4383d950aff587aa551c6f8f8e4c91a386c32f3c6db0b1e86423d93c1` —
+client spent 0 ETH on gas (paid 0.000189 g OLTIN fee), the paymaster paid
+0.0000045 ETH of gas, mined in ~1 s. Script: `npm run smoke:gasless`
+(`contracts/scripts/smoke-gasless.ts`); negative preflight reverts typed
+`TargetNotSponsored`.
 
 Operating notes:
 - The fee is pegged to the gas being sponsored. **A client MUST size
