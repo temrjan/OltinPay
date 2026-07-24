@@ -11,6 +11,7 @@ import {
   parsePricesBySymbolResponse,
   decideGoldPrice,
   checkCbuAge,
+  usdPerUzsFromRate,
   type TokenUsdPrice,
   type GoldPriceInput,
   type BlockTimestampProvider,
@@ -187,6 +188,13 @@ describe("keeper CBU parsing", function () {
     const days = cbuRateAgeDays("15.07.2026", new Date(Date.UTC(2026, 6, 23, 9, 0, 0)));
     expect(days).to.equal(8);
     expect(days <= 7).to.be.false;
+  });
+  it("should convert the CBU rate to USD-per-UZS feed semantics", function () {
+    // Feed canonical: USD per 1 UZS @ 8 decimals (= 1e16 / rate), matching
+    // Exchange.sol and oltinpay-api bank/service.py.
+    // 1e16 / 1204884000000 = 8299.57 → 8300.
+    expect(usdPerUzsFromRate(12048_84000000n)).to.equal(8300n);
+    expect(() => usdPerUzsFromRate(0n)).to.throw();
   });
 });
 
