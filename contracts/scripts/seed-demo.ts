@@ -14,9 +14,9 @@
  *   6. Probe sell: client 1 sells 1 g back (treasury pays UZD).
  *   7. Print the final state (supply, treasury, balances, coverage).
  *
- * One-shot by design: it MINTS new UZD every run, so do not re-run blindly —
- * re-running doubles the clients' sums and buys more OLTIN. That is fine on a
- * testnet as long as it is deliberate.
+ * Re-runnable: mint/fund steps are skipped when balances from a previous
+ * (possibly failed) run are already there. Note it still BUYS more OLTIN on
+ * every run beyond the probe — re-run deliberately, on a testnet.
  *
  * Required env (contracts/.env):
  *   PRIVATE_KEY     deployer = the "bank" (UZD minter, OLTIN admin, pays gas)
@@ -51,6 +51,8 @@ const EXCHANGE_ABI = [
   "function buy(uint256 uzdInWei, uint256 minOltinOut) returns (uint256)",
   "function sell(uint256 oltinInWei, uint256 minUzdOut) returns (uint256)",
   "function treasuryBalance() view returns (uint256)",
+  "event Bought(address indexed user, uint256 uzdInWei, uint256 oltinOutWei, uint256 xauAns, uint256 uzsAns)",
+  "event Sold(address indexed user, uint256 oltinInWei, uint256 uzdOutWei, uint256 xauAns, uint256 uzsAns)",
 ];
 
 const FEED_ABI = [
@@ -130,17 +132,27 @@ async function main(): Promise<number> {
   };
   console.log(`BEFORE: supply=${before.supply} treasury=${before.treasury} bankUzd=${before.bankUzd}`);
 
-  // 1. Mint UZD (bank + clients).
+  // 1. Mint UZD (bank + clients). Idempotent: skipped if the bank already
+  //    holds enough (a previous run may have minted before a later step failed).
   console.log("\n[1] Mint UZD (deployer is the UZD minter in V3.1)");
   const uzdAsBank = uzd.connect(bank) as Contract;
-  await mined(await uzdAsBank.mint(bank.address, BANK_UZD), "mint bank UZD");
-  for (const [i, c] of clients.entries()) {
-    await mined(await uzdAsBank.mint(c.address, CLIENT_UZD[i]), `mint client ${i + 1} UZD`);
+  if (BigInt(before.bankUzd) >= BANK_UZD) {
+    console.log("  (skip) bank already holds UZD from a previous run");
+  } else {
+    await mined(await uzdAsBank.mint(bank.address, BANK_UZD), "mint bank UZD");
+    for (const [i, c] of clients.entries()) {
+      await mined(await uzdAsBank.mint(c.address, CLIENT_UZD[i]), `mint client ${i + 1} UZD`);
+    }
   }
 
-  // 2. Fund clients with gas.
+  // 2. Fund clients with gas (only those that need it).
   console.log("\n[2] Fund clients with ETH");
   for (const [i, c] of clients.entries()) {
+    const bal = BigInt(await zk.getBalance(c.address));
+    if (bal >= CLIENT_GAS / 2n) {
+      console.log(`  (skip) client ${i + 1} already has gas`);
+      continue;
+    }
     await mined(await bank.transfer({ to: c.address, amount: CLIENT_GAS }), `fund client ${i + 1}`);
   }
 
