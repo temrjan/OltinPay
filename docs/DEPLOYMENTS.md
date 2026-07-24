@@ -11,8 +11,35 @@
 | XauUsdFeed (dec 8) | `0xe0AFc7eD0c6028b8172C2b108624168d235e8BFD` |
 | UzsUsdFeed (dec 8) | `0x637347fd661cFFAE9B562aFA394A392214fa24aD` |
 | **OltinTokenV3 (OLTIN)** | `0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5` |
-| **Exchange (UZD treasury)** | `0xc367D7761Cc2A1b4D15475017136085E3EF74e0C` |
-| UZD (existing, reused) | `0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32` |
+| ~~Exchange (UZD treasury)~~ → **V3.1 ниже** | `0xc367D7761Cc2A1b4D15475017136085E3EF74e0C` (retired) |
+| ~~UZD (existing, reused)~~ → **V3.1 ниже** | `0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32` (retired) |
+
+## V3.1 — money edge re-issued (2026-07-24)
+
+Legacy UZD had totalSupply 0 with all roles on a lost V1/V2-era key
+(`0xa0A7…779e`), and `Exchange.uzd` is immutable — so the money edge was
+redeployed (spec `.claude/specs/2026-07-24-v31-money-edge-SPEC.md`):
+
+| Contract | Address |
+|---|---|
+| **UZD (V3.1, deployer = admin/minter)** | `0x51232fd0065bD2ca50551761Acef476E3CDf02aA` |
+| **Exchange (V3.1, UZD treasury)** | `0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9` |
+
+- Bytecode of both == local artifacts (keccak `0x28fe52…a608d` UZD,
+  `0x7b0196…aeb0` Exchange).
+- `OLTIN.MINTER_ROLE`: granted to Exchange2 (`0x3e66ee…c41d`), **revoked from
+  the legacy Exchange** (`0x0e7ee2…b47b64`) — the sleeper minter is closed.
+- Paymaster `sponsoredTarget`: UZD2/Exchange2 = true; legacy UZD/Exchange =
+  false (`0xbc4bf6…e1ff4`, `0x18e218…dff85`, `0x7aec43…82cb6`, `0x263fb9…06fcc`).
+- RETIRED: legacy UZD `0x95b30Be4…` (supply 0, roles on lost key) and legacy
+  Exchange `0xc367D776…` (minter revoked, sponsorship removed). They stay
+  on-chain (immutable) but are dead ends.
+
+**Demo clients (P1-C, 2026-07-24):** `0x57cE0560A7373d1B6B4C24804C3941F796362208`,
+`0x87A7D8dB6b291e27BF7b8B808786ABdFbE12164B`,
+`0x5e6Eb7cF3E600f589A32cC7cBeDCAC14508c66EC` (keys in `contracts/.env`).
+
+**Keeper poster (P1-B, 2026-07-24):** `0xfaFB46cC23705058EE9E1a96f64B0f273B87405e`.
 
 ## PR-4a companions (deployed 2026-07-19 from `deploy/deployPaymasterStaking.ts`)
 
@@ -115,8 +142,10 @@ Explorer: `https://sepolia-era.zksync.network/address/<addr>`
 
 **Keeper poster key (P1-B, 2026-07-24):** address
 `0xfaFB46cC23705058EE9E1a96f64B0f273B87405e` holds `POSTER_ROLE` on all three
-canonical Attestors (grant txs `0xa1cd7c…6023` XAU, `0x94fe84…9bc66` UZS,
-`0x16b8db…377c` RESERVE) and 0.03 ETH. The private key lives only on 7demo
+canonical Attestors (grant txs `0xa1cd7c2aff488e6267d89dcbe71b2782373b3bacb20e311d506450529d246023` XAU,
+`0x94fe845c4c68a4f1384cbee2ac02708ef214293f23e8271ffdfb8e138e39bc66` UZS,
+`0x16b8db6d0add994ccf6d3a5dca64b28510238812ee815223eb6a63fb41aa377c` RESERVE)
+and 0.03 ETH. The private key lives only on 7demo
 (`/root/oltinpay-keeper/poster.key`, mode 600, never transmitted); the
 deployer key keeps its roles as the manual fallback path.
 
