@@ -136,7 +136,7 @@ async function main(): Promise<number> {
   //    holds enough (a previous run may have minted before a later step failed).
   console.log("\n[1] Mint UZD (deployer is the UZD minter in V3.1)");
   const uzdAsBank = uzd.connect(bank) as Contract;
-  if (BigInt(before.bankUzd) >= BANK_UZD) {
+  if (BigInt(before.bankUzd) > 0n) {
     console.log("  (skip) bank already holds UZD from a previous run");
   } else {
     await mined(await uzdAsBank.mint(bank.address, BANK_UZD), "mint bank UZD");
