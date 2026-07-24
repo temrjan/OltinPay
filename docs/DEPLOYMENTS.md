@@ -107,12 +107,20 @@ Explorer: `https://sepolia-era.zksync.network/address/<addr>`
 
 ## Next (demo readiness)
 
-> 🔴 **No feed has ever published a value** (checked 2026-07-22: all nine Attestor
-> instances report `roundId = 0`, `updatedAt = 0`). Until the three canonical
-> feeds are posted, `Exchange.buy/sell` reverts with "price stale" and V3 cannot
-> mint at all — the on-chain demo does not run, paymaster or no paymaster.
+> ✅ **All three canonical feeds are live since 2026-07-23** (P1-A/P1-E): XAU is
+> the PAXG+XAUT median (24/7), RESERVE 5000 g, UZS the CBU rate — all verified
+> by reading the chain. `Exchange.buy/sell` no longer reverts on "price stale".
+> Feeds still need a scheduled keeper run (cron is P4-A); refresh manually with
+> `npm run keeper:all` before any demo.
 
-1. Post initial reserve: `ReserveAttestor.postAnswer(<grams>)` (deployer is POSTER).
-2. Seed Exchange treasury with UZD for sell demos.
-3. Start keepers: `npm run keeper:xau` / `npm run keeper:uzs`.
+**Keeper poster key (P1-B, 2026-07-24):** address
+`0xfaFB46cC23705058EE9E1a96f64B0f273B87405e` holds `POSTER_ROLE` on all three
+canonical Attestors (grant txs `0xa1cd7c…6023` XAU, `0x94fe84…9bc66` UZS,
+`0x16b8db…377c` RESERVE) and 0.03 ETH. The private key lives only on 7demo
+(`/root/oltinpay-keeper/poster.key`, mode 600, never transmitted); the
+deployer key keeps its roles as the manual fallback path.
+
+1. ~~Post initial reserve~~ ✅ done (ReserveAttestor roundId ≥ 1, 5000 g).
+2. Seed Exchange treasury with UZD for sell demos (P1-C, open).
+3. ~~Start keepers~~ ✅ manual runs work; cron on 7demo = P4-A (open).
 4. Explorer verify pending (zksolc-verify flaky) — retry `hardhat verify`.
