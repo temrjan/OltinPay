@@ -49,6 +49,11 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      - name: Lockfile check (pyproject ↔ uv.lock must not drift)
+        run: |
+          pip install uv==0.11.26
+          uv lock --check
+
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
