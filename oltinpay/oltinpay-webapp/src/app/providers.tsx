@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/app';
 import { useWalletStore } from '@/stores/wallet';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { PinUnlock } from '@/components/PinUnlock';
+import { useTranslation } from '@/hooks/useTranslation';
 import { api } from '@/lib/api';
 import { hasWallet as checkWalletStorage } from '@/lib/wallet';
 
@@ -129,21 +130,31 @@ function WalletGate({ children }: { children: React.ReactNode }) {
   const lock = useWalletStore((s) => s.lock);
   const walletPresent = useWalletStore((s) => s.hasWallet);
   const setHasWallet = useWalletStore((s) => s.setHasWallet);
+  const { t } = useTranslation();
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   // Onboarding routes are gateless — user is creating or restoring a wallet.
   const isOnboarding = pathname?.startsWith('/onboarding') ?? false;
 
-  // Seed presence from storage once, only while still unknown — a value already
-  // set by onboarding/restore/unlock must win over this async check.
+  // Seed presence from storage while still unknown. On a storage READ error we do
+  // NOT collapse "couldn't check" into "absent": that would route an existing-wallet
+  // user to onboarding, where a fresh mnemonic silently overwrites the (non-custodial)
+  // blob — irreversible loss. Instead surface a retry screen and keep presence unknown.
   useEffect(() => {
     if (walletPresent !== null) return;
     let cancelled = false;
     (async () => {
-      const present = await checkWalletStorage();
-      if (!cancelled) setHasWallet(present);
+      try {
+        const present = await checkWalletStorage();
+        if (!cancelled) setHasWallet(present);
+      } catch (err) {
+        console.error('Wallet presence check failed:', err);
+        if (!cancelled) setCheckFailed(true);
+      }
     })();
     return () => { cancelled = true; };
-  }, [walletPresent, setHasWallet]);
+  }, [walletPresent, setHasWallet, attempt]);
 
   // Auto-lock when the in-memory session expires
   useEffect(() => {
@@ -161,6 +172,22 @@ function WalletGate({ children }: { children: React.ReactNode }) {
 
   if (isOnboarding) {
     return <>{children}</>;
+  }
+
+  // Storage read failed — never silently route to onboarding (that risks
+  // overwriting an existing wallet). Offer an explicit retry instead.
+  if (checkFailed) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 gap-4">
+        <div className="text-text-muted text-center">{t('walletCheckFailed')}</div>
+        <button
+          onClick={() => { setCheckFailed(false); setAttempt((a) => a + 1); }}
+          className="bg-gold text-background px-4 py-2 rounded-lg font-medium"
+        >
+          {t('retry')}
+        </button>
+      </div>
+    );
   }
 
   if (walletPresent === null) {
