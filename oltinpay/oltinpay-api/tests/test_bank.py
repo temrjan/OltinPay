@@ -174,11 +174,32 @@ async def test_replayed_nonce_rejected(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("value", [None, SecretStr("")])
 async def test_unconfigured_secret_returns_503(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+    value: SecretStr | None,
+) -> None:
+    """No secret (None) OR a present-but-empty secret both mean auth is not
+    configured -> 503. The empty-string case is exactly what a literal
+    ``cp .env.example .env`` (BANK_HMAC_SECRET=) produces."""
+    monkeypatch.setattr(settings, "bank_hmac_secret", value)
+    resp = await client.post("/api/v1/bank/fx", content=b"{}")
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_empty_secret_rejects_forged_empty_key_signature(
     client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(settings, "bank_hmac_secret", None)
-    resp = await client.post("/api/v1/bank/fx", content=b"{}")
+    """Auth-bypass regression: with an empty BANK_HMAC_SECRET the HMAC key is the
+    public empty string, so anyone can compute a matching X-Bank-Signature. The
+    guard must treat empty as unconfigured (503), never authenticate the forgery."""
+    monkeypatch.setattr(settings, "bank_hmac_secret", SecretStr(""))
+    with _signer_mock():
+        resp = await _bank_post(
+            client, "/api/v1/bank/fx", {"uzsPerUsd": 12500, "source": "CBU"}, secret=""
+        )
     assert resp.status_code == 503
 
 

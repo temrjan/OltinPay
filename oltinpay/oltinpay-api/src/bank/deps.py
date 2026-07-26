@@ -68,7 +68,10 @@ _replay_guard = _NonceReplayGuard(ttl_sec=2 * settings.bank_hmac_max_skew_sec)
 async def require_bank_auth(request: Request) -> None:
     """FastAPI dependency guarding every /api/v1/bank/* route."""
     secret = settings.bank_hmac_secret
-    if secret is None:
+    # `not secret` (not `is None`): a present-but-empty BANK_HMAC_SECRET= resolves
+    # to SecretStr('') — its empty HMAC key is publicly computable, so an empty
+    # secret means auth is NOT configured, never "authenticate with an empty key".
+    if not secret:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Bank authentication is not configured on the server.",

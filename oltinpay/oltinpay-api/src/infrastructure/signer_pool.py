@@ -356,7 +356,10 @@ class SignerPool:
 
     def for_key(self, role: Role) -> Signer:
         secret: SecretStr | None = getattr(settings, _ROLE_KEY_ATTR[role])
-        if secret is None:
+        # `not secret` (not `is None`): a present-but-empty KEY_*= resolves to
+        # SecretStr('') — treat it as unconfigured (clean SignerUnconfigured)
+        # instead of letting Account.from_key('') raise a raw ValueError.
+        if not secret:
             raise SignerUnconfigured(
                 f"{_ROLE_KEY_ATTR[role].upper()} is not configured on the server."
             )
