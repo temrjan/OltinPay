@@ -16,13 +16,17 @@ import respx
 import rlp
 from eth_account import Account
 from eth_utils import to_int
+from pydantic import SecretStr
 
 from src.config import settings
 from src.infrastructure import signer_pool
 from src.infrastructure.signer_pool import (
     NonceManagedSigner,
+    Role,
+    SignerPool,
     SignerReceiptTimeout,
     SignerRevertError,
+    SignerUnconfigured,
     encode_mint_calldata,
 )
 
@@ -258,3 +262,14 @@ async def test_receipt_wait_releases_the_key_lock(
     assert tx2 != tx1
     assert stub.sent_nonces == [0, 1]  # nonce+1 broadcast during #1's wait
     assert signer._nonce == 2
+
+
+def test_for_key_empty_secret_raises_unconfigured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A role key present-but-empty (KEY_BANK_OPS= in .env) must raise the clean
+    SignerUnconfigured, not a raw ValueError from Account.from_key(''). Regression
+    for the ``is None`` guard that let SecretStr('') slip past into from_key."""
+    monkeypatch.setattr(settings, "key_bank_ops", SecretStr(""))
+    with pytest.raises(SignerUnconfigured):
+        SignerPool().for_key(Role.BANK_OPS)
