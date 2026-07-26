@@ -80,6 +80,12 @@ export const translations = {
     // Demo
     demoBadge: 'DEMO',
     demoBadgeNote: 'tokenlar real qiymatga ega emas',
+    demoBalanceTitle: 'Demo balans',
+    demoBalanceSubtitle: '1000 UZD beramiz — OLTIN xaridi, oʻtkazmalar va steykingni sinab koʻring.',
+    demoBalanceDisclaimer: 'Tushunaman: bu Sepolia test tarmogʻidagi demo-tokenlar — real qiymatga ega emas.',
+    demoBalanceGet: 'Demo balans olish',
+    demoBalanceClaiming: 'Hisoblanmoqda…',
+    demoBalanceError: 'Hisoblab boʻlmadi. Qayta urinib koʻring.',
 
     // Onboarding
     onboardWelcome: 'OltinPay hamyoniga xush kelibsiz',
@@ -200,6 +206,12 @@ export const translations = {
     // Demo
     demoBadge: 'DEMO',
     demoBadgeNote: 'токены не имеют реальной стоимости',
+    demoBalanceTitle: 'Демо-баланс',
+    demoBalanceSubtitle: 'Начислим 1000 UZD, чтобы попробовать покупку OLTIN, переводы и стейкинг.',
+    demoBalanceDisclaimer: 'Понимаю: это демо-токены в тестовой сети Sepolia — не имеют реальной стоимости.',
+    demoBalanceGet: 'Получить демо-баланс',
+    demoBalanceClaiming: 'Начисляем…',
+    demoBalanceError: 'Не удалось начислить. Попробуйте ещё раз.',
 
     // Onboarding
     onboardWelcome: 'Добро пожаловать в OltinPay',
@@ -320,6 +332,12 @@ export const translations = {
     // Demo
     demoBadge: 'DEMO',
     demoBadgeNote: 'tokens have no real value',
+    demoBalanceTitle: 'Demo balance',
+    demoBalanceSubtitle: 'We will credit 1000 UZD so you can try buying OLTIN, transfers and staking.',
+    demoBalanceDisclaimer: 'I understand these are demo tokens on the Sepolia testnet — with no real value.',
+    demoBalanceGet: 'Get demo balance',
+    demoBalanceClaiming: 'Crediting…',
+    demoBalanceError: 'Could not credit. Please try again.',
 
     // Onboarding
     onboardWelcome: 'Welcome to OltinPay',

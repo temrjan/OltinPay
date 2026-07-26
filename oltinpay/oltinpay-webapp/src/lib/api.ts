@@ -88,6 +88,24 @@ class ApiClient {
     });
   }
 
+  // Welcome bonus (demo balance)
+  async getWelcomeStatus() {
+    return this.request<{
+      claimed: boolean;
+      tx_hash: string | null;
+      claimed_at: string | null;
+    }>('/welcome/status');
+  }
+
+  async claimWelcome() {
+    return this.request<{
+      tx_hash: string;
+      amount_wei: string;
+      wallet_address: string;
+      claimed_at: string;
+    }>('/welcome/claim', { method: 'POST' });
+  }
+
   // Transfers
   async createTransfer(to_oltin_id: string, amount: number) {
     return this.request<any>('/transfers', {

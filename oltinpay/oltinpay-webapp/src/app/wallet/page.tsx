@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowUpRight, ArrowDownLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCw, AlertCircle, Gift, Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTranslation } from '@/hooks/useTranslation';
 import { api } from '@/lib/api';
@@ -27,7 +27,9 @@ export default function WalletPage() {
   const { user: tgUser, hapticFeedback } = useTelegram();
   const { t } = useTranslation();
   const user = useAppStore((state) => state.user);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AccountType>('wallet');
+  const [agreed, setAgreed] = useState(false);
 
   const { data: balancesData, isLoading, error, refetch } = useQuery({
     queryKey: ['balances'],
@@ -39,6 +41,28 @@ export default function WalletPage() {
     queryKey: ['transfers'],
     queryFn: () => api.getTransfers(5),
     staleTime: 30000,
+  });
+
+  const { data: welcomeStatus } = useQuery({
+    queryKey: ['welcome-status'],
+    queryFn: () => api.getWelcomeStatus(),
+    staleTime: 30000,
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: () => api.claimWelcome(),
+    onSuccess: () => {
+      hapticFeedback('medium');
+      queryClient.invalidateQueries({ queryKey: ['welcome-status'] });
+      queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['transfers'] });
+    },
+    onError: () => {
+      // A 409 (already claimed / receipt-timeout reconciliation) means a claim
+      // now exists — refetch status so the card reflects reality rather than
+      // offering a retry that would just 409 again.
+      queryClient.invalidateQueries({ queryKey: ['welcome-status'] });
+    },
   });
 
   const getBalance = (account: AccountType, currency: 'usd' | 'oltin'): number => {
@@ -98,6 +122,73 @@ export default function WalletPage() {
         )}
         <div className="text-text-muted text-sm mt-1">{t('totalBalance')}</div>
       </div>
+
+      {/* Demo Balance (welcome bonus) — shown until claimed */}
+      {welcomeStatus && !welcomeStatus.claimed && (
+        <div className="bg-gradient-to-b from-gold/10 to-gold/5 border border-gold/30 rounded-xl p-4 space-y-3">
+          <div className="flex gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
+              <Gift size={20} className="text-gold" />
+            </div>
+            <div>
+              <h3 className="font-semibold flex items-center gap-2">
+                {t('demoBalanceTitle')}
+                <span className="text-[10px] tracking-wider font-bold text-gold border border-gold/50 rounded px-1.5 py-px">
+                  {t('demoBadge')}
+                </span>
+              </h3>
+              <p className="text-text-muted text-sm mt-1">{t('demoBalanceSubtitle')}</p>
+            </div>
+          </div>
+
+          <label className="flex gap-2.5 items-start bg-card border border-border rounded-xl p-3 cursor-pointer focus-within:ring-2 focus-within:ring-gold/60">
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+            />
+            <span
+              className={`shrink-0 mt-0.5 w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center transition-colors ${
+                agreed
+                  ? 'bg-gold border-gold text-background'
+                  : 'border-border bg-background text-transparent'
+              }`}
+            >
+              <Check size={13} strokeWidth={3.5} />
+            </span>
+            <span className="text-sm leading-snug">{t('demoBalanceDisclaimer')}</span>
+          </label>
+
+          {claimMutation.isError && (
+            <div className="flex items-center gap-2 text-red text-sm">
+              <AlertCircle size={16} className="shrink-0" />
+              {/* Never surface the raw API `detail` here — FastAPI always sends
+                  a non-empty, unlocalized string (e.g. "KEY_BANK_OPS is not
+                  configured on the server"). Show the localized message only. */}
+              <span>{t('demoBalanceError')}</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              hapticFeedback('medium');
+              claimMutation.mutate();
+            }}
+            disabled={!agreed || claimMutation.isPending}
+            className="w-full rounded-xl py-3.5 font-semibold flex items-center justify-center gap-2 bg-gold text-background transition-colors disabled:bg-gold/20 disabled:text-text-muted"
+          >
+            {claimMutation.isPending ? (
+              <>
+                <Loader2 size={17} className="animate-spin" />
+                {t('demoBalanceClaiming')}
+              </>
+            ) : (
+              t('demoBalanceGet')
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Account Tabs */}
       <div className="flex bg-card rounded-xl p-1 border border-border">
