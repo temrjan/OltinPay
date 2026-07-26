@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     zksync_chain_id: int = 300
     oltin_contract_address: str = "0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5"
     uzd_contract_address: str = "0x51232fd0065bD2ca50551761Acef476E3CDf02aA"
-    staking_contract_address: str = "0x63e537A3a150d06035151E29904C1640181C8314"
+    staking_contract_address: str = "0xD3b6ffd1dE409e1C37BA5B867d6eC3897A721fAa"
     exchange_address: str = "0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9"
     reserve_attestor_address: str = "0x9413F60295dcf7D81fcb69eE256029900B107d1B"
     xau_feed_address: str = "0xe0AFc7eD0c6028b8172C2b108624168d235e8BFD"
