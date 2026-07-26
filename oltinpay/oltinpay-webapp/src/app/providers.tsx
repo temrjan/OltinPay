@@ -8,7 +8,7 @@ import { useWalletStore } from '@/stores/wallet';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { PinUnlock } from '@/components/PinUnlock';
 import { api } from '@/lib/api';
-import { hasWallet } from '@/lib/wallet';
+import { hasWallet as checkWalletStorage } from '@/lib/wallet';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -127,19 +127,23 @@ function WalletGate({ children }: { children: React.ReactNode }) {
   const account = useWalletStore((s) => s.account);
   const isExpired = useWalletStore((s) => s.isExpired);
   const lock = useWalletStore((s) => s.lock);
-  const [walletPresence, setWalletPresence] = useState<'unknown' | 'absent' | 'present'>('unknown');
+  const walletPresent = useWalletStore((s) => s.hasWallet);
+  const setHasWallet = useWalletStore((s) => s.setHasWallet);
 
   // Onboarding routes are gateless — user is creating or restoring a wallet.
   const isOnboarding = pathname?.startsWith('/onboarding') ?? false;
 
+  // Seed presence from storage once, only while still unknown — a value already
+  // set by onboarding/restore/unlock must win over this async check.
   useEffect(() => {
+    if (walletPresent !== null) return;
     let cancelled = false;
     (async () => {
-      const present = await hasWallet();
-      if (!cancelled) setWalletPresence(present ? 'present' : 'absent');
+      const present = await checkWalletStorage();
+      if (!cancelled) setHasWallet(present);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [walletPresent, setHasWallet]);
 
   // Auto-lock when the in-memory session expires
   useEffect(() => {
@@ -150,20 +154,20 @@ function WalletGate({ children }: { children: React.ReactNode }) {
 
   // Redirect to onboarding if no wallet exists
   useEffect(() => {
-    if (walletPresence === 'absent' && !isOnboarding) {
+    if (walletPresent === false && !isOnboarding) {
       router.replace('/onboarding');
     }
-  }, [walletPresence, isOnboarding, router]);
+  }, [walletPresent, isOnboarding, router]);
 
   if (isOnboarding) {
     return <>{children}</>;
   }
 
-  if (walletPresence === 'unknown') {
+  if (walletPresent === null) {
     return <LoadingSpinner />;
   }
 
-  if (walletPresence === 'absent') {
+  if (walletPresent === false) {
     return <LoadingSpinner />; // briefly while redirect happens
   }
 
