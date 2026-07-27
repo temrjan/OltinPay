@@ -1,5 +1,15 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.oltinpay.com/api/v1';
 
+/** Error carrying the HTTP status so callers can branch on it (e.g. 409 vs 400). */
+export class ApiError extends Error {
+  readonly status: number;
+  constructor(status: number, detail: string) {
+    super(detail);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -27,7 +37,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || 'Request failed');
+      throw new ApiError(response.status, error.detail || 'Request failed');
     }
 
     if (response.status === 204) {
@@ -64,6 +74,15 @@ class ApiClient {
     return this.request<any>('/users/oltin-id', {
       method: 'POST',
       body: JSON.stringify({ oltin_id }),
+    });
+  }
+
+  // Bind the non-custodial wallet address to the current user (first call wins;
+  // idempotent 200 if the same address is already bound, 409 if a different one).
+  async registerWallet(wallet_address: string) {
+    return this.request<{ wallet_address: string | null }>('/users/wallet', {
+      method: 'POST',
+      body: JSON.stringify({ wallet_address }),
     });
   }
 

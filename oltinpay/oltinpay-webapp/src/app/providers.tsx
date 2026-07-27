@@ -8,8 +8,8 @@ import { useWalletStore } from '@/stores/wallet';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { PinUnlock } from '@/components/PinUnlock';
 import { useTranslation } from '@/hooks/useTranslation';
-import { api } from '@/lib/api';
-import { hasWallet as checkWalletStorage } from '@/lib/wallet';
+import { api, ApiError } from '@/lib/api';
+import { hasWallet as checkWalletStorage, removeEncryptedWallet } from '@/lib/wallet';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -130,9 +130,13 @@ function WalletGate({ children }: { children: React.ReactNode }) {
   const lock = useWalletStore((s) => s.lock);
   const walletPresent = useWalletStore((s) => s.hasWallet);
   const setHasWallet = useWalletStore((s) => s.setHasWallet);
+  const reset = useWalletStore((s) => s.reset);
   const { t } = useTranslation();
   const [checkFailed, setCheckFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [registeredAddress, setRegisteredAddress] = useState<string | null>(null);
+  const [registerError, setRegisterError] = useState<null | 'retryable' | 'conflict'>(null);
+  const [regAttempt, setRegAttempt] = useState(0);
 
   // Onboarding routes are gateless — user is creating or restoring a wallet.
   const isOnboarding = pathname?.startsWith('/onboarding') ?? false;
@@ -170,6 +174,29 @@ function WalletGate({ children }: { children: React.ReactNode }) {
     }
   }, [walletPresent, isOnboarding, router]);
 
+  // Bind the wallet address to the backend once the session is unlocked. Runs on
+  // every unlock (onboarding/restore/PinUnlock) and is idempotent (backend returns
+  // 200 when the same address is already bound), so wallets created before this
+  // shipped self-heal on their next unlock. A 409 means the account is bound to a
+  // DIFFERENT wallet (a rejected restore) — a terminal, non-retryable state.
+  useEffect(() => {
+    if (account === null || registeredAddress === account.address || registerError) return;
+    const addr = account.address;
+    let cancelled = false;
+    (async () => {
+      try {
+        await api.registerWallet(addr);
+        if (!cancelled) setRegisteredAddress(addr);
+      } catch (err) {
+        if (cancelled) return;
+        setRegisterError(
+          err instanceof ApiError && err.status === 409 ? 'conflict' : 'retryable'
+        );
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [account, registeredAddress, registerError, regAttempt]);
+
   if (isOnboarding) {
     return <>{children}</>;
   }
@@ -200,6 +227,49 @@ function WalletGate({ children }: { children: React.ReactNode }) {
 
   if (account === null) {
     return <PinUnlock />;
+  }
+
+  // Backend rejected the address: the account is bound to a DIFFERENT wallet
+  // (a restore of the wrong seed). Non-retryable — wipe the wrong local blob and
+  // send the user back to onboarding, else they'd be stuck on a wallet that can
+  // never register.
+  if (registerError === 'conflict') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 gap-4">
+        <div className="text-text-muted text-center">{t('walletConflict')}</div>
+        <button
+          onClick={async () => {
+            setRegisterError(null);
+            await removeEncryptedWallet();
+            reset();
+          }}
+          className="bg-gold text-background px-4 py-2 rounded-lg font-medium"
+        >
+          {t('startOver')}
+        </button>
+      </div>
+    );
+  }
+
+  // Registration failed for a transient reason (network / 5xx) — offer a retry.
+  if (registerError === 'retryable') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 gap-4">
+        <div className="text-text-muted text-center">{t('walletRegisterFailed')}</div>
+        <button
+          onClick={() => { setRegisterError(null); setRegAttempt((a) => a + 1); }}
+          className="bg-gold text-background px-4 py-2 rounded-lg font-medium"
+        >
+          {t('retry')}
+        </button>
+      </div>
+    );
+  }
+
+  // Registration in flight — don't show wallet content (balances/claim would 400)
+  // until the address is bound on the backend.
+  if (registeredAddress !== account.address) {
+    return <LoadingSpinner />;
   }
 
   return <>{children}</>;

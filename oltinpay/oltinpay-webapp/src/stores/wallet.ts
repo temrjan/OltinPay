@@ -20,6 +20,7 @@ interface WalletState {
   hasWallet: boolean | null;
   unlock: (account: HDAccount) => void;
   lock: () => void;
+  reset: () => void;
   touch: () => void;
   isExpired: () => boolean;
   setHasWallet: (present: boolean) => void;
@@ -39,6 +40,12 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   // Lock clears the in-memory session only — the encrypted wallet still exists,
   // so hasWallet stays true (gate shows PinUnlock, not onboarding).
   lock: () => set({account: null, unlockedAt: null}),
+
+  // Wipe the session AND presence together — for when the local wallet was
+  // removed (e.g. a rejected restore, after removeEncryptedWallet()). Distinct
+  // from lock(): here hasWallet MUST go false, else the gate would show PinUnlock
+  // for a wallet that no longer exists in storage — a dead end.
+  reset: () => set({account: null, unlockedAt: null, hasWallet: false}),
 
   touch: () => set({unlockedAt: Date.now()}),
 
