@@ -100,9 +100,13 @@ Operating notes:
   that sponsorship stops until the rate is refreshed. Record the expiry date here
   at deploy time (a deploy on 2026-07-22..25 expires 2026-08-21..24 — after the
   10 August deadline, so it will not fire during the contest window).
-- Deployed caps: 0.0005 ETH per transaction, 0.002 ETH per sender per day,
-  0.005 ETH per day in total. All are owner-settable (`setCaps`) — a demo that
-  hits a ceiling is a one-transaction fix, not a redeploy.
+- Deployed caps: 0.0005 ETH per transaction, 0.0005 ETH per sender per day,
+  0.005 ETH per day in total (on-chain `5e14 / 5e14 / 5e15`, verified via eth_call
+  2026-07-27 — matches the wei values on line 65). The per-sender/day cap was
+  deliberately lowered 2e15 → 5e14 by 4a′ mitigation M-B (equalised to the per-tx
+  ceiling to raise the address count a griefer needs); the "0.002 per sender/day"
+  in the pre-M-B design docs is superseded. All are owner-settable (`setCaps`) — a
+  demo that hits a ceiling is a one-transaction fix, not a redeploy.
 
 ## Retired / orphan — do not use, do not reference
 

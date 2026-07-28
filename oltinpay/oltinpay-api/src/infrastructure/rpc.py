@@ -95,3 +95,18 @@ def decode_uint256(hex_result: str) -> int:
     if not hex_result or hex_result == "0x":
         return 0
     return int(hex_result, 16)
+
+
+async def get_eth_balance(
+    address: str, *, client: httpx.AsyncClient | None = None
+) -> int:
+    """Return the native ETH balance of ``address`` in wei (``eth_getBalance``).
+
+    Used to make the welcome gas drip idempotent against the live chain — the
+    balance is the source of truth for "already funded?", so a retry never
+    double-drips. Raises RpcError on a node-reported error or a malformed reply.
+    """
+    result = await rpc_request("eth_getBalance", [address, "latest"], client=client)
+    if not isinstance(result, str):
+        raise RpcError(f"Unexpected eth_getBalance response: {result!r}")
+    return int(result, 16)
