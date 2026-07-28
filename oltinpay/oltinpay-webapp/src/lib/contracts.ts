@@ -7,7 +7,9 @@ import type {Address} from 'viem';
 export const ZKSYNC_SEPOLIA_CHAIN_ID = 300;
 
 export const CONTRACTS = {
-  OLTIN: '0x4A56B78DBFc2E6c914f5413B580e86ee1A474347' as Address,
+  // OltinTokenV3 (OLTIN) — the live token. The retired V2 (0x4A56B78D…) is gone;
+  // UZD/STAKING below are still V2-retired and get repointed in Stages 4/5.
+  OLTIN: '0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5' as Address,
   UZD: '0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32' as Address,
   STAKING: '0x63e537A3a150d06035151E29904C1640181C8314' as Address,
 } as const;

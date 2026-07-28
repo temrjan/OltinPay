@@ -1,12 +1,13 @@
 """Users router."""
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
-from src.auth.dependencies import CurrentUser, DbSession
-from src.common.exceptions import ConflictException
+from src.auth.dependencies import CurrentUser, DbSession, get_current_user
+from src.common.exceptions import ConflictException, NotFoundException
 from src.users import service
 from src.users.schemas import (
     OltinIdCreate,
+    UserLookupResult,
     UserResponse,
     UserSearchResult,
     UserUpdate,
@@ -63,6 +64,29 @@ async def search_users(
     """Search users by oltin_id prefix."""
     users = await service.search_users(db, q)
     return [UserSearchResult.model_validate(u) for u in users]
+
+
+@router.get(
+    "/lookup",
+    response_model=UserLookupResult,
+    dependencies=[Depends(get_current_user)],
+)
+async def lookup_user(
+    db: DbSession,
+    oltin_id: str = Query(..., min_length=1, max_length=32),
+) -> UserLookupResult:
+    """Resolve a recipient oltin_id to their wallet address for a client-signed
+    P2P transfer.
+
+    404 if no such user. ``wallet_address`` may be null (the recipient never
+    completed wallet onboarding) — the client blocks the send in that case.
+    Auth is required (route-level dependency) so addresses are not enumerable
+    anonymously; the resolved user is not otherwise used here.
+    """
+    user = await service.get_user_by_oltin_id(db, oltin_id)
+    if user is None:
+        raise NotFoundException("User not found")
+    return UserLookupResult.model_validate(user)
 
 
 @router.post("/wallet", response_model=UserResponse)

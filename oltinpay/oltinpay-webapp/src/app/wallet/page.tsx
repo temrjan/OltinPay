@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useBalances } from '@/hooks/useBalances';
+import { useTransactions } from '@/hooks/useTransactions';
 import { api } from '@/lib/api';
 import { formatToken } from '@/lib/format';
 import { useAppStore } from '@/stores/app';
@@ -23,11 +24,9 @@ export default function WalletPage() {
 
   const { data: balancesData, isLoading, error, refetch } = useBalances();
 
-  const { data: transfersData } = useQuery({
-    queryKey: ['transfers'],
-    queryFn: () => api.getTransfers(5),
-    staleTime: 30000,
-  });
+  // Real on-chain history (indexer-backed). Errors/400 (no wallet yet) fall
+  // through to the empty state below, never a failure toast.
+  const { data: transactionsData } = useTransactions();
 
   const { data: welcomeStatus } = useQuery({
     queryKey: ['welcome-status'],
@@ -243,38 +242,47 @@ export default function WalletPage() {
       {/* Recent Transactions */}
       <div className="bg-card rounded-xl p-4 border border-border">
         <h3 className="font-semibold mb-3">{t('recentTransactions')}</h3>
-        {!transfersData?.length ? (
+        {!transactionsData?.length ? (
           <p className="text-text-muted text-sm text-center py-4">{t('noTransactions')}</p>
         ) : (
           <div className="space-y-3">
-            {transfersData.slice(0, 5).map((tx: any) => (
-              <div key={tx.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    tx.type === 'incoming' ? 'bg-green/20' : 'bg-red/20'
-                  }`}>
-                    {tx.type === 'incoming' ? (
-                      <ArrowDownLeft size={16} className="text-green" />
-                    ) : (
-                      <ArrowUpRight size={16} className="text-red" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">
-                      {tx.type === 'incoming' ? t('received') : t('sent')}
+            {transactionsData.slice(0, 5).map((tx) => {
+              const incoming = tx.direction === 'in';
+              return (
+                <a
+                  key={tx.tx_hash}
+                  href={tx.explorer_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      incoming ? 'bg-green/20' : 'bg-red/20'
+                    }`}>
+                      {incoming ? (
+                        <ArrowDownLeft size={16} className="text-green" />
+                      ) : (
+                        <ArrowUpRight size={16} className="text-red" />
+                      )}
                     </div>
-                    <div className="text-xs text-text-muted">
-                      {new Date(tx.created_at).toLocaleDateString()}
+                    <div>
+                      <div className="text-sm font-medium">
+                        {incoming ? t('received') : t('sent')}
+                      </div>
+                      <div className="text-xs text-text-muted">
+                        {new Date(tx.indexed_at).toLocaleDateString()}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className={`font-semibold ${
-                  tx.type === 'incoming' ? 'text-green' : 'text-red'
-                }`}>
-                  {tx.type === 'incoming' ? '+' : '-'}{tx.amount} {tx.currency}
-                </div>
-              </div>
-            ))}
+                  {tx.amount_wei && (
+                    <div className={`font-semibold ${incoming ? 'text-green' : 'text-red'}`}>
+                      {incoming ? '+' : '-'}{formatToken(tx.amount_wei)} OLTIN
+                    </div>
+                  )}
+                </a>
+              );
+            })}
           </div>
         )}
       </div>
