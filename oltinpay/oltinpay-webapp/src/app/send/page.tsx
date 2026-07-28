@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { ArrowLeft, Search, User, CheckCircle, AlertCircle, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatUnits } from 'viem';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBalances } from '@/hooks/useBalances';
 import { api } from '@/lib/api';
 import { useAppStore } from '@/stores/app';
 
@@ -46,11 +48,8 @@ export default function SendPage() {
   const [internalAmount, setInternalAmount] = useState('');
   const [internalSuccess, setInternalSuccess] = useState(false);
 
-  // Get balances
-  const { data: balancesData } = useQuery({
-    queryKey: ['balances'],
-    queryFn: () => api.getBalances(),
-  });
+  // Get balances (shared hook — single source of truth, same as the wallet screen)
+  const { data: balancesData } = useBalances();
 
   // Search users
   const { data: searchResults, isLoading: searching } = useQuery({
@@ -103,9 +102,14 @@ export default function SendPage() {
   // Get balance for account/currency
   const getBalance = (account: AccountType, cur: Currency): number => {
     if (!balancesData) return 0;
-    const accountData = (balancesData as any)[account];
-    if (!accountData) return 0;
-    return Number(accountData[cur.toLowerCase()]) || 0;
+    let wei = '0';
+    if (account === 'wallet') {
+      wei = cur === 'OLTIN' ? balancesData.wallet.oltin_wei : balancesData.wallet.uzd_wei;
+    } else if (account === 'staking') {
+      wei = balancesData.staking.total_principal_wei; // staked OLTIN
+    }
+    // 'exchange' has no per-user on-chain account (reworked at Stage 5) -> 0.
+    return Number(formatUnits(BigInt(wei), 18));
   };
 
   // User transfer balance (OLTIN from wallet)

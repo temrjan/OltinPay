@@ -8,16 +8,25 @@ export interface User {
   created_at: string;
 }
 
-export interface AccountBalance {
-  usd: number;
-  oltin: number;
+// On-chain balances from GET /balances — all values are raw wei strings
+// (uint256 doesn't fit a JS number). Format for display via lib/format.formatToken.
+export interface WalletBalances {
+  oltin_wei: string;
+  uzd_wei: string;
 }
 
-export interface Balances {
-  total_usd: number;
-  wallet: AccountBalance;
-  exchange: AccountBalance;
-  staking: AccountBalance;
+export interface StakingBalances {
+  total_principal_wei: string;
+  unlocked_wei: string;
+  pending_reward_wei: string;
+  lot_count: number;
+  next_unlock_at: number;
+}
+
+export interface BalancesResponse {
+  wallet_address: string;
+  wallet: WalletBalances;
+  staking: StakingBalances;
 }
 
 export interface Transfer {

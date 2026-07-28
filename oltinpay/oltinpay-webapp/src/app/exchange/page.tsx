@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { formatUnits } from 'viem';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTranslation } from '@/hooks/useTranslation';
 import { api } from '@/lib/api';
@@ -61,9 +62,10 @@ export default function ExchangePage() {
     },
   });
 
-  // Get exchange account balances
-  const exchangeUsd = balancesData?.exchange?.usd ? Number(balancesData.exchange.usd) : 0;
-  const exchangeOltin = balancesData?.exchange?.oltin ? Number(balancesData.exchange.oltin) : 0;
+  // Tradeable balances come from the wallet (there is no per-user exchange
+  // account in the on-chain model — the real UZD<->OLTIN swap lands at Stage 5).
+  const exchangeUzd = balancesData ? Number(formatUnits(BigInt(balancesData.wallet.uzd_wei), 18)) : 0;
+  const exchangeOltin = balancesData ? Number(formatUnits(BigInt(balancesData.wallet.oltin_wei), 18)) : 0;
 
   // Price display
   const midPrice = priceData?.mid ? Number(priceData.mid) : 85;
@@ -72,8 +74,8 @@ export default function ExchangePage() {
   const currentPrice = side === 'buy' ? askPrice : bidPrice;
 
   // Available balance for current operation
-  const availableBalance = side === 'buy' ? exchangeUsd : exchangeOltin;
-  const balanceCurrency = side === 'buy' ? 'USD' : 'OLTIN';
+  const availableBalance = side === 'buy' ? exchangeUzd : exchangeOltin;
+  const balanceCurrency = side === 'buy' ? 'UZD' : 'OLTIN';
 
   // Check if can swap
   const canSwap = amount &&
@@ -102,8 +104,10 @@ export default function ExchangePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <div className="text-2xl font-bold">${exchangeUsd.toFixed(2)}</div>
-            <div className="text-text-muted text-xs">USD</div>
+            <div className="text-2xl font-bold">
+              {exchangeUzd.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+            </div>
+            <div className="text-text-muted text-xs">UZD</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-gold">{exchangeOltin.toFixed(4)}</div>
@@ -222,7 +226,7 @@ export default function ExchangePage() {
                 <span className="text-text-muted">0.00</span>
               )}
             </div>
-            <span className="text-text-muted font-medium">{side === 'buy' ? 'OLTIN' : 'USD'}</span>
+            <span className="text-text-muted font-medium">{side === 'buy' ? 'OLTIN' : 'UZD'}</span>
           </div>
         </div>
 
@@ -235,7 +239,7 @@ export default function ExchangePage() {
             </div>
             <div className="flex justify-between">
               <span>{t('fee')} ({quoteData.fee_percent}%):</span>
-              <span>{Number(quoteData.fee).toFixed(side === 'buy' ? 4 : 2)} {side === 'buy' ? 'OLTIN' : 'USD'}</span>
+              <span>{Number(quoteData.fee).toFixed(side === 'buy' ? 4 : 2)} {side === 'buy' ? 'OLTIN' : 'UZD'}</span>
             </div>
           </div>
         )}
@@ -257,7 +261,7 @@ export default function ExchangePage() {
       </button>
 
       {/* Info */}
-      {exchangeUsd === 0 && exchangeOltin === 0 && (
+      {exchangeUzd === 0 && exchangeOltin === 0 && (
         <div className="bg-card rounded-xl p-4 flex gap-3 border border-border">
           <Info size={20} className="text-gold flex-shrink-0 mt-0.5" />
           <div className="text-sm text-text-muted">

@@ -1,0 +1,30 @@
+import { describe, it, expect } from 'vitest';
+
+import { formatToken } from './format';
+
+describe('formatToken', () => {
+  it('should group 1e24 wei (1,000,000 tokens) with a thousands separator', () => {
+    // Reviewer nit: the test fixes the FINAL string, not the intermediate number.
+    expect(formatToken('1000000000000000000000000')).toBe('1,000,000');
+  });
+
+  it('should format 1e18 wei as "1"', () => {
+    expect(formatToken('1000000000000000000')).toBe('1');
+  });
+
+  it('should format 0 wei as "0"', () => {
+    expect(formatToken('0')).toBe('0');
+  });
+
+  it('should keep a non-trivial fraction and drop trailing zeros', () => {
+    expect(formatToken('1500000000000000000')).toBe('1.5');
+  });
+
+  it('should cap the fraction at maxFractionDigits (default 4)', () => {
+    expect(formatToken('1234567890000000000')).toBe('1.2345');
+  });
+
+  it('should format a small sub-unit amount (0.001)', () => {
+    expect(formatToken('1000000000000000')).toBe('0.001');
+  });
+});
