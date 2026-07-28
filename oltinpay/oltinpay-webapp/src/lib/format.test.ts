@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { formatToken, parseTokenAmount } from './format';
+import { computeMinOut, formatToken, parseTokenAmount } from './format';
 
 describe('formatToken', () => {
   it('should group 1e24 wei (1,000,000 tokens) with a thousands separator', () => {
@@ -57,5 +57,40 @@ describe('parseTokenAmount', () => {
 
   it('rejects non-numeric input as null', () => {
     expect(parseTokenAmount('abc')).toBeNull();
+  });
+});
+
+describe('computeMinOut', () => {
+  it('applies a 1% slippage floor (default)', () => {
+    expect(computeMinOut('1000')).toBe(BigInt(990));
+  });
+
+  it('floors the integer division', () => {
+    expect(computeMinOut('100')).toBe(BigInt(99)); // 100*9900/10000 = 99
+  });
+
+  it('handles a large wei value without precision loss', () => {
+    expect(computeMinOut('1000000000000000000')).toBe(BigInt('990000000000000000'));
+  });
+
+  it('honors a custom slippage (2%)', () => {
+    expect(computeMinOut('1000', 200)).toBe(BigInt(980));
+  });
+
+  it('returns null for null / empty estimate', () => {
+    expect(computeMinOut(null)).toBeNull();
+    expect(computeMinOut('')).toBeNull();
+  });
+
+  it('returns null for a zero / non-positive estimate', () => {
+    expect(computeMinOut('0')).toBeNull();
+  });
+
+  it('returns null when the floored minOut is 0 (amount too small)', () => {
+    expect(computeMinOut('1')).toBeNull(); // 1*9900/10000 = 0
+  });
+
+  it('returns null for a non-numeric estimate', () => {
+    expect(computeMinOut('abc')).toBeNull();
   });
 });

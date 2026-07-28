@@ -52,6 +52,36 @@ export interface UserLookupResult {
   wallet_address: string | null;
 }
 
+// Exchange price + quote (por module, feed-derived — all UZS, not USD).
+export interface FeedReading {
+  answer: string;
+  decimals: number;
+  updated_at: number;
+}
+
+export interface RatesResponse {
+  xau_usd: FeedReading;
+  uzs_usd: FeedReading;
+  oltin_price_uzd: number; // UZS per 1 OLTIN (1 gram of gold)
+}
+
+export type QuoteSide = 'buy' | 'sell';
+
+// GET /quote?side=&amount= — estimate only (no minOut/fee); estimated_out_wei is
+// an exact integer wei string (same floor formula as the on-chain swap).
+export interface QuoteResponse {
+  oltin_price_uzd: number;
+  xau_answer: string;
+  uzs_answer: string;
+  xau_updated_at: number;
+  uzs_updated_at: number;
+  side: QuoteSide | null;
+  amount: number | null;
+  estimated_out: number | null;
+  estimated_out_wei: string | null;
+  estimated_out_symbol: string | null;
+}
+
 export interface Transfer {
   id: string;
   direction: 'sent' | 'received';

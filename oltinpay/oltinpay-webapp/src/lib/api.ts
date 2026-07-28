@@ -1,4 +1,10 @@
-import type { BalancesResponse, Transaction, UserLookupResult } from '@/types';
+import type {
+  BalancesResponse,
+  QuoteResponse,
+  RatesResponse,
+  Transaction,
+  UserLookupResult,
+} from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.oltinpay.com/api/v1';
 
@@ -175,62 +181,16 @@ class ApiClient {
     return this.request<any[]>('/staking/rewards');
   }
 
-  // Exchange
-  async getOrderbook() {
-    return this.request<any>('/exchange/orderbook');
+  // Exchange price + quote (por module, feed-derived, UZS). /rates is public;
+  // /quote is auth-gated — request() attaches the bearer token automatically.
+  async getRates() {
+    return this.request<RatesResponse>('/rates');
   }
 
-  async getPrice() {
-    return this.request<any>('/exchange/price');
-  }
-
-  // Swap - instant exchange
-  async getSwapQuote(data: {
-    side: 'buy' | 'sell';
-    amount: number;
-    amount_type?: 'from' | 'to';
-  }) {
-    return this.request<{
-      side: string;
-      from_currency: string;
-      from_amount: number;
-      to_currency: string;
-      to_amount: number;
-      price: number;
-      fee: number;
-      fee_percent: number;
-    }>('/exchange/swap/quote', {
-      method: 'POST',
-      body: JSON.stringify({
-        side: data.side,
-        amount: data.amount,
-        amount_type: data.amount_type || 'from',
-      }),
-    });
-  }
-
-  async executeSwap(data: {
-    side: 'buy' | 'sell';
-    amount: number;
-    amount_type?: 'from' | 'to';
-  }) {
-    return this.request<{
-      success: boolean;
-      side: string;
-      from_currency: string;
-      from_amount: number;
-      to_currency: string;
-      to_amount: number;
-      price: number;
-      fee: number;
-    }>('/exchange/swap', {
-      method: 'POST',
-      body: JSON.stringify({
-        side: data.side,
-        amount: data.amount,
-        amount_type: data.amount_type || 'from',
-      }),
-    });
+  async getQuote(side: 'buy' | 'sell', amount: string) {
+    return this.request<QuoteResponse>(
+      `/quote?side=${side}&amount=${encodeURIComponent(amount)}`
+    );
   }
 
   // Legacy orders
