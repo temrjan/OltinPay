@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 import pytest_asyncio
+from eth_utils import to_checksum_address
 from httpx import AsyncClient  # noqa: TC002  — runtime type for fixture
 from jose import jwt
 from sqlalchemy.ext.asyncio import (
@@ -20,13 +21,29 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from src.config import settings
-from src.infrastructure.signer_pool import SignerReceiptTimeout
+from src.infrastructure.signer_pool import Role, SignerReceiptTimeout
 from src.users.models import User
 
 CLAIM = "/api/v1/welcome/claim"
 STATUS = "/api/v1/welcome/status"
 WALLET = "0xA0A78aA9B9619fbc3bC12b5756442BD7A7D6779e"
-FAKE_TX = "0x" + "b" * 64
+FAKE_TX = "0x" + "b" * 64  # the UZD mint tx in tests
+DRIP_TX = "0x" + "d" * 64  # the ETH gas-drip tx in tests
+
+
+@pytest.fixture(autouse=True)
+def _wallet_already_funded():
+    """Default: report the wallet as already funded so the gas drip is SKIPPED.
+
+    Existing claim tests then see send_via only for the UZD mint — their
+    behaviour is unchanged by the drip. Drip-specific tests override this fixture
+    with a low balance (patching the same target inside their own ``with``).
+    """
+    with patch(
+        "src.welcome.service.get_eth_balance",
+        new=AsyncMock(return_value=10**16),  # 0.01 ETH, well above threshold
+    ):
+        yield
 
 
 def _make_token(user_id: uuid.UUID) -> str:
@@ -168,3 +185,80 @@ async def test_status_after_claim(
     body = response.json()
     assert body["claimed"] is True
     assert body["tx_hash"] == FAKE_TX
+
+
+@pytest.mark.asyncio
+async def test_claim_drips_gas_when_wallet_below_threshold(
+    client: AsyncClient, wallet_user: dict[str, Any]
+) -> None:
+    """A wallet below the ETH threshold gets a native drip BEFORE the UZD mint:
+    two send_via calls — the ETH value transfer first, then the mint."""
+    with (
+        patch(
+            "src.welcome.service.get_eth_balance",
+            new=AsyncMock(return_value=0),
+        ),
+        patch(
+            "src.welcome.service.send_via",
+            new=AsyncMock(side_effect=[DRIP_TX, FAKE_TX]),
+        ) as mock_send,
+    ):
+        response = await client.post(CLAIM, headers=wallet_user["headers"])
+
+    assert response.status_code == 200
+    assert response.json()["tx_hash"] == FAKE_TX  # the UZD mint, not the drip
+    assert mock_send.call_count == 2
+    drip_call, mint_call = mock_send.call_args_list
+    # Drip leg: native ETH transfer to the (checksummed) wallet, value=drip_eth_wei.
+    assert drip_call.args[0] == Role.BANK_OPS
+    assert drip_call.args[1] == to_checksum_address(WALLET.lower())
+    assert drip_call.args[2] == "0x"
+    assert drip_call.kwargs["value"] == settings.drip_eth_wei
+    # Mint leg: the UZD contract (calldata call), no ETH value.
+    assert mint_call.args[1] == settings.uzd_contract_address
+    assert "value" not in mint_call.kwargs
+
+
+@pytest.mark.asyncio
+async def test_claim_succeeds_when_gas_drip_fails(
+    client: AsyncClient, wallet_user: dict[str, Any]
+) -> None:
+    """A drip failure (bank-ops out of ETH / timeout) must NOT abort the claim —
+    the UZD mint still lands and the user gets 200 (best-effort gas drip)."""
+    with (
+        patch(
+            "src.welcome.service.get_eth_balance",
+            new=AsyncMock(return_value=0),
+        ),
+        patch(
+            "src.welcome.service.send_via",
+            new=AsyncMock(side_effect=[SignerReceiptTimeout("drip", DRIP_TX), FAKE_TX]),
+        ) as mock_send,
+    ):
+        response = await client.post(CLAIM, headers=wallet_user["headers"])
+
+    assert response.status_code == 200
+    assert response.json()["tx_hash"] == FAKE_TX
+    assert mock_send.call_count == 2  # drip attempted (failed), then mint succeeded
+
+
+@pytest.mark.asyncio
+async def test_claim_skips_drip_when_wallet_already_funded(
+    client: AsyncClient, wallet_user: dict[str, Any]
+) -> None:
+    """A wallet already at/above the threshold gets NO drip — the live balance is
+    the idempotency gate, so send_via fires once (the mint) only."""
+    with (
+        patch(
+            "src.welcome.service.get_eth_balance",
+            new=AsyncMock(return_value=settings.drip_eth_threshold_wei),
+        ),
+        patch(
+            "src.welcome.service.send_via",
+            new=AsyncMock(return_value=FAKE_TX),
+        ) as mock_send,
+    ):
+        response = await client.post(CLAIM, headers=wallet_user["headers"])
+
+    assert response.status_code == 200
+    assert mock_send.call_count == 1  # mint only — drip gated off by the balance

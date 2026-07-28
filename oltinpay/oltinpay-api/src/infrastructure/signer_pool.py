@@ -164,8 +164,12 @@ class Signer(Protocol):
 
     address: str
 
-    async def send(self, contract: str, data: str) -> str:
-        """Sign and broadcast a transaction, returning its hash."""
+    async def send(self, contract: str, data: str, value: int = 0) -> str:
+        """Sign and broadcast a transaction, returning its hash.
+
+        ``value`` (wei) funds a native ETH transfer; it defaults to 0 so every
+        existing calldata-to-contract call (mint/burn/postAnswer) is unchanged.
+        """
         ...
 
 
@@ -196,7 +200,7 @@ class NonceManagedSigner:
         self._lock = asyncio.Lock()
         self._nonce: int | None = None
 
-    async def send(self, contract: str, data: str) -> str:
+    async def send(self, contract: str, data: str, value: int = 0) -> str:
         # The client is opened OUTSIDE the lock: it must survive the lock
         # release below so the receipt poll can keep using it (B2a).
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -206,7 +210,9 @@ class NonceManagedSigner:
                 if self._nonce is None:
                     self._nonce = await self._fetch_latest_nonce(client)
                 try:
-                    tx_hash = await self._build_sign_send(contract, data, client)
+                    tx_hash = await self._build_sign_send(
+                        contract, data, client, value=value
+                    )
                 except _NonceTooLow:
                     # Local counter drifted (restart / external tx). Re-sync
                     # from the chain and retry exactly once.
@@ -216,7 +222,9 @@ class NonceManagedSigner:
                         self.address,
                         self._nonce,
                     )
-                    tx_hash = await self._build_sign_send(contract, data, client)
+                    tx_hash = await self._build_sign_send(
+                        contract, data, client, value=value
+                    )
             # Lock released: the nonce is already advanced, so the next send can
             # broadcast nonce+1 while this one waits for its receipt (B2a). The
             # mined-receipt requirement itself is BLOCKER B2 — do not remove.
@@ -230,18 +238,20 @@ class NonceManagedSigner:
         return int(raw, 16)
 
     async def _build_sign_send(
-        self, contract: str, data: str, client: httpx.AsyncClient
+        self, contract: str, data: str, client: httpx.AsyncClient, value: int = 0
     ) -> str:
         assert self._nonce is not None  # invariant guaranteed by send()
         nonce = self._nonce
 
         # Three independent reads — gather to shrink how long the per-key lock is
         # held (P1). maxPriorityFeePerGas may be unsupported -> tolerated below.
+        # `value` is included in the estimate so a native transfer prices the
+        # same amount it will move; it is "0x0" for every calldata call (no-op).
         gas_price_hex, est_hex, priority_hex = await asyncio.gather(
             _rpc("eth_gasPrice", [], client),
             _rpc(
                 "eth_estimateGas",
-                [{"from": self.address, "to": contract, "data": data}],
+                [{"from": self.address, "to": contract, "data": data, "value": hex(value)}],
                 client,
             ),
             _rpc("eth_maxPriorityFeePerGas", [], client),
@@ -261,7 +271,7 @@ class NonceManagedSigner:
             "chainId": settings.zksync_chain_id,
             "nonce": nonce,
             "to": contract,
-            "value": 0,
+            "value": value,
             "data": data,
             "gas": gas_limit,
             "maxFeePerGas": max_fee,
@@ -375,13 +385,16 @@ class SignerPool:
 pool = SignerPool()
 
 
-async def send_via(role: Role, contract: str, data: str) -> str:
+async def send_via(role: Role, contract: str, data: str, value: int = 0) -> str:
     """Sign+broadcast ``data`` to ``contract`` using ``role``'s serialized signer.
+
+    ``value`` (wei) funds a native ETH transfer (``data="0x"``, ``contract`` = the
+    recipient EOA); it defaults to 0, leaving every calldata call unchanged.
 
     Service modules import this and patch it at their own usage site in tests
     (``patch("src.<module>.service.send_via", AsyncMock(...))``).
     """
-    return await pool.for_key(role).send(contract, data)
+    return await pool.for_key(role).send(contract, data, value=value)
 
 
 __all__ = [

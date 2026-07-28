@@ -42,8 +42,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from src.bank.models import BankDeposit
 from src.common.exceptions import BadRequestException
+from src.config import settings
 from src.database import Base
 from src.users.models import User
+from src.welcome import service as welcome_service
 from src.withdrawals import service as withdrawals_service
 from src.withdrawals.models import Withdrawal
 
@@ -172,3 +174,85 @@ async def test_concurrent_withdrawals_respect_cap(
             )
         ).scalars().all()
     assert sum(amounts) <= DEPOSITED
+
+
+@pytest.mark.asyncio
+async def test_concurrent_welcome_claims_drip_once(
+    pg: tuple[async_sessionmaker[object], uuid.UUID],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """N concurrent welcome claims for one user fire EXACTLY ONE gas drip.
+
+    _ensure_gas reads the live ETH balance then drips if below threshold — a
+    check-then-act. The signer releases its per-key lock before the receipt wait
+    (B2a), so without a per-user advisory lock a burst of claims all read the
+    below-threshold balance and each drip, draining the shared KEY_BANK_OPS ETH
+    reserve in one request (blocking review finding).
+
+    Deterministic race (no scheduler-timing reliance): the winner A parks INSIDE
+    its drip while still holding the xact-scoped advisory lock; the loser B then
+    races. With the lock B blocks on lock_user until A commits, by then reads the
+    funded balance and skips (one drip). Without it B reads the stale zero balance
+    and drips too (two — the drain this test guards against).
+    """
+    maker, user_id = pg
+    wallet = "0x" + "a" * 40  # the pg-fixture user's wallet
+
+    drip_count = {"n": 0}
+    entered = {"n": 0}
+    first_parked = asyncio.Event()
+    release_first = asyncio.Event()
+
+    async def fake_balance(_wallet: str) -> int:
+        # Live chain reflects drips already applied; a fresh wallet reads 0.
+        return settings.drip_eth_wei if drip_count["n"] > 0 else 0
+
+    async def fake_send_via(*_args: object, **_kwargs: object) -> str:
+        entered["n"] += 1
+        if entered["n"] == 1:
+            # Winner parks mid-drip, still holding the advisory lock, exposing the
+            # below-threshold read window a racing claim would exploit.
+            first_parked.set()
+            await release_first.wait()
+        drip_count["n"] += 1
+        return "0x" + "e" * 64
+
+    # Patch at the welcome-service usage site (imported names); monkeypatch
+    # auto-restores at teardown.
+    monkeypatch.setattr(welcome_service, "get_eth_balance", fake_balance)
+    monkeypatch.setattr(welcome_service, "send_via", fake_send_via)
+
+    session_a = maker()
+
+    async def run_a() -> None:
+        # Acquires the per-user lock + reads balance=0, then parks in the drip.
+        await welcome_service._ensure_gas(session_a, user_id, wallet)
+
+    a_task = asyncio.create_task(run_a())
+    await asyncio.wait_for(first_parked.wait(), timeout=5.0)
+
+    async def run_b() -> None:
+        async with maker() as s:
+            await welcome_service._ensure_gas(s, user_id, wallet)
+            await s.commit()
+
+    b_task = asyncio.create_task(run_b())
+    # Synchronization point (assertions are deterministic either way): let B
+    # reach lock_user. With the lock it blocks; without it it runs to the end.
+    await asyncio.sleep(0.5)
+    b_finished_before_a_committed = b_task.done()
+
+    release_first.set()  # winner finishes its drip
+    await a_task
+    await session_a.commit()  # releases the advisory lock
+    await session_a.close()
+    await asyncio.wait_for(b_task, timeout=5.0)
+
+    assert drip_count["n"] == 1, (
+        f"expected exactly one drip under the per-user lock, got {drip_count['n']}"
+        " — concurrent welcome claims drained the bank-ops ETH reserve"
+    )
+    assert not b_finished_before_a_committed, (
+        "second claim completed before the first committed — the advisory lock "
+        "was not held across the balance-read -> drip critical section"
+    )

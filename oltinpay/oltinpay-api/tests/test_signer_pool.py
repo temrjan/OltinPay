@@ -15,7 +15,7 @@ import pytest
 import respx
 import rlp
 from eth_account import Account
-from eth_utils import to_int
+from eth_utils import to_checksum_address, to_int
 from pydantic import SecretStr
 
 from src.config import settings
@@ -48,6 +48,18 @@ def _nonce_of(raw_tx_hex: str) -> int:
     return to_int(fields[1])  # [chainId, nonce, ...]
 
 
+def _value_data_of(raw_tx_hex: str) -> tuple[int, bytes]:
+    """Decode (value, data) from a signed EIP-1559 (type-2) transaction.
+
+    Field order: [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gas, to,
+    value, data, accessList] -> value is index 6, data is index 7.
+    """
+    payload = bytes.fromhex(raw_tx_hex[2:])
+    assert payload[0] == 0x02  # EIP-1559 envelope
+    fields = rlp.decode(payload[1:])
+    return to_int(fields[6]), fields[7]
+
+
 class _RpcStub:
     """Stateful JSON-RPC handler for respx."""
 
@@ -66,6 +78,7 @@ class _RpcStub:
         self.receipt_never = receipt_never
         self.hold_receipts: set[str] = set()
         self.tx_hashes: list[str] = []  # hashes of successful broadcasts
+        self.raw_txs: list[str] = []  # raw signed hex of successful broadcasts
         self.calls: dict[str, int] = {}
         self.sent_nonces: list[int] = []
         self._send_count = 0
@@ -95,6 +108,7 @@ class _RpcStub:
                     },
                 )
             self.sent_nonces.append(_nonce_of(raw))
+            self.raw_txs.append(raw)
             tx_hash = "0x" + f"{self._send_count:064x}"
             self.tx_hashes.append(tx_hash)
             return _res(tx_hash)
@@ -273,3 +287,46 @@ def test_for_key_empty_secret_raises_unconfigured(
     monkeypatch.setattr(settings, "key_bank_ops", SecretStr(""))
     with pytest.raises(SignerUnconfigured):
         SignerPool().for_key(Role.BANK_OPS)
+
+
+@pytest.mark.asyncio
+async def test_send_value_transfer_sets_value_and_empty_data() -> None:
+    """A native ETH transfer (value>0, data='0x') signs a tx carrying that value
+    and empty calldata, reusing the same serialized-nonce + receipt path.
+
+    This is the gas-drip enabler: send_via(BANK_OPS, wallet, "0x", value=drip).
+    """
+    signer = NonceManagedSigner(Account.from_key(TEST_KEY))
+    stub = _RpcStub(start_nonce=0)
+    drip_wei = 10**15
+    # The signer contract requires a checksummed `to` (eth_account rejects any
+    # non-checksummed address). _ensure_gas checksums wallet.lower() before this
+    # call; mirror that here.
+    recipient = to_checksum_address(RECIPIENT.lower())
+
+    with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+        mock.post("").mock(side_effect=stub)
+        tx_hash = await signer.send(recipient, "0x", value=drip_wei)
+
+    assert tx_hash.startswith("0x")
+    value, data = _value_data_of(stub.raw_txs[0])
+    assert value == drip_wei
+    assert data == b""  # empty calldata for a plain transfer
+
+
+@pytest.mark.asyncio
+async def test_send_calldata_call_keeps_zero_value() -> None:
+    """The default value=0 leaves every calldata call unchanged — a mint carries
+    the calldata and NO ETH value (backwards-compat guard for the generalization).
+    """
+    signer = NonceManagedSigner(Account.from_key(TEST_KEY))
+    stub = _RpcStub(start_nonce=0)
+    data = encode_mint_calldata(RECIPIENT, 10**18)
+
+    with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+        mock.post("").mock(side_effect=stub)
+        await signer.send(CONTRACT, data)
+
+    value, sent_data = _value_data_of(stub.raw_txs[0])
+    assert value == 0
+    assert sent_data == bytes.fromhex(data[2:])

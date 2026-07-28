@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import httpx
 import pytest
+import respx
 
-from src.infrastructure.rpc import decode_uint256, is_valid_address, pad_address
+from src.config import settings
+from src.infrastructure.rpc import (
+    RpcError,
+    decode_uint256,
+    get_eth_balance,
+    is_valid_address,
+    pad_address,
+)
 
 
 class TestIsValidAddress:
@@ -75,3 +84,34 @@ class TestDecodeUint256:
     )
     def test_decodes(self, hex_value: str, expected: int) -> None:
         assert decode_uint256(hex_value) == expected
+
+
+class TestGetEthBalance:
+    @pytest.mark.asyncio
+    async def test_decodes_hex_balance_to_wei(self) -> None:
+        """eth_getBalance returns a hex string; the helper narrows it to int wei."""
+        with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+            mock.post("").mock(
+                return_value=httpx.Response(
+                    200, json={"jsonrpc": "2.0", "id": 1, "result": hex(10**15)}
+                )
+            )
+            balance = await get_eth_balance("0x" + "a" * 40)
+        assert balance == 10**15
+
+    @pytest.mark.asyncio
+    async def test_raises_on_node_error(self) -> None:
+        """A node-reported JSON-RPC error surfaces as RpcError, not a silent 0."""
+        with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+            mock.post("").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "error": {"code": -32000, "message": "boom"},
+                    },
+                )
+            )
+            with pytest.raises(RpcError):
+                await get_eth_balance("0x" + "a" * 40)

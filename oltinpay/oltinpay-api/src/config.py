@@ -67,6 +67,14 @@ class Settings(BaseSettings):
     key_uzs: SecretStr | None = None
     key_xau: SecretStr | None = None
 
+    # Welcome gas drip — a brand-new wallet holds 0 OLTIN, so its FIRST on-chain
+    # action (approve/buy) cannot be gasless (paymaster fee is in OLTIN); it needs
+    # a one-off native ETH top-up. The welcome bonus drips drip_eth_wei from
+    # KEY_BANK_OPS, but only when the wallet is below drip_eth_threshold_wei — the
+    # live balance is the idempotency gate, so a retry never double-drips.
+    drip_eth_wei: int = 10**15  # 0.001 ETH
+    drip_eth_threshold_wei: int = 5 * 10**14  # 0.0005 ETH — drip only if below
+
     # Bank connector HMAC auth (X-Bank-Signature = HMAC-SHA256 over body+ts+nonce)
     bank_hmac_secret: SecretStr | None = None
     bank_hmac_max_skew_sec: int = 300  # reject timestamps older/newer than this
