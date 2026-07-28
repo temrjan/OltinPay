@@ -29,6 +29,29 @@ export interface BalancesResponse {
   staking: StakingBalances;
 }
 
+// On-chain transaction feed from GET /transactions (indexer-backed). Mirrors the
+// backend TransactionItem; amount_wei is a raw wei string, indexed_at is ISO.
+export type TransactionDirection = 'in' | 'out' | 'self';
+
+export interface Transaction {
+  tx_hash: string;
+  event_type: string;
+  direction: TransactionDirection;
+  block_number: number;
+  from_address: string | null;
+  to_address: string | null;
+  amount_wei: string | null;
+  explorer_url: string;
+  indexed_at: string;
+}
+
+// GET /users/lookup?oltin_id= — resolve a recipient to their on-chain address.
+// wallet_address is null when the recipient never onboarded a wallet.
+export interface UserLookupResult {
+  oltin_id: string;
+  wallet_address: string | null;
+}
+
 export interface Transfer {
   id: string;
   direction: 'sent' | 'received';

@@ -1,4 +1,4 @@
-import type { BalancesResponse } from '@/types';
+import type { BalancesResponse, Transaction, UserLookupResult } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.oltinpay.com/api/v1';
 
@@ -92,9 +92,22 @@ class ApiClient {
     return this.request<any[]>(`/users/search?q=${encodeURIComponent(q)}`);
   }
 
+  // Resolve a recipient oltin_id to their wallet address for a signed transfer.
+  async lookupUser(oltin_id: string) {
+    return this.request<UserLookupResult>(
+      `/users/lookup?oltin_id=${encodeURIComponent(oltin_id)}`
+    );
+  }
+
   // Balances
   async getBalances() {
     return this.request<BalancesResponse>('/balances');
+  }
+
+  // On-chain transaction feed (indexer-backed). Requires a registered wallet;
+  // the backend returns 400 if wallet_address is unset — callers show empty state.
+  async getTransactions() {
+    return this.request<Transaction[]>('/transactions');
   }
 
   async internalTransfer(data: {

@@ -63,3 +63,16 @@ class UserSearchResult(BaseModel):
 
     oltin_id: str
     telegram_id: int
+
+
+class UserLookupResult(BaseModel):
+    """Resolve a recipient oltin_id to their on-chain wallet address.
+
+    ``wallet_address`` is null when the recipient never onboarded a wallet —
+    the client blocks the send in that case.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    oltin_id: str
+    wallet_address: str | None = None

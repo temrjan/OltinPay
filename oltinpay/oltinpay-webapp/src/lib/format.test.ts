@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { formatToken } from './format';
+import { formatToken, parseTokenAmount } from './format';
 
 describe('formatToken', () => {
   it('should group 1e24 wei (1,000,000 tokens) with a thousands separator', () => {
@@ -26,5 +26,36 @@ describe('formatToken', () => {
 
   it('should format a small sub-unit amount (0.001)', () => {
     expect(formatToken('1000000000000000')).toBe('0.001');
+  });
+});
+
+describe('parseTokenAmount', () => {
+  it('parses a whole number to wei', () => {
+    expect(parseTokenAmount('1')).toBe(BigInt('1000000000000000000'));
+  });
+
+  it('parses a fractional amount to wei', () => {
+    expect(parseTokenAmount('1.5')).toBe(BigInt('1500000000000000000'));
+  });
+
+  it('parses the smallest sub-unit (1 wei)', () => {
+    expect(parseTokenAmount('0.000000000000000001')).toBe(BigInt(1));
+  });
+
+  it('rejects empty / whitespace as null', () => {
+    expect(parseTokenAmount('')).toBeNull();
+    expect(parseTokenAmount('   ')).toBeNull();
+  });
+
+  it('rejects zero as null', () => {
+    expect(parseTokenAmount('0')).toBeNull();
+  });
+
+  it('rejects a negative amount as null', () => {
+    expect(parseTokenAmount('-1')).toBeNull();
+  });
+
+  it('rejects non-numeric input as null', () => {
+    expect(parseTokenAmount('abc')).toBeNull();
   });
 });
