@@ -267,14 +267,6 @@ class ApiClient {
       method: 'DELETE',
     });
   }
-
-  // AI assistant
-  async chat(message: string) {
-    return this.request<{ response: string; sources: any[] }>('/aylin/chat', {
-      method: 'POST',
-      body: JSON.stringify({ message }),
-    });
-  }
 }
 
 export const api = new ApiClient();

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Globe, ChevronRight, LogOut, Bot, Copy, Check, Star, List, Info } from 'lucide-react';
+import { User, Globe, ChevronRight, LogOut, Copy, Check, Star, List, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -46,7 +46,6 @@ export default function ProfilePage() {
   ];
 
   const menuItems = [
-    { href: '/aylin', icon: Bot, label: t('aylinAssistant'), color: 'text-gold' },
     { href: '/favorites', icon: Star, label: t('favorites'), color: 'text-gold' },
     { href: '/history', icon: List, label: t('allOperations'), color: 'text-text-muted' },
   ];
