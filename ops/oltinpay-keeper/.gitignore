@@ -1,0 +1,5 @@
+# Never commit the signing key or runtime artifacts.
+poster.key
+venv/
+__pycache__/
+*.log

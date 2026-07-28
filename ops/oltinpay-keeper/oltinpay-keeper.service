@@ -1,0 +1,12 @@
+[Unit]
+Description=OltinPay feed keeper (XAU/UZS/RESERVE freshness)
+Documentation=file:/root/oltinpay-keeper/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/oltinpay-keeper
+ExecStart=/root/oltinpay-keeper/venv/bin/python /root/oltinpay-keeper/keeper.py
+NoNewPrivileges=true
+# Non-zero exit (any POST_FAIL) is surfaced in `systemctl status` / journald.
