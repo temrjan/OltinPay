@@ -1,4 +1,4 @@
-"""Welcome bonus service — DEMO 1000 UZD mint + one-off ETH gas drip per user."""
+"""Welcome bonus service — DEMO: UZD mint + OLTIN transfer + ETH gas drip per user."""
 
 from __future__ import annotations
 
@@ -13,13 +13,13 @@ from sqlalchemy.exc import IntegrityError
 from src.common.exceptions import BadRequestException, ConflictException
 from src.config import settings
 from src.infrastructure.db_lock import lock_user
-from src.infrastructure.rpc import RpcError, get_eth_balance
+from src.infrastructure.rpc import get_eth_balance
 from src.infrastructure.signer_pool import (
     Role,
-    SignerError,
     SignerReceiptTimeout,
     SignerUnconfigured,
     encode_mint_calldata,
+    encode_transfer_calldata,
     send_via,
 )
 from src.welcome.models import WelcomeClaim
@@ -30,8 +30,6 @@ if TYPE_CHECKING:
     from src.users.models import User
 
 logger = logging.getLogger(__name__)
-
-BONUS_AMOUNT_WEI = 1000 * 10**18  # 1000 UZD with 18 decimals
 
 
 async def get_existing_claim(
@@ -71,9 +69,12 @@ async def _ensure_gas(db: AsyncSession, user_id: uuid.UUID, wallet: str) -> None
     await lock_user(db, user_id)
     try:
         balance = await get_eth_balance(wallet)
-    except RpcError:
-        # Could not confirm the balance — skip this round rather than risk an
-        # unguarded (non-idempotent) drip; a later call retries.
+    except Exception:
+        # Best-effort, DELIBERATELY BROAD (same class as the OLTIN leg): the RPC
+        # layer lets RAW transport errors through (httpx 503/ConnectError/broken
+        # JSON), not only RpcError. A balance-read flake must NOT turn the whole
+        # claim into a 500 — skip the drip this round (nothing is reserved/minted
+        # yet, so this is benign) and let a later call retry via the balance gate.
         logger.warning(
             "welcome_gas_balance_read_failed wallet=%s", wallet, exc_info=True
         )
@@ -92,21 +93,58 @@ async def _ensure_gas(db: AsyncSession, user_id: uuid.UUID, wallet: str) -> None
             "0x",
             value=settings.drip_eth_wei,
         )
-    except (SignerError, SignerUnconfigured):
-        # KEY_BANK_OPS may be out of ETH (a predictable operational condition) or
-        # the drip may time out. Never fail the claim — the balance-gated retry on
-        # a later call tops the wallet up once bank-ops is refunded.
+    except Exception:
+        # Best-effort, DELIBERATELY BROAD: KEY_BANK_OPS may be out of ETH, or a RAW
+        # transport flake may hit — neither must abort the claim (this runs before
+        # the reservation, so a failure here is benign). The balance-gated retry on
+        # a later call tops the wallet up once conditions clear.
         logger.warning("welcome_gas_drip_failed wallet=%s", wallet, exc_info=True)
 
 
-async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
-    """Mint 1000 UZD to the user's wallet. One call per user ever.
+async def _send_welcome_oltin(wallet: str) -> None:
+    """Best-effort OLTIN transfer — the gifted-gold leg of the welcome bonus.
 
-    Reserve-then-broadcast pattern — the DB row with a unique constraint on
-    user_id is inserted FIRST and committed, so concurrent claims fail fast
-    on the unique-constraint violation instead of double-minting. Only after
-    the slot is reserved do we broadcast the on-chain mint, then update the
-    same row with the resulting tx_hash.
+    OLTIN is TRANSFERRED (not minted): minting is Exchange-only by PoR design,
+    so bank-ops is pre-funded with OLTIN and sends it. The recipient rides in the
+    calldata (the tx ``to`` is the token contract), so no checksum dance is needed.
+
+    Idempotency is by the CLAIM ROW, not the balance: ``claim_welcome_bonus`` calls
+    this only AFTER the reservation is committed, and a concurrent/retry claim 409s
+    at the unique flush before reaching here, so it fires exactly once per user. A
+    balance gate would be WRONG — a user who legitimately spends the gifted OLTIN
+    (stake/sell) drops to 0 and would be re-dripped forever.
+
+    Best-effort with a DELIBERATELY BROAD except (blocking review finding). The
+    RPC layer wraps only node-reported JSON-RPC errors in SignerError; RAW transport
+    errors (httpx ConnectError / ReadTimeout / HTTPStatusError on a 503 / a broken-
+    JSON decode) fly uncaught. A narrow catch here would let such a flake abort the
+    claim — and since the UZD mint is already committed on-chain, a retry would mint
+    a SECOND bonus (double-mint, A-prime broken). The invariant is that the committed
+    welcome claim (the double-mint guard) is NEVER lost because the OLTIN gift failed,
+    so this leg must survive ANY failure. ``exc_info`` keeps the cause for ops — this
+    is the justified broad-except case, not a silenced signal.
+    """
+    try:
+        await send_via(
+            Role.BANK_OPS,
+            settings.oltin_contract_address,
+            encode_transfer_calldata(wallet, settings.welcome_oltin_wei),
+        )
+    except Exception:
+        logger.warning(
+            "welcome_oltin_transfer_failed wallet=%s", wallet, exc_info=True
+        )
+
+
+async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
+    """Credit the welcome bonus to the user's wallet. One call per user ever.
+
+    Three legs: (1) an ETH gas drip BEFORE the reservation (best-effort, balance-
+    gated, per-user lock — see _ensure_gas); (2) the UZD mint, which IS the claim
+    (reserve-then-broadcast: the unique user_id row is inserted first so concurrent
+    claims fail fast instead of double-minting; A-prime keep-reservation on a
+    timed-out mint); (3) an OLTIN transfer, best-effort, once per claim row (see
+    _send_welcome_oltin). Amounts come from settings so the demo can retune.
     """
     if not user.wallet_address:
         raise BadRequestException(
@@ -133,7 +171,7 @@ async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
         user_id=user.id,
         wallet_address=wallet,
         tx_hash="",  # placeholder, filled after broadcast
-        amount_wei=str(BONUS_AMOUNT_WEI),
+        amount_wei=str(settings.welcome_uzd_wei),
     )
     db.add(claim)
     try:
@@ -150,7 +188,7 @@ async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
         tx_hash = await send_via(
             Role.BANK_OPS,
             settings.uzd_contract_address,
-            encode_mint_calldata(wallet, BONUS_AMOUNT_WEI),
+            encode_mint_calldata(wallet, settings.welcome_uzd_wei),
         )
     except SignerUnconfigured as exc:
         await db.rollback()
@@ -172,4 +210,9 @@ async def claim_welcome_bonus(db: AsyncSession, user: User) -> WelcomeClaim:
 
     claim.tx_hash = tx_hash.lower()
     await db.commit()
+    # OLTIN leg — the gifted gold, AFTER commit so the reservation (the double-mint
+    # guard) is already durable and can NEVER be lost by a failure in this
+    # best-effort leg (defence in depth on top of the broad except in the helper).
+    # Once per claim row: a retry 409s at the flush above, before reaching here.
+    await _send_welcome_oltin(wallet)
     return claim
