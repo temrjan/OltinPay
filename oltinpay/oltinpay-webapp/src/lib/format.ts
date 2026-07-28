@@ -46,3 +46,27 @@ export function parseTokenAmount(raw: string, decimals = TOKEN_DECIMALS): bigint
     return null;
   }
 }
+
+/**
+ * Client-side slippage floor for an Exchange swap. The backend `/quote` returns
+ * an exact-integer estimate (`estimated_out_wei`, same floor formula as the
+ * on-chain swap) but no minOut — we floor it by the slippage tolerance
+ * (default 1% = 100 bps). Returns null when the estimate is missing / non-positive
+ * / not a number, OR the floored minOut would be 0 — the on-chain buy requires
+ * `minOltinOut > 0`, and a 0 floor means the amount is too small to swap.
+ */
+export function computeMinOut(
+  estimatedOutWei: string | null,
+  slippageBps = 100,
+): bigint | null {
+  if (!estimatedOutWei) return null;
+  let est: bigint;
+  try {
+    est = BigInt(estimatedOutWei);
+  } catch {
+    return null;
+  }
+  if (est <= BigInt(0)) return null;
+  const minOut = (est * BigInt(10000 - slippageBps)) / BigInt(10000);
+  return minOut > BigInt(0) ? minOut : null;
+}

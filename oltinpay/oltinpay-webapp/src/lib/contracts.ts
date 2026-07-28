@@ -7,10 +7,10 @@ import type {Address} from 'viem';
 export const ZKSYNC_SEPOLIA_CHAIN_ID = 300;
 
 export const CONTRACTS = {
-  // OltinTokenV3 (OLTIN) — the live token. The retired V2 (0x4A56B78D…) is gone;
-  // UZD/STAKING below are still V2-retired and get repointed in Stages 4/5.
+  // Live V3/V3.1 addresses. STAKING is still V2-retired (repointed in Stage 4).
   OLTIN: '0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5' as Address,
-  UZD: '0x95b30Be4fdE1C48d7C5dC22C1EBA061219125A32' as Address,
+  UZD: '0x51232fd0065bD2ca50551761Acef476E3CDf02aA' as Address,
+  EXCHANGE: '0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9' as Address,
   STAKING: '0x63e537A3a150d06035151E29904C1640181C8314' as Address,
 } as const;
 
@@ -122,6 +122,36 @@ export const STAKING_ABI = [
     name: 'unlockedPrincipal',
     stateMutability: 'view',
     inputs: [{name: 'user', type: 'address'}],
+    outputs: [{type: 'uint256'}],
+  },
+] as const;
+
+export const EXCHANGE_ABI = [
+  {
+    type: 'function',
+    name: 'buy',
+    stateMutability: 'nonpayable',
+    inputs: [
+      {name: 'uzdInWei', type: 'uint256'},
+      {name: 'minOltinOut', type: 'uint256'},
+    ],
+    outputs: [{name: 'oltinOutWei', type: 'uint256'}],
+  },
+  {
+    type: 'function',
+    name: 'sell',
+    stateMutability: 'nonpayable',
+    inputs: [
+      {name: 'oltinInWei', type: 'uint256'},
+      {name: 'minUzdOut', type: 'uint256'},
+    ],
+    outputs: [{name: 'uzdOutWei', type: 'uint256'}],
+  },
+  {
+    type: 'function',
+    name: 'treasuryBalance',
+    stateMutability: 'view',
+    inputs: [],
     outputs: [{type: 'uint256'}],
   },
 ] as const;

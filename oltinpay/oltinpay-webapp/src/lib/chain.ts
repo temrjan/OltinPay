@@ -11,7 +11,7 @@ import {zksyncSepoliaTestnet} from 'viem/chains';
 import type {Address, Hex} from 'viem';
 import type {HDAccount} from 'viem/accounts';
 
-import {CONTRACTS, ERC20_ABI, STAKING_ABI} from './contracts';
+import {CONTRACTS, ERC20_ABI, EXCHANGE_ABI, STAKING_ABI} from './contracts';
 
 export const publicClient = createPublicClient({
   chain: zksyncSepoliaTestnet,
@@ -124,5 +124,50 @@ export async function claimStakingReward(account: HDAccount): Promise<Hex> {
     address: CONTRACTS.STAKING,
     abi: STAKING_ABI,
     functionName: 'claim',
+  });
+}
+
+// Exchange (buy/sell). Both are two-step: approve the Exchange to move the input
+// token, then buy/sell. `buy` pulls UZD + mints OLTIN; `sell` burns OLTIN + pays
+// UZD from the treasury. minOut is the client-computed slippage floor.
+export async function approveForExchange(
+  account: HDAccount,
+  token: Address,
+  amount: bigint,
+): Promise<Hex> {
+  const wallet = makeWalletClient(account);
+  return wallet.writeContract({
+    address: token,
+    abi: ERC20_ABI,
+    functionName: 'approve',
+    args: [CONTRACTS.EXCHANGE, amount],
+  });
+}
+
+export async function exchangeBuy(
+  account: HDAccount,
+  uzdInWei: bigint,
+  minOltinOut: bigint,
+): Promise<Hex> {
+  const wallet = makeWalletClient(account);
+  return wallet.writeContract({
+    address: CONTRACTS.EXCHANGE,
+    abi: EXCHANGE_ABI,
+    functionName: 'buy',
+    args: [uzdInWei, minOltinOut],
+  });
+}
+
+export async function exchangeSell(
+  account: HDAccount,
+  oltinInWei: bigint,
+  minUzdOut: bigint,
+): Promise<Hex> {
+  const wallet = makeWalletClient(account);
+  return wallet.writeContract({
+    address: CONTRACTS.EXCHANGE,
+    abi: EXCHANGE_ABI,
+    functionName: 'sell',
+    args: [oltinInWei, minUzdOut],
   });
 }
