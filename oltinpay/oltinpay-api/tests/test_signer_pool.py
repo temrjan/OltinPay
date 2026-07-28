@@ -28,6 +28,7 @@ from src.infrastructure.signer_pool import (
     SignerRevertError,
     SignerUnconfigured,
     encode_mint_calldata,
+    encode_transfer_calldata,
 )
 
 # Deterministic well-known test key (Hardhat account #1). Test-only.
@@ -330,3 +331,49 @@ async def test_send_calldata_call_keeps_zero_value() -> None:
     value, sent_data = _value_data_of(stub.raw_txs[0])
     assert value == 0
     assert sent_data == bytes.fromhex(data[2:])
+
+
+def test_encode_transfer_calldata() -> None:
+    """ERC20 transfer(address,uint256): selector a9059cbb + padded addr + amount."""
+    data = encode_transfer_calldata(RECIPIENT, 5 * 10**18)
+    assert data.startswith("0xa9059cbb")
+    assert len(data) == 2 + 8 + 64 + 64  # 0x + selector + address word + amount word
+    # recipient lower-cased and left-padded to 32 bytes
+    assert data[10:74] == "0" * 24 + RECIPIENT[2:].lower()
+    assert int(data[74:], 16) == 5 * 10**18  # amount as uint256
+
+
+def test_encode_transfer_calldata_rejects_bad_address() -> None:
+    with pytest.raises(ValueError, match="Invalid recipient address"):
+        encode_transfer_calldata("not-an-address", 1)
+
+
+@pytest.mark.asyncio
+async def test_receipt_poll_tolerates_transient_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R2 (blocking review finding): a transient RPC error while polling the receipt
+    (the tx is already broadcast) must NOT abort the wait — it is retried until the
+    receipt arrives, never surfaced as a failure that would let the caller roll its
+    reservation back while the tx mines (double-spend on retry)."""
+    monkeypatch.setattr(signer_pool, "RECEIPT_POLL_SEC", 0.01)
+    signer = NonceManagedSigner(Account.from_key(TEST_KEY))
+    stub = _RpcStub(start_nonce=0)
+    data = encode_mint_calldata(RECIPIENT, 10**18)
+    receipt_polls = {"n": 0}
+
+    def _handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        if body["method"] == "eth_getTransactionReceipt":
+            receipt_polls["n"] += 1
+            if receipt_polls["n"] == 1:
+                # First poll: a 503 -> _rpc raises a RAW httpx.HTTPStatusError.
+                return httpx.Response(503, text="upstream unavailable")
+        return stub(request)
+
+    with respx.mock(base_url=settings.zksync_rpc_url) as mock:
+        mock.post("").mock(side_effect=_handler)
+        tx_hash = await signer.send(CONTRACT, data)
+
+    assert tx_hash.startswith("0x")
+    assert receipt_polls["n"] >= 2  # first poll 503'd, retried, then mined

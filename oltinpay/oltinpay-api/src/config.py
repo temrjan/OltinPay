@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     drip_eth_wei: int = 10**15  # 0.001 ETH
     drip_eth_threshold_wei: int = 5 * 10**14  # 0.0005 ETH — drip only if below
 
+    # Welcome bonus amounts (settable so the demo can retune without a redeploy).
+    # ред.3: 1,000,000 UZD (minted) + 1 OLTIN (transferred from bank-ops — OLTIN
+    # minting is Exchange-only by PoR design) + the ETH gas drip above.
+    welcome_uzd_wei: int = 1_000_000 * 10**18  # 1,000,000 UZD
+    welcome_oltin_wei: int = 1 * 10**18  # 1 OLTIN
+
     # Bank connector HMAC auth (X-Bank-Signature = HMAC-SHA256 over body+ts+nonce)
     bank_hmac_secret: SecretStr | None = None
     bank_hmac_max_skew_sec: int = 300  # reject timestamps older/newer than this

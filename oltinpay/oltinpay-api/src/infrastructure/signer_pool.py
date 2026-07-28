@@ -59,6 +59,7 @@ logger = logging.getLogger(__name__)
 MINT_SELECTOR = "0x40c10f19"  # mint(address,uint256)
 ADMIN_BURN_SELECTOR = "0x06dd0419"  # adminBurn(address,uint256)  (BURNER_ROLE)
 POST_ANSWER_SELECTOR = "0xd7fc7b18"  # postAnswer(int256)
+TRANSFER_SELECTOR = "0xa9059cbb"  # transfer(address,uint256)  (ERC20)
 
 # Receipt polling (BLOCKER B2): a mempool-accepted tx can still revert on-chain.
 RECEIPT_TIMEOUT_SEC = 60.0  # zkSync Sepolia mines in seconds; generous ceiling
@@ -140,6 +141,19 @@ def encode_mint_calldata(to: str, amount_wei: int) -> str:
     if not is_valid_address(to):
         raise ValueError(f"Invalid recipient address: {to}")
     return "0x" + MINT_SELECTOR[2:] + pad_address(to) + _encode_uint256(amount_wei)
+
+
+def encode_transfer_calldata(to: str, amount_wei: int) -> str:
+    """ERC20 transfer(address,uint256) calldata.
+
+    Used for the welcome OLTIN leg (bank-ops holds OLTIN and transfers it —
+    OLTIN minting is Exchange-only by PoR design). The recipient rides in the
+    calldata (lower-cased by pad_address), so the tx ``to`` is the checksummed
+    token contract, not the wallet.
+    """
+    if not is_valid_address(to):
+        raise ValueError(f"Invalid recipient address: {to}")
+    return "0x" + TRANSFER_SELECTOR[2:] + pad_address(to) + _encode_uint256(amount_wei)
 
 
 def encode_admin_burn_calldata(holder: str, amount_wei: int) -> str:
@@ -336,7 +350,25 @@ class NonceManagedSigner:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + RECEIPT_TIMEOUT_SEC
         while True:
-            receipt = await _rpc("eth_getTransactionReceipt", [tx_hash], client)
+            try:
+                receipt = await _rpc("eth_getTransactionReceipt", [tx_hash], client)
+            except Exception as exc:
+                # A transient error while POLLING — the tx is already broadcast and
+                # may be mining — must NOT abort the wait. Aborting would let the
+                # caller roll its reservation back while the tx mines, risking a
+                # double-spend on retry (every send_via path: welcome mint,
+                # withdrawals, bank). _rpc raises RAW transport errors (httpx 503 /
+                # ConnectError / a broken-JSON decode), not only SignerError, so this
+                # catch is deliberately broad. Tolerate until the deadline; a
+                # persistent failure then surfaces as SignerReceiptTimeout (the caller
+                # keep-reserves and never re-broadcasts) — the safe outcome.
+                if loop.time() >= deadline:
+                    raise SignerReceiptTimeout(
+                        f"receipt not confirmed within timeout: {tx_hash}", tx_hash
+                    ) from exc
+                logger.warning("receipt_poll_transient tx=%s err=%r", tx_hash, exc)
+                await asyncio.sleep(RECEIPT_POLL_SEC)
+                continue
             if isinstance(receipt, dict):
                 status = receipt.get("status")
                 if isinstance(status, str) and int(status, 16) == 1:
@@ -407,6 +439,7 @@ __all__ = [
     "encode_admin_burn_calldata",
     "encode_mint_calldata",
     "encode_post_answer_calldata",
+    "encode_transfer_calldata",
     "pool",
     "send_via",
 ]
