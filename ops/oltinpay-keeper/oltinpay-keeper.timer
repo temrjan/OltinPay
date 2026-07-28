@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the OltinPay feed keeper every 30 min (survives reboot)
+
+[Timer]
+# ~2 min after boot, then every 30 min. Persistent=true catches up a run that
+# was missed while the box was down, so a reboot cannot leave feeds stale.
+OnBootSec=2min
+OnUnitActiveSec=30min
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target
