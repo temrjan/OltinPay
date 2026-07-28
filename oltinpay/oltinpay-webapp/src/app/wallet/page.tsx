@@ -6,22 +6,12 @@ import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBalances } from '@/hooks/useBalances';
 import { api } from '@/lib/api';
+import { formatToken } from '@/lib/format';
 import { useAppStore } from '@/stores/app';
 
-type AccountType = 'wallet' | 'exchange' | 'staking';
-
-interface AccountBalance {
-  usd: number;
-  oltin: number;
-}
-
-interface BalancesResponse {
-  total_usd: number;
-  wallet: AccountBalance;
-  exchange: AccountBalance;
-  staking: AccountBalance;
-}
+type AccountType = 'wallet' | 'staking';
 
 export default function WalletPage() {
   const { user: tgUser, hapticFeedback } = useTelegram();
@@ -31,11 +21,7 @@ export default function WalletPage() {
   const [activeTab, setActiveTab] = useState<AccountType>('wallet');
   const [agreed, setAgreed] = useState(false);
 
-  const { data: balancesData, isLoading, error, refetch } = useQuery({
-    queryKey: ['balances'],
-    queryFn: () => api.getBalances() as Promise<BalancesResponse>,
-    staleTime: 30000,
-  });
+  const { data: balancesData, isLoading, error, refetch } = useBalances();
 
   const { data: transfersData } = useQuery({
     queryKey: ['transfers'],
@@ -65,16 +51,16 @@ export default function WalletPage() {
     },
   });
 
-  const getBalance = (account: AccountType, currency: 'usd' | 'oltin'): number => {
-    if (!balancesData) return 0;
-    const accountData = balancesData[account];
-    if (!accountData) return 0;
-    return Number(accountData[currency]) || 0;
-  };
+  // On-chain balances are raw wei strings — format for display (native tokens,
+  // there is no USD in the /balances schema).
+  const walletUzd = balancesData ? formatToken(balancesData.wallet.uzd_wei) : '0';
+  const walletOltin = balancesData ? formatToken(balancesData.wallet.oltin_wei) : '0';
+  const stakedOltin = balancesData
+    ? formatToken(balancesData.staking.total_principal_wei)
+    : '0';
 
   const tabs = [
     { id: 'wallet', label: t('wallet') },
-    { id: 'exchange', label: t('exchange') },
     { id: 'staking', label: t('staking') },
   ] as const;
 
@@ -82,9 +68,14 @@ export default function WalletPage() {
     ? tgUser?.first_name || 'User'
     : `@${user?.oltin_id}`;
 
-  const totalUsd = balancesData?.total_usd || 0;
-  const currentUsd = getBalance(activeTab, 'usd');
-  const currentOltin = getBalance(activeTab, 'oltin');
+  // Rows shown for the active tab.
+  const balanceRows =
+    activeTab === 'wallet'
+      ? [
+          { label: 'UZD', value: walletUzd },
+          { label: 'OLTIN', value: walletOltin },
+        ]
+      : [{ label: 'OLTIN', value: stakedOltin }];
 
   return (
     <div className="p-4 space-y-4">
@@ -118,7 +109,9 @@ export default function WalletPage() {
             <div className="animate-pulse bg-gold/20 rounded h-8 w-32" />
           </div>
         ) : (
-          <div className="text-3xl font-bold text-gold">${ Number(totalUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div className="text-3xl font-bold text-gold">
+            {walletUzd} <span className="text-xl">UZD</span>
+          </div>
         )}
         <div className="text-text-muted text-sm mt-1">{t('totalBalance')}</div>
       </div>
@@ -209,22 +202,18 @@ export default function WalletPage() {
 
       {/* Account Balances */}
       <div className="bg-card rounded-xl p-4 space-y-3 border border-border">
-        <div className="flex justify-between items-center">
-          <span className="text-text-muted">USD</span>
-          {isLoading ? (
-            <div className="animate-pulse bg-gold/20 rounded h-5 w-20" />
-          ) : (
-            <span className="font-semibold">${currentUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          )}
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-text-muted">OLTIN</span>
-          {isLoading ? (
-            <div className="animate-pulse bg-gold/20 rounded h-5 w-20" />
-          ) : (
-            <span className="font-semibold text-gold">{currentOltin.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</span>
-          )}
-        </div>
+        {balanceRows.map((row) => (
+          <div key={row.label} className="flex justify-between items-center">
+            <span className="text-text-muted">{row.label}</span>
+            {isLoading ? (
+              <div className="animate-pulse bg-gold/20 rounded h-5 w-20" />
+            ) : (
+              <span className={row.label === 'OLTIN' ? 'font-semibold text-gold' : 'font-semibold'}>
+                {row.value}
+              </span>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Action Buttons */}

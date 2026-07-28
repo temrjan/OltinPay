@@ -1,3 +1,5 @@
+import type { BalancesResponse } from '@/types';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.oltinpay.com/api/v1';
 
 /** Error carrying the HTTP status so callers can branch on it (e.g. 409 vs 400). */
@@ -92,7 +94,7 @@ class ApiClient {
 
   // Balances
   async getBalances() {
-    return this.request<any>('/balances');
+    return this.request<BalancesResponse>('/balances');
   }
 
   async internalTransfer(data: {
