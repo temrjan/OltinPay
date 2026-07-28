@@ -10,13 +10,15 @@ import { useBalances } from '@/hooks/useBalances';
 import { useTransactions } from '@/hooks/useTransactions';
 import { api } from '@/lib/api';
 import { formatToken } from '@/lib/format';
+import { prepareHistory } from '@/lib/history';
+import type { DisplayTx } from '@/lib/history';
 import { useAppStore } from '@/stores/app';
 
 type AccountType = 'wallet' | 'staking';
 
 export default function WalletPage() {
   const { user: tgUser, hapticFeedback } = useTelegram();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const user = useAppStore((state) => state.user);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<AccountType>('wallet');
@@ -75,6 +77,25 @@ export default function WalletPage() {
           { label: 'OLTIN', value: walletOltin },
         ]
       : [{ label: 'OLTIN', value: stakedOltin }];
+
+  // On-chain history: correct token symbol + collapsed mint/burn double-records.
+  const L = (uz: string, ru: string, en: string) =>
+    language === 'uz' ? uz : language === 'ru' ? ru : en;
+  const history = prepareHistory(transactionsData ?? []);
+  const kindLabel = (kind: DisplayTx['kind']): string => {
+    switch (kind) {
+      case 'received':
+        return t('received');
+      case 'sent':
+        return t('sent');
+      case 'minted':
+        return L('Berildi', 'Начислено', 'Credited');
+      case 'burned':
+        return L('Yechildi', 'Списано', 'Debited');
+      case 'self':
+        return L("O'ziga", 'Себе', 'Self');
+    }
+  };
 
   return (
     <div className="p-4 space-y-4">
@@ -242,12 +263,13 @@ export default function WalletPage() {
       {/* Recent Transactions */}
       <div className="bg-card rounded-xl p-4 border border-border">
         <h3 className="font-semibold mb-3">{t('recentTransactions')}</h3>
-        {!transactionsData?.length ? (
+        {!history.length ? (
           <p className="text-text-muted text-sm text-center py-4">{t('noTransactions')}</p>
         ) : (
           <div className="space-y-3">
-            {transactionsData.slice(0, 5).map((tx) => {
-              const incoming = tx.direction === 'in';
+            {history.slice(0, 5).map((tx) => {
+              const positive = tx.kind === 'received' || tx.kind === 'minted';
+              const negative = tx.kind === 'sent' || tx.kind === 'burned';
               return (
                 <a
                   key={tx.tx_hash}
@@ -258,26 +280,26 @@ export default function WalletPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      incoming ? 'bg-green/20' : 'bg-red/20'
+                      positive ? 'bg-green/20' : negative ? 'bg-red/20' : 'bg-background'
                     }`}>
-                      {incoming ? (
-                        <ArrowDownLeft size={16} className="text-green" />
-                      ) : (
+                      {negative ? (
                         <ArrowUpRight size={16} className="text-red" />
+                      ) : (
+                        <ArrowDownLeft size={16} className={positive ? 'text-green' : 'text-text-muted'} />
                       )}
                     </div>
                     <div>
-                      <div className="text-sm font-medium">
-                        {incoming ? t('received') : t('sent')}
-                      </div>
+                      <div className="text-sm font-medium">{kindLabel(tx.kind)}</div>
                       <div className="text-xs text-text-muted">
                         {new Date(tx.indexed_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
                   {tx.amount_wei && (
-                    <div className={`font-semibold ${incoming ? 'text-green' : 'text-red'}`}>
-                      {incoming ? '+' : '-'}{formatToken(tx.amount_wei)} OLTIN
+                    <div className={`font-semibold ${
+                      positive ? 'text-green' : negative ? 'text-red' : 'text-text-muted'
+                    }`}>
+                      {positive ? '+' : negative ? '-' : ''}{formatToken(tx.amount_wei)} {tx.symbol}
                     </div>
                   )}
                 </a>
