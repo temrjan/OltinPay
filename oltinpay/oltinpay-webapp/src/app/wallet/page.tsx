@@ -267,12 +267,15 @@ export default function WalletPage() {
           <p className="text-text-muted text-sm text-center py-4">{t('noTransactions')}</p>
         ) : (
           <div className="space-y-3">
-            {history.slice(0, 5).map((tx) => {
+            {history.slice(0, 8).map((tx) => {
               const positive = tx.kind === 'received' || tx.kind === 'minted';
               const negative = tx.kind === 'sent' || tx.kind === 'burned';
               return (
                 <a
-                  key={tx.tx_hash}
+                  // A collapsed BUY/SELL yields two rows sharing one tx_hash
+                  // (a UZD leg + an OLTIN leg), so the hash alone is not unique.
+                  // Compose with symbol/kind/amount for a stable per-row key.
+                  key={`${tx.tx_hash}-${tx.symbol}-${tx.kind}-${tx.amount_wei}`}
                   href={tx.explorer_url}
                   target="_blank"
                   rel="noopener noreferrer"
