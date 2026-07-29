@@ -18,8 +18,7 @@ OltinPay/
 ├── oltinpay/
 │   ├── oltinpay-api/          — FastAPI backend (Python 3.11+)
 │   ├── oltinpay-webapp/       — Next.js 14 Telegram Mini App
-│   ├── oltinpay-bot/          — aiogram Telegram bot
-│   └── DevDocs/               — product docs (specs, API, tokenomics)
+│   └── oltinpay-bot/          — aiogram Telegram bot
 ├── docker-compose.yml         — production stack (Traefik + Postgres + Redis + 3 services)
 ├── docker-compose.monitoring.yml
 └── scripts/                   — backup / restore
