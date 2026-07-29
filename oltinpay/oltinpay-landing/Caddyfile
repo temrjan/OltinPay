@@ -1,0 +1,36 @@
+:80 {
+    root * /srv
+
+    # /presentation was merged into /. Redirect instead of 404: the old address
+    # may already have been sent to someone. These must sit above try_files,
+    # which would otherwise resolve the path before any redirect applies.
+    redir /presentation / 301
+    redir /presentation.html / 301
+
+    # Clean URLs are canonical (/how-it-works, not /how-it-works.html). The .html
+    # forms still resolve via try_files below, so old bookmarks and cached links
+    # keep working — a 301 sends them to the extensionless address instead of
+    # serving the same page at two URLs. No loop: the targets have no .html suffix,
+    # so they don't re-match these rules.
+    redir /index.html / 301
+    redir /how-it-works.html /how-it-works 301
+    redir /license.html /license 301
+
+    # Serve the page or its .html (so /how-it-works -> how-it-works.html). No
+    # index.html catch-all: an unknown path must NOT return 200 to a bank's
+    # security scanner — it falls through to the honest 404 below.
+    try_files {path} {path}.html {path}/
+
+    # Without an explicit Cache-Control browsers fall back to heuristic caching
+    # (~10% of the file age), which pinned a months-old landing in users caches.
+    header Cache-Control "public, max-age=0, must-revalidate"
+
+    file_server
+
+    handle_errors {
+        rewrite * /404.html
+        file_server {
+            status {err.status_code}
+        }
+    }
+}

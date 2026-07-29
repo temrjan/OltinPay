@@ -1,0 +1,26 @@
+services:
+  oltinpay-landing:
+    image: caddy:2-alpine
+    container_name: oltinpay-landing
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /srv/oltinpay-landing/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /srv/oltinpay-landing/public:/srv:ro
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+networks:
+  proxy:
+    external: true
