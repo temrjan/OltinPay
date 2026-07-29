@@ -1,0 +1,17 @@
+:80 {
+    root * /srv
+
+    # /presentation was merged into /. Redirect instead of 404: the old address
+    # may already have been sent to someone. These must sit above try_files,
+    # which would otherwise resolve the path before any redirect applies.
+    redir /presentation / 301
+    redir /presentation.html / 301
+
+    try_files {path} {path}.html {path}/ /index.html
+
+    # Without an explicit Cache-Control browsers fall back to heuristic caching
+    # (~10% of the file age), which pinned a months-old landing in users caches.
+    header Cache-Control "public, max-age=0, must-revalidate"
+
+    file_server
+}
