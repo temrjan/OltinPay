@@ -90,6 +90,29 @@ export default function StakingPage() {
       : L('Tranzaksiya yuborilmadi', 'Транзакция не отправлена', 'Transaction failed');
   };
 
+  // A sent tx that mined but reverted — gas was spent (distinct from one that
+  // never broadcast, which explain() covers).
+  const revertedOnChain = () =>
+    L('Amal zanjirda rad etildi (gaz sarflandi)', 'Операция отклонена сетью (газ потрачен)', 'Reverted on-chain (gas spent)');
+
+  // Wait for a receipt. A TIMEOUT is not a failure — the tx may still mine — so
+  // surface it as unknown (a blind retry would double-stake and re-lock funds)
+  // and refresh so the position/history reflect whatever actually landed.
+  const awaitReceipt = async (hash: `0x${string}`) => {
+    try {
+      return await publicClient.waitForTransactionReceipt({ hash, timeout: RECEIPT_TIMEOUT_MS });
+    } catch {
+      invalidate();
+      throw new Error(
+        L(
+          'Holat nomaʼlum — qayta urinishdan oldin tarixni tekshiring',
+          'Статус неизвестен — проверьте историю перед повтором',
+          'Status unknown — check history before retrying',
+        ),
+      );
+    }
+  };
+
   const stakeMutation = useMutation({
     mutationFn: async () => {
       if (!account) throw new Error(L('Hamyon qulflangan', 'Кошелёк заблокирован', 'Wallet is locked'));
@@ -107,7 +130,7 @@ export default function StakingPage() {
       } catch (err) {
         throw new Error(explain(msg(err), false));
       }
-      const ar = await publicClient.waitForTransactionReceipt({ hash: approveHash, timeout: RECEIPT_TIMEOUT_MS });
+      const ar = await awaitReceipt(approveHash);
       if (ar.status !== 'success') {
         throw new Error(L('Approve rad etildi', 'Approve отклонён', 'Approve reverted'));
       }
@@ -120,7 +143,7 @@ export default function StakingPage() {
       } catch (err) {
         throw new Error(explain(msg(err), true));
       }
-      const sr = await publicClient.waitForTransactionReceipt({ hash: stakeHash, timeout: RECEIPT_TIMEOUT_MS });
+      const sr = await awaitReceipt(stakeHash);
       if (sr.status !== 'success') throw new Error(explain('reverted', true));
       return stakeHash;
     },
@@ -149,8 +172,8 @@ export default function StakingPage() {
       } catch (err) {
         throw new Error(explain(msg(err), false));
       }
-      const r = await publicClient.waitForTransactionReceipt({ hash, timeout: RECEIPT_TIMEOUT_MS });
-      if (r.status !== 'success') throw new Error(explain('reverted', false));
+      const r = await awaitReceipt(hash);
+      if (r.status !== 'success') throw new Error(revertedOnChain());
       return hash;
     },
     onSuccess: () => {
@@ -171,8 +194,8 @@ export default function StakingPage() {
       } catch (err) {
         throw new Error(explain(msg(err), false));
       }
-      const r = await publicClient.waitForTransactionReceipt({ hash, timeout: RECEIPT_TIMEOUT_MS });
-      if (r.status !== 'success') throw new Error(explain('reverted', false));
+      const r = await awaitReceipt(hash);
+      if (r.status !== 'success') throw new Error(revertedOnChain());
       return hash;
     },
     onSuccess: () => {
