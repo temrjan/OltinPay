@@ -21,7 +21,7 @@
     handle_errors {
         rewrite * /404.html
         file_server {
-            status_code {err.status_code}
+            status {err.status_code}
         }
     }
 }
