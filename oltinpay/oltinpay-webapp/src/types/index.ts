@@ -23,6 +23,15 @@ export interface StakingBalances {
   next_unlock_at: number;
 }
 
+// GET /staking — the on-chain stake position (OltinStaking.getStakeInfo) plus
+// the contract's APY/lock constants. Same wei-string fields as StakingBalances
+// (used inside /balances) with the extra scalars the staking screen needs.
+export interface StakingInfoResponse extends StakingBalances {
+  wallet_address: string;
+  apy_bps: number;
+  lock_period_days: number;
+}
+
 export interface BalancesResponse {
   wallet_address: string;
   wallet: WalletBalances;
@@ -90,21 +99,6 @@ export interface Transfer {
   fee: number;
   status: 'pending' | 'confirmed' | 'failed';
   created_at: string;
-}
-
-export interface StakingInfo {
-  balance: number;
-  locked_until: string | null;
-  is_locked: boolean;
-  apy: number;
-  daily_reward: number;
-  total_earned: number;
-}
-
-export interface StakingReward {
-  date: string;
-  amount: number;
-  balance_snapshot: number;
 }
 
 export interface Order {

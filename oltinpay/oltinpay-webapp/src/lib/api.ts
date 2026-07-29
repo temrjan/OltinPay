@@ -2,6 +2,7 @@ import type {
   BalancesResponse,
   QuoteResponse,
   RatesResponse,
+  StakingInfoResponse,
   Transaction,
   UserLookupResult,
 } from '@/types';
@@ -158,27 +159,10 @@ class ApiClient {
     return this.request<any[]>(`/transfers?limit=${limit}&offset=${offset}`);
   }
 
-  // Staking
+  // Staking — read-only. stake/unstake/claim are signed client-side via viem
+  // straight to the OltinStaking contract (see lib/chain), never through here.
   async getStaking() {
-    return this.request<any>('/staking');
-  }
-
-  async stakingDeposit(amount: number) {
-    return this.request<any>('/staking/deposit', {
-      method: 'POST',
-      body: JSON.stringify({ amount }),
-    });
-  }
-
-  async stakingWithdraw(amount: number) {
-    return this.request<any>('/staking/withdraw', {
-      method: 'POST',
-      body: JSON.stringify({ amount }),
-    });
-  }
-
-  async getStakingRewards() {
-    return this.request<any[]>('/staking/rewards');
+    return this.request<StakingInfoResponse>('/staking');
   }
 
   // Exchange price + quote (por module, feed-derived, UZS). /rates is public;

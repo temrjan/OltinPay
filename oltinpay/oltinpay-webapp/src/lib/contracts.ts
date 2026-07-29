@@ -7,11 +7,11 @@ import type {Address} from 'viem';
 export const ZKSYNC_SEPOLIA_CHAIN_ID = 300;
 
 export const CONTRACTS = {
-  // Live V3/V3.1 addresses. STAKING is still V2-retired (repointed in Stage 4).
+  // Live V3/V3.1 addresses.
   OLTIN: '0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5' as Address,
   UZD: '0x51232fd0065bD2ca50551761Acef476E3CDf02aA' as Address,
   EXCHANGE: '0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9' as Address,
-  STAKING: '0x63e537A3a150d06035151E29904C1640181C8314' as Address,
+  STAKING: '0xD3b6ffd1dE409e1C37BA5B867d6eC3897A721fAa' as Address,
 } as const;
 
 // Minimal ABIs — only what the frontend actually calls.
