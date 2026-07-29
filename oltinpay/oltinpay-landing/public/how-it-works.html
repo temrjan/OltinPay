@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OltinPay — как это работает (архитектура, инварианты, ограничения)</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
+    --ink:#eef0f4; --sub:#9aa1b1; --faint:#6b7284;
+    --gold:#e7b64c; --green:#41cf8e; --red:#f0605f; --blue:#6ea8fe;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+  h1{font-size:clamp(26px,4vw,40px);line-height:1.1;font-weight:750;letter-spacing:-.02em;text-wrap:balance;margin:0}
+  h2{font-size:clamp(20px,2.6vw,26px);font-weight:700;letter-spacing:-.02em;margin:0}
+  h3{font-size:15px;font-weight:650;margin:0}
+  .sub{color:var(--sub)}
+  .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  section{padding:52px 0;border-top:1px solid var(--line)}
+  .kicker{color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+
+  header.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:16px;height:58px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:750}
+  .brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--gold),#c9922f);display:grid;place-items:center;color:#161200;font-weight:800;font-size:14px}
+  .nav .back{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
+  .nav .back:hover{color:var(--ink)}
+
+  .hero{padding:48px 0 8px}
+  .hero p{font-size:17px;max-width:60ch;margin:16px 0 0}
+
+  /* diagram */
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:20px}
+  .dlabel{font-size:12px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px;font-weight:600}
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap}
+  .zone{flex:1;min-width:180px;border:1px dashed var(--line);border-radius:14px;padding:14px;position:relative}
+  .zone.device{border-color:color-mix(in srgb,var(--green) 45%,transparent)}
+  .zone.chain{border-color:color-mix(in srgb,var(--gold) 45%,transparent)}
+  .zone.server{border-color:color-mix(in srgb,var(--blue) 45%,transparent)}
+  .zone .zt{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px}
+  .zone.device .zt{color:var(--green)} .zone.chain .zt{color:var(--gold)} .zone.server .zt{color:var(--blue)}
+  .node{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+  .node b{font-weight:650;display:block} .node span{color:var(--sub);font-size:12px}
+  .node:last-child{margin-bottom:0}
+  .barrier{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 10px;color:var(--red);gap:4px}
+  .barrier .ln{width:2px;flex:1;background:repeating-linear-gradient(var(--red),var(--red) 5px,transparent 5px,transparent 11px);opacity:.6}
+  .barrier .tx{font-size:11px;font-weight:700;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.05em}
+  @media(max-width:720px){.barrier .tx{writing-mode:horizontal-tb;transform:none}.barrier .ln{width:100%;height:2px;background:repeating-linear-gradient(90deg,var(--red),var(--red) 5px,transparent 5px,transparent 11px)}}
+
+  /* money path */
+  .path{display:flex;flex-direction:column;gap:2px}
+  .step{display:flex;gap:14px;align-items:flex-start}
+  .step .num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--gold)}
+  .step .body{padding-bottom:16px;border-left:1px dashed var(--line);margin-left:13px;padding-left:22px;margin-top:-13px;padding-top:13px}
+  .step:last-child .body{border-left:0}
+  .step .body b{font-weight:650} .step .body span{color:var(--sub);font-size:13px;display:block;margin-top:1px}
+
+  /* invariants */
+  .inv{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px;margin-top:14px}
+  .inv .top{display:flex;gap:12px;align-items:flex-start}
+  .inv .lk{flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,var(--gold) 15%,transparent);color:var(--gold);display:grid;place-items:center}
+  .inv h3{margin-bottom:3px} .inv p{margin:0;color:var(--sub);font-size:14px}
+  .inv .check{margin-top:12px;display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--faint);flex-wrap:wrap}
+  .inv .check .c{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:4px 9px;color:var(--sub)}
+  .inv .check .c b{color:var(--ink);font-weight:600}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px}
+  .card h3{margin-bottom:5px} .card p{margin:0;color:var(--sub);font-size:14px}
+  .card .why{color:var(--gold);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+  @media(max-width:600px){.stat-grid{grid-template-columns:1fr}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .stat .n{font-size:22px;font-weight:800;color:var(--gold);letter-spacing:-.02em} .stat .l{color:var(--sub);font-size:12.5px;margin-top:2px}
+  .chip{display:inline-block;font-size:12px;font-weight:600;color:var(--sub);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+
+  .limit{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .limit:last-child{border-bottom:0}
+  .limit .d{width:9px;height:9px;border-radius:50%;flex:0 0 auto;margin-top:6px;background:var(--gold)}
+  .limit b{font-weight:650} .limit span{color:var(--sub);display:block;font-size:13px;margin-top:2px}
+  .lead-note{background:linear-gradient(160deg,color-mix(in srgb,var(--gold) 8%,transparent),transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent);border-radius:14px;padding:16px;margin-bottom:18px;font-size:14.5px}
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--faint);font-size:12.5px;text-align:center;line-height:1.7}
+  svg{stroke-width:1.8}
+</style>
+</head>
+<body>
+
+<header class="nav"><div class="wrap">
+  <div class="brand"><span class="mark">O</span> OltinPay</div>
+  <a class="back" href="index.html"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> На главную</a>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Как это работает</div>
+    <h1 style="margin-top:12px">Что гарантирует код, а не маркетинг</h1>
+    <p class="sub">Каждое утверждение ниже — с указанием контракта и функции. Не «надёжная архитектура», а конкретные инварианты, которые вы или автоматический оценщик проверяете сами. Границы и слабые места названы прямо.</p>
+  </div>
+
+  <!-- 1 · ARCHITECTURE -->
+  <section>
+    <div class="kicker">1 · Архитектура и граница доверия</div>
+    <h2>Где что живёт — и что через границу не проходит</h2>
+    <div class="diagram">
+      <div class="dlabel">Схема: три зоны и красная линия, которую ключ не пересекает</div>
+      <div class="flow">
+        <div class="zone device"><div class="zt">Устройство клиента</div>
+          <div class="node"><b>Приватный ключ</b><span>создан из seed, лежит только здесь</span></div>
+          <div class="node"><b>Подпись транзакций</b><span>происходит на устройстве</span></div>
+        </div>
+        <div class="barrier"><div class="ln"></div><div class="tx">ключ не переходит</div><div class="ln"></div></div>
+        <div class="zone chain"><div class="zt">На цепи (zkSync)</div>
+          <div class="node"><b>Токен обязательства</b><span>выпуск/сжигание, потолок</span></div>
+          <div class="node"><b>Обеспеченность</b><span>публикует потолок, аттестация</span></div>
+          <div class="node"><b>Биржа · стейкинг</b><span>обмен, накопление</span></div>
+        </div>
+        <div class="zone server"><div class="zt">Вне цепи (сервер)</div>
+          <div class="node"><b>Индексатор</b><span>читает события цепи для ленты</span></div>
+          <div class="node"><b>API</b><span>не хранит ключ; из кошелькового — адрес</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="sub" style="margin-top:14px">Сервер не может подписать за клиента и не хранит средства — он читает цепь и обслуживает интерфейс. Полномочие тратить средства есть только у ключа на устройстве.</p>
+  </section>
+
+  <!-- 2 · INVARIANTS -->
+  <section>
+    <div class="kicker">2 · Инварианты, которые обеспечивает код</div>
+    <h2>Проверяемые утверждения — с контрактом и функцией</h2>
+    <div class="lead-note">Исходный код всех контрактов <b>опубликован и верифицирован</b> — совпадает с репозиторием байт-в-байт. Откройте адрес, где лежат средства, и прочитайте Solidity сами: не «поверьте, что код такой», а «проверьте». Каждый инвариант ниже держит сеть, а не приложение — обойти через интерфейс или через нас нельзя.</div>
+
+    <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+      <div><h3>Выпуск не может превысить подтверждённый потолок</h3><p>Чеканка отклоняется, если <span class="mono">totalSupply() + amount</span> больше подтверждённого резерва. Проверка — в контракте токена; интерфейс её не обходит.</p></div></div>
+      <div class="check"><span class="c">контракт <b>OLTIN</b></span><span class="c">функция <b>mint</b></span><span class="c">потолок — контракт <b>0x9413F602…</b></span></div></div>
+
+    <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div><h3>Устаревшее подтверждение останавливает выпуск само</h3><p>Если аттестация старше <b>1 часа</b> (<span class="mono">maxAgeReserve = 3600</span>), чеканка ревертит. Перестали подтверждать — выпуск замирает. Отказ в безопасную сторону.</p></div></div>
+      <div class="check"><span class="c">контракт <b>OLTIN</b></span><span class="c">функция <b>mint</b> · <b>maxAgeReserve</b></span></div></div>
+
+    <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+      <div><h3>Вклад заперт на 7 дней — досрочно не может никто</h3><p>Каждый депозит создаёт лот с <span class="mono">lockedUntil = now + 7 дней</span>. Вывод берёт только из разблокированных лотов. Ни администратор, ни кто-либо другой не снимает раньше срока.</p></div></div>
+      <div class="check"><span class="c">контракт <b>Стейкинг</b></span><span class="c">функция <b>unstake</b> · <b>LOCK_PERIOD</b></span></div></div>
+
+    <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+      <div><h3>Администратор не может тронуть чужой вклад</h3><p>Вывод работает только с лотами <span class="mono">msg.sender</span> — ограничение вшито в саму функцию, а не в правила приложения. У администратора нет пути к средствам вкладчика.</p></div></div>
+      <div class="check"><span class="c">контракт <b>Стейкинг</b></span><span class="c">функция <b>unstake</b> (msg.sender)</span></div></div>
+
+    <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div>
+      <div><h3>Ключ клиента не покидает устройство</h3><p>Кошелёк выводит ключ из seed на устройстве и подписывает локально. Сервер <b>не хранит ключ и не может подписать</b>; из кошелькового у него — только публичный адрес (учётные данные вроде Telegram-id хранятся, но не дают доступа к средствам).</p></div></div>
+      <div class="check"><span class="c">клиент <b>lib/wallet</b></span><span class="c">бэкенд — только <b>wallet_address</b></span></div></div>
+  </section>
+
+  <!-- MONEY PATH -->
+  <section>
+    <div class="kicker">Путь денег</div>
+    <h2>Что происходит при покупке, обмене и продаже</h2>
+    <div class="diagram">
+      <div class="dlabel">Схема: восемь шагов, каждый подписан действием</div>
+      <div class="path">
+        <div class="step"><div class="num">1</div><div class="body"><b>Клиент вносит сумы</b><span>через фиатные рельсы партнёра</span></div></div>
+        <div class="step"><div class="num">2</div><div class="body"><b>Разрешает бирже списать</b><span>подпись на устройстве</span></div></div>
+        <div class="step"><div class="num">3</div><div class="body"><b>Покупает обязательство</b><span>биржа чеканит токен — но только в пределах подтверждённого потолка</span></div></div>
+        <div class="step"><div class="num">4</div><div class="body"><b>Держит в некастодиальном кошельке</b><span>ключ у клиента</span></div></div>
+        <div class="step"><div class="num">5</div><div class="body"><b>Переводит другому</b><span>или вносит в стейкинг под доход</span></div></div>
+        <div class="step"><div class="num">6</div><div class="body"><b>Продаёт обратно</b><span>биржа сжигает токен</span></div></div>
+        <div class="step"><div class="num">7</div><div class="body"><b>Получает сумы из казны биржи</b><span>расчёт на цепи</span></div></div>
+        <div class="step"><div class="num">8</div><div class="body"><b>Выводит через рельсы партнёра</b><span>фиат на стороне эмитента</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section>
+    <div class="kicker">Роли и полномочия</div>
+    <h2>Кто что может — и чего не может никто</h2>
+    <div class="two">
+      <div class="card"><h3 style="color:var(--gold)">Может</h3>
+        <div class="node" style="margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Публикатор</b> — устанавливает потолок обеспечения (в проде это партнёр)</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Биржа</b> — чеканит/сжигает токен, в пределах потолка. Роль MINTER держит <b>ровно один адрес — контракт биржи, не человеческий ключ</b> (проверяется воспроизведением событий RoleGranted/RoleRevoked)</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Клиент</b> — подписывает только свои операции</div>
+      </div>
+      <div class="card"><h3 style="color:var(--red)">Не может никто</h3>
+        <div class="node" style="margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Выпустить токен сверх потолка</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Снять чужой вклад до срока</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Подписать за клиента / достать его ключ</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · STACK -->
+  <section>
+    <div class="kicker">3 · Стек с обоснованием</div>
+    <h2>Каждый выбор — с причиной, а не логотип</h2>
+    <div class="two">
+      <div class="card"><div class="why">Почему zkSync Era</div><h3>Стоимость транзакции</h3><p>Перевод и обмен стоят копейки. На дорогой сети микротранзакции розничного продукта нерентабельны.</p></div>
+      <div class="card"><div class="why">Почему некастодиальный кошелёк</div><h3>Эмитент не держит чужие средства</h3><p>Ключ у клиента — меньше операционной и регуляторной нагрузки на партнёра, нет «горячего» хранилища чужих денег.</p></div>
+      <div class="card"><div class="why">Почему без апгрейд-механизма</div><h3>Правила нельзя поменять задним числом</h3><p>Контракты неизменяемы — ни мы, ни кто-либо не перепишет логику под уже выпущенное. <b>Цена размена:</b> исправление требует нового контракта и миграции.</p></div>
+    </div>
+  </section>
+
+  <!-- 4 · DISCIPLINE -->
+  <section>
+    <div class="kicker">4 · Дисциплина разработки</div>
+    <h2>Проверяемо в открытом репозитории</h2>
+    <div class="stat-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="stat"><div class="n">405</div><div class="l">тестов · 204 контракты · 165 бэкенд · 36 фронт</div></div>
+      <div class="stat"><div class="n">CI на PR</div><div class="l">гейты до слияния, без глушилок</div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <span class="chip">Экшены запинены по SHA</span><span class="chip">squash-only + автоудаление веток</span><span class="chip">push protection</span>
+    </div>
+    <p class="sub" style="margin-top:16px">Процесс ревью — часть продукта: значимые блокеры (дренаж средств, обход аутентификации, гонка на резерве, двойная эмиссия) пойманы адверсариальным ревью. Всё это читается в репозитории напрямую.</p>
+    <a class="chip" style="margin-top:16px;display:inline-flex;align-items:center;gap:7px;color:var(--gold);border-color:color-mix(in srgb,var(--gold) 40%,transparent)" href="https://github.com/temrjan/OltinPay" target="_blank" rel="noopener">Открыть репозиторий на GitHub →</a>
+  </section>
+
+  <!-- 5 · LIMITATIONS -->
+  <section>
+    <div class="kicker">5 · Ограничения — прямо</div>
+    <h2>Что мы называем сами</h2>
+    <div class="lead-note">Точная самооценка — не слабость, а сигнал зрелости. Проект без слабых мест читается как реклама.</div>
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:6px 18px">
+      <div class="limit"><span class="d"></span><div><b>Тестовая сеть.</b><span>zkSync Era Sepolia; токены не имеют реальной стоимости — это доказательство работоспособности, не боевой выпуск.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>Внешнего аудита не было.</b><span>Внутренний адверсариальный ревью-процесс работает; независимый аудит — до боевого запуска.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>Контракты неизменяемы.</b><span>Намеренно — правила не переписать задним числом. Цена: исправление требует нового контракта и миграции живых позиций.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>Управление на одном ключе.</b><span>Административные роли пока на едином EOA. Под паузой пользователь не может ничего (вклад/вывод/награда) — а наградный фонд администратор при этом вывести может (withdrawRewardPool не под паузой). Принципала и потолка это не касается: изъять чужой вклад или выпустить сверх потолка нельзя. Вынос в мультисиг запланирован, это приоритет перед монетизацией.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>Индексатор не устойчив к реорганизациям цепи.</b><span>Лента истории строится чтением событий; при реорганизации может кратко отставать — на балансы и инварианты цепи это не влияет.</span></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Демо в тестовой сети zkSync Era Sepolia · токены не имеют реальной стоимости · деятельность требует обязательного лицензирования (регулятор НАПП).<br>
+  OltinPay · инфраструктура выпуска золото-индексированного обязательства.
+</footer>
+</body>
+</html>

@@ -7,11 +7,21 @@
     redir /presentation / 301
     redir /presentation.html / 301
 
-    try_files {path} {path}.html {path}/ /index.html
+    # Serve the page or its .html (so /how-it-works -> how-it-works.html). No
+    # index.html catch-all: an unknown path must NOT return 200 to a bank's
+    # security scanner — it falls through to the honest 404 below.
+    try_files {path} {path}.html {path}/
 
     # Without an explicit Cache-Control browsers fall back to heuristic caching
     # (~10% of the file age), which pinned a months-old landing in users caches.
     header Cache-Control "public, max-age=0, must-revalidate"
 
     file_server
+
+    handle_errors {
+        rewrite * /404.html
+        file_server {
+            status_code {err.status_code}
+        }
+    }
 }
