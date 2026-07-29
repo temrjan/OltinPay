@@ -34,6 +34,12 @@ class Settings(BaseSettings):
 
     # Telegram
     telegram_bot_token: SecretStr | None = None
+    # Webhook: Telegram echoes this secret in the X-Telegram-Bot-Api-Secret-Token
+    # header on every update. The webhook rejects any request whose header does not
+    # match (constant-time), and fails closed when the secret is unset.
+    telegram_webhook_secret: SecretStr | None = None
+    # Mini App launch URL for the inline "Open the app" button (must be https).
+    telegram_webapp_url: str = "https://app.oltinpay.com/"
 
     # CORS - stored as comma-separated string
     cors_origins_str: str = "http://localhost:3000"

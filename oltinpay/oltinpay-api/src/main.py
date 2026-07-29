@@ -21,6 +21,7 @@ from src.indexer.poller import indexer
 from src.indexer.router import router as transactions_router
 from src.por.router import router as por_router
 from src.staking.router import router as staking_router
+from src.telegram.router import router as telegram_router
 from src.transfers.router import router as transfers_router
 from src.users.router import router as users_router
 from src.welcome.router import router as welcome_router
@@ -86,6 +87,9 @@ def create_app() -> FastAPI:
     )
     # PoR / rates / quote live at the API root (/por, /por/history, /rates, /quote).
     app.include_router(por_router, prefix=prefix, tags=["public"])
+
+    # Telegram bot webhook — unversioned, stable URL for setWebhook.
+    app.include_router(telegram_router, prefix="/telegram", tags=["telegram"])
 
     return app
 

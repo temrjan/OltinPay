@@ -45,6 +45,7 @@ known-first-party = ["src"]
 # i18n notification messages contain Cyrillic characters by design;
 # RUF001 flags them as ambiguous Latin look-alikes, which is wrong here.
 "src/notifications.py" = ["RUF001"]
+"src/telegram/messages.py" = ["RUF001"]
 
 [tool.mypy]
 python_version = "3.11"

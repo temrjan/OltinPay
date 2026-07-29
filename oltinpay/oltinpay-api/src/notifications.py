@@ -1,5 +1,7 @@
 """Telegram notification service."""
 
+from typing import Any
+
 import httpx
 
 from src.config import settings
@@ -11,8 +13,13 @@ async def send_telegram_notification(
     telegram_id: int,
     message: str,
     parse_mode: str = "HTML",
+    reply_markup: dict[str, Any] | None = None,
 ) -> bool:
     """Send notification via Telegram bot.
+
+    ``reply_markup`` attaches a keyboard (e.g. an inline web_app button) when
+    provided; omitted from the payload otherwise so plain notifications are
+    unchanged.
 
     Returns True if sent successfully.
     """
@@ -22,17 +29,17 @@ async def send_telegram_notification(
     token = settings.telegram_bot_token.get_secret_value()
     url = TELEGRAM_API_URL.format(token=token)
 
+    payload: dict[str, Any] = {
+        "chat_id": telegram_id,
+        "text": message,
+        "parse_mode": parse_mode,
+    }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url,
-                json={
-                    "chat_id": telegram_id,
-                    "text": message,
-                    "parse_mode": parse_mode,
-                },
-                timeout=10.0,
-            )
+            response = await client.post(url, json=payload, timeout=10.0)
             return response.status_code == 200
     except Exception:
         return False
