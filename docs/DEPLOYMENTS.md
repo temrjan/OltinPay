@@ -66,10 +66,16 @@ Verified by reading the chain, not by trusting the deploy script's output:
 - live `eth_call` probes: `checkSponsorship` returns 258679734705000 for a sample
   transaction and reverts `TargetNotSponsored` / `PerTxCapExceeded` on the
   refusal paths.
-- Explorer source verification still pending (`hardhat verify` reports a bytecode
-  mismatch it cannot resolve for zksolc builds — the same flakiness noted for the
-  V3 stack). The keccak comparison above is what currently establishes that the
-  deployed code is the reviewed code; retry `npm run verify` later.
+- Explorer source verification: DONE for the V3 stack (2026-07-29). The earlier
+  "bytecode mismatch" was not a zksolc problem — `hardhat verify` fails when it has
+  to guess which local contract matches, and succeeds once told explicitly:
+
+      npx hardhat verify --network zkSyncSepolia \
+        --contract contracts/<File>.sol:<Name> <address> <constructor args...>
+
+  The paymaster is not verified: its constructor takes ten arguments, several of
+  them mutable and changed since deployment, so they cannot be recovered from chain
+  state. Recover them from the deployment transaction input if it is ever needed.
 
 ✅ **PROVEN ON PRODUCTION 2026-07-24 (P1-D):** live gasless transfer 1 g OLTIN,
 tx `0xb86555c4383d950aff587aa551c6f8f8e4c91a386c32f3c6db0b1e86423d93c1` —
