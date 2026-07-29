@@ -30,3 +30,14 @@ def test_welcome_copy_has_no_ai_line():
     for lang in ("uz", "ru", "en"):
         welcome = bot.MESSAGES[lang]["welcome"].lower()
         assert not any(w in welcome for w in _ASSISTANT_WORDS), lang
+
+
+# OLTIN is a gold-INDEXED obligation, not tokenized/gold-backed gold; the copy
+# must never imply the token is gold (see positioning rule).
+_GOLD_BACKING_WORDS = ("tokenized", "токенизированн", "tokenizatsiya", "обеспечен")
+
+
+def test_welcome_copy_avoids_gold_backing_claim():
+    for lang in ("uz", "ru", "en"):
+        welcome = bot.MESSAGES[lang]["welcome"].lower()
+        assert not any(w in welcome for w in _GOLD_BACKING_WORDS), lang
