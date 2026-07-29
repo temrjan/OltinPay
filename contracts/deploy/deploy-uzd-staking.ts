@@ -46,5 +46,5 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(`   npx hardhat verify --network zkSyncSepolia ${stakingAddr} ${OLTIN_ADDRESS}`);
   console.log(`3. Fund the reward pool by calling OltinStaking.fundRewardPool(amount)`);
   console.log(`   (admin must approve OLTIN to staking first)`);
-  console.log(`4. Update docs/PROGRESS.md with the deployed addresses.`);
+  console.log(`4. Record the deployed addresses in docs/DEPLOYMENTS.md.`);
 }

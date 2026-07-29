@@ -89,7 +89,7 @@ Regulatory window: НАПП stablecoin pilot started 2026-01-01, runs 12 months 
 **Keep as-is:**
 - `auth/`, `users/`, `contacts/`, `notifications.py`, `aylin/`, `common/`, `database.py`, `redis_client.py`, `main.py`, `config.py`
 
-**Rewrite to read on-chain (week 4):**
+**Read on-chain:**
 - `balances/service.py` → `balanceOf(wallet_address)` via JSON-RPC
 - `transfers/service.py` → index Transfer events from contract; user signs and broadcasts on the client
 - `staking/service.py` → wrap calls to `OltinStaking` contract; rewards calculated on-chain by contract

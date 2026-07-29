@@ -58,4 +58,4 @@ unset PRIVATE_KEY
 
 echo ""
 echo "✓ Done. Copy the UZD and OltinStaking addresses from above and paste"
-echo "  them into the chat or docs/PROGRESS.md."
+echo "  them into docs/DEPLOYMENTS.md."

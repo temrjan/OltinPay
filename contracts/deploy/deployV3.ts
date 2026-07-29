@@ -175,5 +175,5 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(
     `3. Seed the treasury for sell demos: transfer UZD to the Exchange (${exchangeAddr}).`,
   );
-  console.log("4. Update docs/PROGRESS.md with the addresses above.");
+  console.log("4. Record the addresses above in docs/DEPLOYMENTS.md.");
 }

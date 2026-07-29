@@ -125,7 +125,7 @@ ssh 7demo "cd /opt/oltinpay && git reset --hard <good-sha> && docker compose up 
 
 ## What's NOT deployed by this pipeline
 
-- **Smart contracts** — deployed manually via `contracts/scripts/deploy.sh` (see `docs/PROGRESS.md`). No automation on purpose: contract deployment is irreversible and costs real (or testnet) gas.
+- **Smart contracts** — deployed manually via `contracts/scripts/deploy.sh` (see `docs/DEPLOYMENTS.md`). No automation on purpose: contract deployment is irreversible and costs real (or testnet) gas.
 - **alembic migrations** — not auto-applied by the Docker image. Run on the server after deploy:
   ```bash
   ssh 7demo "cd /opt/oltinpay && docker compose exec oltinpay-api alembic upgrade head"
