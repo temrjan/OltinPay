@@ -141,24 +141,45 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   // === Verify ===
   console.log("\n=== Verifying on explorer ===");
-  const toVerify: Array<[string, string, any[]]> = [
-    ["Attestor(Reserve)", reserveAddr, [0]],
-    ["Attestor(XAU)", xauAddr, [8]],
-    ["Attestor(UZS)", uzsAddr, [8]],
-    ["OltinTokenV3", oltinAddr, [reserveAddr, maxAgeReserve, feeCollector]],
+  // `contract` is REQUIRED. Without it the plugin has to guess which local contract
+  // matches the deployed bytecode, that guess fails, and it reports a misleading
+  // "bytecode doesn't match any of your local contracts". The bytecode matches
+  // exactly — the matcher is what breaks. This cost six months of the V3 stack
+  // sitting unverified behind a wrong diagnosis.
+  const toVerify: Array<[string, string, string, any[]]> = [
+    ["Attestor(Reserve)", reserveAddr, "contracts/Attestor.sol:Attestor", [0]],
+    ["Attestor(XAU)", xauAddr, "contracts/Attestor.sol:Attestor", [8]],
+    ["Attestor(UZS)", uzsAddr, "contracts/Attestor.sol:Attestor", [8]],
+    [
+      "OltinTokenV3",
+      oltinAddr,
+      "contracts/OltinTokenV3.sol:OltinTokenV3",
+      [reserveAddr, maxAgeReserve, feeCollector],
+    ],
     [
       "Exchange",
       exchangeAddr,
+      "contracts/Exchange.sol:Exchange",
       [oltinAddr, uzdAddress, xauAddr, uzsAddr, maxAgeXau, maxAgeUzs],
     ],
   ];
-  for (const [name, address, constructorArguments] of toVerify) {
+  let verifyFailures = 0;
+  for (const [name, address, contract, constructorArguments] of toVerify) {
     try {
-      await hre.run("verify:verify", { address, constructorArguments });
+      await hre.run("verify:verify", { address, contract, constructorArguments });
       console.log(`Verified ${name}`);
     } catch (e) {
-      console.log(`Verify ${name} failed (may already be verified):`, e);
+      // Do NOT swallow this. An unverified contract is an unverifiable claim, and
+      // the previous version buried the reason in a passing deploy log.
+      verifyFailures++;
+      console.error(`VERIFY FAILED for ${name} at ${address}:`, e);
     }
+  }
+  if (verifyFailures > 0) {
+    console.error(
+      `\n${verifyFailures} contract(s) did not verify. The deployment itself is fine, ` +
+        `but publish the source before anyone is asked to trust these addresses.`,
+    );
   }
 
   // === Next steps ===
