@@ -28,7 +28,7 @@ MESSAGES = {
         "select_language": "🌐 Tilni tanlang:",
         "welcome": """Salom, {name}! 👋
 
-🥇 **OltinPay** — tokenizatsiyalangan oltin savdo platformasi.
+🥇 **OltinPay** — oltinga bog'langan OLTIN aktivi hamyoni.
 
 Imkoniyatlar:
 • OLTIN sotib olish va sotish
@@ -47,7 +47,7 @@ Pastdagi tugmani bosing:""",
         "select_language": "🌐 Выберите язык:",
         "welcome": """Привет, {name}! 👋
 
-🥇 **OltinPay** — платформа торговли токенизированным золотом.
+🥇 **OltinPay** — кошелёк золото-индексированного актива OLTIN.
 
 Возможности:
 • Покупка и продажа OLTIN
@@ -66,7 +66,7 @@ Pastdagi tugmani bosing:""",
         "select_language": "🌐 Select language:",
         "welcome": """Hello, {name}! 👋
 
-🥇 **OltinPay** — tokenized gold trading platform.
+🥇 **OltinPay** — wallet for the gold-indexed asset OLTIN.
 
 Features:
 • Buy and sell OLTIN
