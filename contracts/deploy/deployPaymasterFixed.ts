@@ -197,7 +197,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   );
   console.log(`RATE EXPIRES AT ${expiry} — after that sponsorship stops until setRate.`);
   // A verified source on the explorer is what makes "check it yourself" real
-  // for a jury or a bank review; failure here must not fail the deployment.
+  // for anyone reviewing the contract; failure here must not fail the deployment.
   try {
     await hre.run("verify:verify", {
       address: paymasterAddress,

@@ -1,8 +1,8 @@
 """Legacy DB helpers for balances — used by transfers/ and staking/.
 
 These functions read the pre-v2 `balances` table (USD/OLTIN virtual
-accounts). They'll be retired when `transfers/` and `staking/` are
-moved to on-chain reads in week 5. Kept here so those modules keep
+accounts). They'll be retired once `transfers/` and `staking/` are
+fully moved to on-chain reads. Kept here so those modules keep
 compiling during the migration.
 """
 

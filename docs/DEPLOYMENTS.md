@@ -55,8 +55,7 @@ redeployed (spec `.claude/specs/2026-07-24-v31-money-edge-SPEC.md`):
 
 Deployed 2026-07-22, funded 0.01 ETH (recovered from the retired paymaster).
 **The rate expires 2026-08-21T17:08:33Z** — after that sponsorship stops until
-`setRate` is called. That is after the 10 August deadline, so it will not fire
-during the contest window.
+`setRate` is called.
 
 Verified by reading the chain, not by trusting the deploy script's output:
 - deployed bytecode == locally compiled artifact, keccak
@@ -98,8 +97,7 @@ Operating notes:
   a timeout and a clear message, or the UI waits forever.
 - **The rate expires.** `maxRateAge` is 30 days from the last `setRate`; after
   that sponsorship stops until the rate is refreshed. Record the expiry date here
-  at deploy time (a deploy on 2026-07-22..25 expires 2026-08-21..24 — after the
-  10 August deadline, so it will not fire during the contest window).
+  at deploy time (a deploy on 2026-07-22..25 expires 2026-08-21..24).
 - Deployed caps: 0.0005 ETH per transaction, 0.0005 ETH per sender per day,
   0.005 ETH per day in total (on-chain `5e14 / 5e14 / 5e15`, verified via eth_call
   2026-07-27 — matches the wei values on line 65). The per-sender/day cap was
