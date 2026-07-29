@@ -61,7 +61,7 @@ jobs:
         run: uv run ruff check src/
 
       - name: Mypy (my modules)
-        run: uv run mypy --ignore-missing-imports src/infrastructure/ src/balances/ src/bank/ src/por/ src/withdrawals/ src/indexer/ src/deposits/ src/welcome/ src/users/schemas.py src/users/router.py src/users/service.py src/main.py
+        run: uv run mypy --ignore-missing-imports src/infrastructure/ src/balances/ src/bank/ src/por/ src/withdrawals/ src/indexer/ src/deposits/ src/welcome/ src/telegram/ src/users/schemas.py src/users/router.py src/users/service.py src/main.py
 
       # Full suite — NEVER a pinned file list (new test files must gate CI
       # automatically; a pinned list is how test_concurrency_pg / test_deposits
