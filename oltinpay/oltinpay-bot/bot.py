@@ -34,14 +34,12 @@ Imkoniyatlar:
 • OLTIN sotib olish va sotish
 • Boshqa foydalanuvchilarga yuborish
 • Steyking qilish va 7% APY olish
-• AI yordamchi
 
 Pastdagi tugmani bosing:""",
         "open_wallet": "🥇 Hamyonni ochish",
         "exchange": "📊 Birja",
         "staking": "💎 Steyking",
         "send": "📤 Yuborish",
-        "aylin": "✨ AI Yordamchi",
         "help": "📚 Yordam",
         "language_set": "✅ Til o'rnatildi: O'zbekcha",
     },
@@ -55,14 +53,12 @@ Pastdagi tugmani bosing:""",
 • Покупка и продажа OLTIN
 • Переводы другим пользователям
 • Стейкинг с доходом 7% APY
-• AI помощник
 
 Нажмите кнопку ниже:""",
         "open_wallet": "🥇 Открыть кошелёк",
         "exchange": "📊 Биржа",
         "staking": "💎 Стейкинг",
         "send": "📤 Отправить",
-        "aylin": "✨ AI Ассистент",
         "help": "📚 Помощь",
         "language_set": "✅ Язык установлен: Русский",
     },
@@ -76,14 +72,12 @@ Features:
 • Buy and sell OLTIN
 • Send to other users
 • Stake and earn 7% APY
-• AI assistant
 
 Press the button below:""",
         "open_wallet": "🥇 Open Wallet",
         "exchange": "📊 Exchange",
         "staking": "💎 Staking",
         "send": "📤 Send",
-        "aylin": "✨ AI Assistant",
         "help": "📚 Help",
         "language_set": "✅ Language set: English",
     },
@@ -128,10 +122,6 @@ def webapp_keyboard(user_id: int) -> InlineKeyboardMarkup:
             [
                 InlineKeyboardButton(
                     text=m["send"], web_app=WebAppInfo(url=f"{url}&tab=send")
-                ),
-                InlineKeyboardButton(
-                    text=m["aylin"],
-                    web_app=WebAppInfo(url=f"{WEBAPP_URL}/aylin?lang={lang}"),
                 ),
             ],
         ]
