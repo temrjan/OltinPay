@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/favicon.png">
+<title>{{idx_title}}</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/">
+<style>
+  :root{
+    --bg:#0b0d12; --bg2:#0f121a; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
+    --ink:#eef0f4; --sub:#9aa1b1; --faint:#6b7284;
+    --gold:#e7b64c; --gold2:#c9922f; --green:#41cf8e; --red:#f0605f; --blue:#6ea8fe;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  h1,h2,h3{letter-spacing:-.02em;margin:0}
+  h1{font-size:clamp(28px,4.5vw,46px);line-height:1.08;font-weight:750;text-wrap:balance}
+  h2{font-size:clamp(22px,3vw,30px);font-weight:700;text-wrap:balance}
+  h3{font-size:16px;font-weight:650}
+  .sub{color:var(--sub)}
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  .kicker{color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
+
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:20px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:750;letter-spacing:-.01em}
+  .brand .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(150deg,var(--gold),var(--gold2));
+    display:grid;place-items:center;color:#161200;font-weight:800;font-size:15px}
+  .nav nav{display:flex;gap:22px;margin-left:auto;font-size:14px;color:var(--sub)}
+  .nav nav a:hover{color:var(--ink)}
+  .nav .cta{margin-left:20px}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#161200;font-weight:700;
+    padding:10px 16px;border-radius:11px;font-size:14px;border:0;cursor:pointer;font-family:inherit}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.tg{background:var(--blue);color:#0b1220}
+  @media(max-width:760px){.nav nav{display:none}}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding-top:56px}
+  .hero .sub{font-size:17px;margin:18px 0 26px;max-width:34ch}
+  .hero .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .trust{display:flex;gap:22px;margin-top:26px;flex-wrap:wrap;font-size:13px;color:var(--faint)}
+  .trust b{color:var(--ink);font-weight:650;display:block;font-size:18px}
+  @media(max-width:860px){.hero{grid-template-columns:1fr;gap:30px}.phonewrap{order:-1}}
+
+  /* phone mockup */
+  .phonewrap{display:flex;justify-content:center;position:relative}
+  .phonewrap::before{content:"";position:absolute;inset:-30px;background:radial-gradient(closest-side,color-mix(in srgb,var(--gold) 16%,transparent),transparent);filter:blur(10px);z-index:0}
+  .phone{position:relative;z-index:1;width:340px;max-width:100%;background:#05060a;border-radius:46px;padding:10px;
+    box-shadow:0 40px 80px -24px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05) inset}
+  .screen{background:#0d0f14;border-radius:36px;overflow:hidden;height:648px;display:flex;flex-direction:column}
+  .statusbar{display:flex;justify-content:space-between;padding:11px 20px 3px;font-size:12px;opacity:.9}
+  .tgbar{display:flex;align-items:center;gap:10px;padding:5px 16px 11px}
+  .tgbar .x{font-size:19px;color:var(--sub)} .tgbar .title{font-weight:600;font-size:15px} .tgbar .spacer{flex:1} .tgbar .ico{color:var(--sub)}
+  .view{flex:1;position:relative;overflow:hidden}
+  .pane{position:absolute;inset:0;padding:4px 15px 14px;overflow-y:auto;opacity:0;transform:translateY(6px);pointer-events:none;transition:.28s}
+  .pane::-webkit-scrollbar{width:0}
+  .pane.active{opacity:1;transform:none;pointer-events:auto}
+  .pane h4{font-size:18px;margin:6px 2px 11px;font-weight:650}
+  .mc{background:#171a21;border:1px solid #262c3a;border-radius:15px;padding:13px}
+  .mrow{display:flex;justify-content:space-between;align-items:center}
+  .mmut{color:#8b909c} .v{font-weight:650} .cg{color:var(--gold)} .cgr{color:var(--green)} .cr{color:var(--red)}
+  .mbal{background:linear-gradient(160deg,color-mix(in srgb,var(--gold) 22%,transparent),color-mix(in srgb,var(--gold) 5%,transparent));border:1.5px solid var(--gold);border-radius:19px;padding:18px;text-align:center}
+  .mbal .big{font-size:28px;font-weight:800;color:var(--gold)} .mbal .big span{font-size:15px} .mbal .s{color:#8b909c;font-size:12.5px;margin-top:2px}
+  .mpill{display:flex;background:#171a21;border:1px solid #262c3a;border-radius:13px;padding:4px}
+  .mpill button{flex:1;border:0;background:transparent;color:#8b909c;font-weight:600;font-size:13px;padding:8px;border-radius:10px;cursor:pointer;font-family:inherit}
+  .mpill button.on{background:var(--gold);color:#161200}
+  .macts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mact{display:flex;align-items:center;gap:9px;background:#171a21;border:1px solid #262c3a;border-radius:15px;padding:12px;min-width:0}
+  .mact .ci{width:33px;height:33px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto} .mact .l{font-weight:600;font-size:13px;white-space:nowrap}
+  .cig{background:color-mix(in srgb,var(--gold) 20%,transparent);color:var(--gold)} .cigr{background:color-mix(in srgb,var(--green) 20%,transparent);color:var(--green)} .cired{background:color-mix(in srgb,var(--red) 18%,transparent);color:var(--red)}
+  .op{display:flex;align-items:center;gap:10px;padding:8px 0}.op .ci{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto}.op .t{font-size:13px;font-weight:600}.op .d{font-size:11px;color:#8b909c}.op .a{margin-left:auto;font-weight:700;font-size:13px}
+  .mfield{background:#0d0f14;border:1px solid #262c3a;border-radius:13px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center}.mfield .n{font-size:19px;color:#8b909c}.mfield .n.set{color:var(--ink)}.mfield .c{color:#8b909c;font-weight:600;font-size:13px}
+  .mcta{width:100%;border:0;border-radius:14px;padding:13px;font-weight:700;font-size:14px;background:var(--gold);color:#161200;font-family:inherit;margin-top:12px;cursor:pointer}
+  .mcta.g{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 40%,transparent);padding:10px;font-size:13px}
+  .tabbar{display:flex;background:#0a0c11;border-top:1px solid #262c3a;padding:7px 6px}
+  .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8b909c;font-size:10px;font-weight:600;padding:4px;cursor:pointer;font-family:inherit}
+  .tab.on{color:var(--gold)} .tab svg{width:21px;height:21px}
+  .grip{width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.16);margin:5px auto 2px}
+  .msvg{stroke-width:1.9}
+  .prof{display:flex;flex-direction:column;align-items:center;padding:6px 0}.prof .av{width:64px;height:64px;border-radius:50%;background:linear-gradient(150deg,var(--gold),#8a6a1e);display:grid;place-items:center;color:#161200;font-weight:800;font-size:24px}.prof .nm{font-weight:700;margin-top:10px}.prof .id{color:#8b909c;font-size:12px}
+  .lr{display:flex;align-items:center;gap:10px;padding:12px 3px;border-bottom:1px solid #262c3a}.lr:last-child{border-bottom:0}.lr .k{flex:1;font-size:13.5px}.lr .val{color:#8b909c;font-size:12.5px}
+
+  /* generic blocks */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card h3{margin-bottom:6px}
+  .col-head{display:flex;align-items:center;gap:10px;font-weight:750;font-size:15px;margin-bottom:14px}
+  .col-head .tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .tag.us{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold)}
+  .tag.you{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+  ul.li{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px}
+  ul.li li{display:flex;gap:11px;font-size:14.5px;color:var(--ink)}
+  ul.li li b{font-weight:650} ul.li li span{color:var(--sub);display:block;font-size:13px;margin-top:1px}
+  .ck{color:var(--gold);flex:0 0 auto;margin-top:2px} .cky{color:var(--blue)}
+  .audience{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:760px){.audience{grid-template-columns:1fr}}
+  .aud{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .aud h3{margin-bottom:4px} .aud p{color:var(--sub);font-size:13.5px;margin:0}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+  @media(max-width:680px){.stat-grid{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .stat .n{font-size:26px;font-weight:800;color:var(--gold);letter-spacing:-.02em}
+  .stat .n.gr{color:var(--green)} .stat .l{color:var(--sub);font-size:13px;margin-top:2px}
+  .addr{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .addr a{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 14px;font-size:13px}
+  .addr a:hover{border-color:var(--gold)} .addr .k{color:var(--ink);font-weight:600} .addr .h{color:var(--faint);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .addr .ext{color:var(--gold);flex:0 0 auto}
+
+  .risk{background:linear-gradient(160deg,color-mix(in srgb,var(--red) 8%,transparent),transparent);border:1px solid color-mix(in srgb,var(--red) 30%,transparent);border-radius:18px;padding:26px}
+  .risk .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);border:1px solid color-mix(in srgb,var(--red) 40%,transparent);border-radius:6px;padding:3px 9px;margin-bottom:14px}
+  .note{display:flex;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;font-size:14px;color:var(--sub)}
+
+  .status-row{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .status-row:last-child{border-bottom:0}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;margin-top:6px}
+  .dot.on{background:var(--green)} .dot.plan{background:var(--faint)} .dot.warn{background:var(--gold)}
+
+  .contact{text-align:center}
+  .contact .lines{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:22px auto 0}
+  .contact .lines a{display:flex;align-items:center;gap:12px;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px;font-size:15px;font-weight:600}
+  .contact .lines a:hover{border-color:var(--gold)}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--faint);font-size:12.5px;text-align:center;line-height:1.7}
+  .chip{display:inline-block;font-size:12px;font-weight:600;color:var(--sub);background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+  .cap{color:var(--faint);font-size:12.5px;margin-top:10px}
+  svg{stroke-width:1.8}
+
+  /* language switch */
+  .lang{display:flex;gap:2px;margin-left:16px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px;letter-spacing:.02em}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
+  @media(max-width:760px){.lang{margin-left:auto}}
+
+  /* on-chain receipts — a claim and the transaction that settles it */
+  .receipts{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+  .receipt{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:12px 14px;font-size:13px;flex-wrap:wrap}
+  .receipt:hover{border-color:var(--gold)}
+  .receipt .what{font-weight:600;color:var(--ink);flex:1;min-width:180px}
+  .receipt .tx{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--gold);
+    border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
+  .receipt .when{color:var(--faint);font-size:12px;min-width:92px;text-align:right}
+</style>
+</head>
+<body>
+
+<header class="nav"><div class="wrap">
+  <div class="brand"><span class="mark">O</span> OltinPay</div>
+  <nav><a href="{{url_how_it_works}}">{{nav_how}}</a><a href="{{url_license}}">{{nav_license}}</a><a href="#proof">{{nav_proof}}</a><a href="{{url_repo}}" target="_blank" rel="noopener">{{nav_code}}</a></nav>
+  <div class="lang"><a class="{{lang_class_en}}" href="/" hreflang="en">EN</a><a class="{{lang_class_ru}}" href="/ru/" hreflang="ru">RU</a><a class="{{lang_class_uz}}" href="/uz/" hreflang="uz">UZ</a></div>
+  <a class="btn tg cta" href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> {{cta_open_miniapp}}</a>
+</div></header>
+
+<main class="wrap">
+
+  <!-- 1 · HERO -->
+  <section class="hero" style="border-top:0">
+    <div>
+      <div class="eyebrow">{{idx_eyebrow}}</div>
+      <h1 style="margin-top:14px">{{idx_h1}}</h1>
+      <p class="sub">{{idx_lead}}</p>
+      <div class="actions"><a class="btn tg" href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> {{cta_open_miniapp}}</a><a class="btn" href="#contact">{{idx_cta_pilot}}</a><a class="btn ghost" href="#labor">{{idx_cta_labor}}</a></div>
+      <div class="trust">
+        <div><b>{{idx_trust1_n}}</b> {{idx_trust1_l}}</div>
+        <div><b>{{idx_trust2_n}}</b> {{idx_trust2_l}}</div>
+        <div><b>{{idx_trust3_n}}</b> {{idx_trust3_l}}</div>
+      </div>
+    </div>
+    <div class="phonewrap">
+      <div class="phone" role="group" aria-label="{{mock_aria}}">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>5G ▮</span></div>
+          <div class="tgbar"><span class="x">×</span><span class="title">OltinPay</span><span class="spacer"></span>
+            <span class="ico"><svg class="msvg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></span>
+            <span class="ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></span></div>
+          <div class="view">
+            <section class="pane active" data-screen="wallet">
+              <div class="mrow" style="padding:2px 2px 11px"><div><div class="mmut" style="font-size:12px">{{mock_welcome}}</div><div style="font-weight:650;font-size:17px">@temrjan</div></div>
+                <div class="ci cig" style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#171a21;border:1px solid #262c3a"><svg class="msvg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div></div>
+              <div class="mbal"><div class="big">1 001 000 <span>UZD</span></div><div class="s">{{mock_total_balance}}</div></div>
+              <div style="height:11px"></div>
+              <div class="mpill"><button class="on">{{mock_tab_wallet}}</button><button>{{mock_tab_staking}}</button></div>
+              <div style="height:11px"></div>
+              <div class="mc" style="padding:2px 0"><div class="mrow" style="padding:12px 14px"><span class="mmut">UZD</span><span class="v">1 001 000</span></div><div class="mrow" style="padding:12px 14px;border-top:1px solid #262c3a"><span class="mmut">OLTIN</span><span class="v cg">0.98</span></div></div>
+              <div style="height:11px"></div>
+              <div class="macts"><div class="mact"><div class="ci cig"><svg class="msvg" viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></div><span class="l">{{mock_send}}</span></div><div class="mact"><div class="ci cigr"><svg class="msvg" viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor"><path d="M17 7L7 17"/><path d="M16 17H7V8"/></svg></div><span class="l">{{mock_receive}}</span></div></div>
+              <div style="height:11px"></div>
+              <div class="mc"><div style="font-weight:650;margin-bottom:5px">{{mock_recent}}</div>
+                <div class="op"><div class="ci cired"><svg class="msvg" viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></div><div><div class="t">{{mock_sent}}</div><div class="d">28.07.2026</div></div><div class="a cr">−0.12 OLTIN</div></div>
+                <div class="op"><div class="ci cigr"><svg class="msvg" viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor"><path d="M17 7L7 17"/><path d="M16 17H7V8"/></svg></div><div><div class="t">{{mock_credited}}</div><div class="d">28.07.2026</div></div><div class="a cgr">+1 000 000 UZD</div></div></div>
+            </section>
+            <section class="pane" data-screen="exchange">
+              <h4>{{mock_exchange}}</h4>
+              <div class="mbal" style="padding:15px"><div class="mmut" style="font-size:12px">{{mock_oltin_price}}</div><div class="big" style="font-size:23px">1 576 000 <span>UZD</span></div><div class="s">{{mock_gold_indexed_rate}}</div></div>
+              <div style="height:11px"></div>
+              <div class="mpill"><button class="on">{{mock_buy}}</button><button>{{mock_sell}}</button></div>
+              <div style="height:12px"></div>
+              <div class="mmut" style="font-size:12px;margin-bottom:5px">{{mock_you_give}}</div><div class="mfield"><span class="n set">100 000</span><span class="c">UZD</span></div>
+              <div style="text-align:center;color:var(--gold);margin:6px 0"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor"><path d="M7 4v13M7 4L4 7M7 4l3 3M17 20V7M17 20l3-3M17 20l-3-3"/></svg></div>
+              <div class="mmut" style="font-size:12px;margin-bottom:5px">{{mock_you_get}}</div><div class="mfield"><span class="n set">0.0634</span><span class="c">OLTIN</span></div>
+              <button class="mcta">{{mock_buy}}</button>
+            </section>
+            <section class="pane" data-screen="staking">
+              <h4>{{mock_staking}}</h4>
+              <div class="mbal" style="padding:15px"><div class="mmut" style="font-size:12px">{{mock_apy_label}}</div><div class="big" style="font-size:30px">7% APY</div><div class="s">{{mock_lock_note}}</div></div>
+              <div style="height:11px"></div>
+              <div class="mc"><div class="mrow" style="padding:3px 0"><span class="mmut">{{mock_staked}}</span><span class="v">100 OLTIN</span></div><div class="mrow" style="padding:3px 0"><span class="mmut">{{mock_unlocked}}</span><span class="v">0 OLTIN</span></div><div class="mrow" style="padding:6px 0 3px;border-top:1px solid #262c3a;margin-top:5px"><span class="mmut">{{mock_reward}}</span><span class="cgr" style="font-weight:700">+0.00026214 OLTIN</span></div><button class="mcta g">{{mock_claim}}</button></div>
+              <div style="height:11px"></div>
+              <div class="mfield"><span class="n">0.0000</span><span class="c">OLTIN</span></div><button class="mcta">{{mock_stake}}</button>
+            </section>
+            <section class="pane" data-screen="profile">
+              <h4>{{mock_profile}}</h4>
+              <div class="prof"><div class="av">T</div><div class="nm">@temrjan</div><div class="id">{{mock_verified}}</div></div>
+              <div style="height:12px"></div>
+              <div class="mc" style="padding:2px 13px"><div class="lr"><span class="k">{{mock_language}}</span><span class="val">{{mock_language_value}}</span></div><div class="lr"><span class="k">{{mock_wallet_address}}</span><span class="val">0x4a75…8882</span></div><div class="lr"><span class="k">{{mock_security_pin}}</span></div><div class="lr"><span class="k">{{mock_about}}</span><span class="val">Testnet</span></div></div>
+              <div class="mmut" style="font-size:11px;text-align:center;margin-top:12px;line-height:1.5">{{mock_key_on_device}}<br>{{mock_noncustodial}}</div>
+            </section>
+          </div>
+          <nav class="tabbar">
+            <button class="tab on" data-go="wallet"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12h3"/></svg>{{mock_tab_wallet}}</button>
+            <button class="tab" data-go="exchange"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 18V9M9 18V5M14 18v-6M19 18v-9"/></svg>{{mock_exchange}}</button>
+            <button class="tab" data-go="staking"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l4 5-4 13-4-13z"/><path d="M8 8h8"/></svg>{{mock_staking}}</button>
+            <button class="tab" data-go="profile"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>{{mock_profile}}</button>
+          </nav>
+          <div class="grip"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · КОМУ -->
+  <section id="who">
+    <div class="kicker">{{idx_k_who}}</div>
+    <h2>{{idx_h2_who}}</h2>
+    <p class="sub" style="max-width:60ch;margin-top:10px">{{idx_who_lead}}</p>
+    <div class="audience" style="margin-top:22px">
+      <div class="aud"><h3>{{idx_aud1_h}}</h3><p>{{idx_aud1_p}}</p></div>
+      <div class="aud"><h3>{{idx_aud2_h}}</h3><p>{{idx_aud2_p}}</p></div>
+      <div class="aud"><h3>{{idx_aud3_h}}</h3><p>{{idx_aud3_p}}</p></div>
+    </div>
+  </section>
+
+  <!-- 3 · РАЗДЕЛЕНИЕ ТРУДА -->
+  <section id="labor">
+    <div class="kicker">{{idx_k_labor}}</div>
+    <h2>{{idx_h2_labor}}</h2>
+    <div class="two" style="margin-top:22px">
+      <div class="card">
+        <div class="col-head"><span class="tag us">{{idx_we_give_tag}}</span> {{idx_we_give_head}}</div>
+        <ul class="li">
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>{{idx_we1_h}}</b><span>{{idx_we1_p}}</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>{{idx_we2_h}}</b><span>{{idx_we2_p}}</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>{{idx_we3_h}}</b><span>{{idx_we3_p}}</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>{{idx_we4_h}}</b><span>{{idx_we4_p}}</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>{{idx_we5_h}}</b><span>{{idx_we5_p}}</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="col-head"><span class="tag you">{{idx_you_bring_tag}}</span> {{idx_you_bring_head}}</div>
+        <ul class="li">
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>{{idx_you1_h}}</b><span>{{idx_you1_p}}</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>{{idx_you2_h}}</b><span>{{idx_you2_p}}</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>{{idx_you3_h}}</b><span>{{idx_you3_p}}</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>{{idx_you4_h}}</b><span>{{idx_you4_p}}</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>{{idx_you5_h}}</b><span>{{idx_you5_p}}</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ЭКОНОМИКА -->
+  <section id="econ">
+    <div class="kicker">{{idx_k_econ}}</div>
+    <h2>{{idx_h2_econ}}</h2>
+    <div class="two" style="margin-top:20px">
+      <div class="card"><h3>{{idx_econ1_h}}</h3><p class="sub" style="margin:6px 0 0">{{idx_econ1_p}}</p></div>
+      <div class="card"><h3>{{idx_econ2_h}}</h3><p class="sub" style="margin:6px 0 0">{{idx_econ2_p}}</p></div>
+    </div>
+    <div class="note">{{idx_econ_note}}</div>
+  </section>
+
+  <!-- 5 · РИСК -->
+  <section id="risk">
+    <div class="risk">
+      <span class="tag">{{idx_risk_tag}}</span>
+      <h2>{{idx_risk_h2}}</h2>
+      <p class="sub" style="margin-top:12px;max-width:62ch">{{idx_risk_p}}</p>
+      <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>{{idx_risk_note}}</div></div>
+    </div>
+  </section>
+
+  <!-- 6 · ДОКАЗАТЕЛЬСТВА -->
+  <section id="proof">
+    <div class="kicker">{{idx_k_proof}}</div>
+    <h2>{{idx_h2_proof}}</h2>
+    <p class="sub" style="max-width:64ch;margin-top:10px">{{idx_proof_lead}}</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="n">5000</div><div class="l">{{idx_stat_ceiling}}</div></div>
+      <div class="stat"><div class="n">2519,80</div><div class="l">{{idx_stat_issued}}</div></div>
+      <div class="stat"><div class="n gr">198,4%</div><div class="l">{{idx_stat_coverage}}</div></div>
+      <div class="stat"><div class="n">{{idx_stat_ttl_n}}</div><div class="l">{{idx_stat_ttl_l}}</div></div>
+    </div>
+    <div class="cap">{{idx_proof_cap}}</div>
+
+    <div style="font-weight:600;color:var(--sub);font-size:14px;margin-top:22px">{{idx_receipts_head}}</div>
+    <div class="receipts">
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xe43c7ec5952fcdd27b554ff88cf141d6ba69211d6e6c16e1143ed4e8e3f92288" target="_blank" rel="noopener">
+        <span class="what">{{idx_receipt_attest}}</span><span class="tx">0xe43c7ec5…f92288</span><span class="when">2026-08-14</span></a>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0x344b763d991d0f76411a4e3eceae11e14e5db8ad2a3f127815f8b6962c13add1" target="_blank" rel="noopener">
+        <span class="what">{{idx_receipt_buy}}</span><span class="tx">0x344b763d…13add1</span><span class="when">2026-07-30</span></a>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xc39f92b2febd59cfb8cb041221bb45d70a8b193cbddb6c3fc1640511014a7022" target="_blank" rel="noopener">
+        <span class="what">{{idx_receipt_stake}}</span><span class="tx">0xc39f92b2…4a7022</span><span class="when">2026-07-29</span></a>
+    </div>
+    <div class="cap">{{idx_receipts_cap}} <a href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener" style="color:var(--gold);border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent)">{{idx_receipts_all}}</a></div>
+
+    <div style="font-weight:600;color:var(--sub);font-size:14px;margin-top:18px">{{idx_proof_deployed}}</div>
+    <div class="addr">
+      <a href="https://sepolia.explorer.zksync.io/address/0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5" target="_blank" rel="noopener"><span class="k">{{idx_addr_token}}</span><span class="h">0x906bcf6c…B3A5</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+      <a href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener"><span class="k">{{idx_addr_attestor}}</span><span class="h">0x9413F602…7d1B</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+      <a href="https://sepolia.explorer.zksync.io/address/0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9" target="_blank" rel="noopener"><span class="k">{{idx_addr_exchange}}</span><span class="h">0x99D733E6…d1c9</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+      <a href="https://sepolia.explorer.zksync.io/address/0xD3b6ffd1dE409e1C37BA5B867d6eC3897A721fAa" target="_blank" rel="noopener"><span class="k">{{idx_addr_staking}}</span><span class="h">0xD3b6ffd1…1fAa</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="col-head"><span class="tag us">{{idx_open_code_tag}}</span> {{idx_open_code_head}}</div>
+      <p class="sub" style="margin:0 0 14px">{{idx_open_code_p}}</p>
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat"><div class="n" style="font-size:22px">{{stat_tests_n}}</div><div class="l">{{stat_tests_l}}</div></div>
+        <div class="stat"><div class="n" style="font-size:22px">{{stat_ci_n}}</div><div class="l">{{stat_ci_l}}</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <span class="chip">{{chip_sha}}</span><span class="chip">{{chip_squash}}</span><span class="chip">{{idx_chip_push}}</span>
+      </div>
+      <a class="btn" style="margin-top:16px" href="{{url_repo}}" target="_blank" rel="noopener">{{cta_open_repo}}</a>
+      <p class="sub" style="font-size:13px;margin:14px 0 0">{{idx_machine_api}} <a style="color:var(--gold);border-bottom:1px solid color-mix(in srgb,var(--gold) 40%,transparent);word-break:break-all" href="https://explorer.sepolia.era.zksync.dev/contract_verification/info/0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5" target="_blank" rel="noopener">…/contract_verification/info/0x906bcf6c…</a></p>
+    </div>
+    <div style="margin-top:16px"><a href="{{url_how_it_works}}" style="color:var(--gold);font-weight:600;font-size:14px">{{idx_link_how}}</a></div>
+    <div class="note" style="margin-top:16px">{{idx_demo_note_pre}} <a href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener" style="color:var(--blue);border-bottom:1px solid color-mix(in srgb,var(--blue) 40%,transparent)">{{idx_demo_note_link}}</a>. {{idx_demo_note_post}}</div>
+  </section>
+
+  <!-- 7 · СТАТУС -->
+  <section id="status">
+    <div class="kicker">{{idx_k_status}}</div>
+    <h2>{{idx_h2_status}}</h2>
+    <div class="card" style="margin-top:18px">
+      <div class="status-row"><span class="dot warn"></span><div><b>{{idx_status1_h}}</b> {{idx_status1_p}}</div></div>
+      <div class="status-row"><span class="dot warn"></span><div><b>{{idx_status2_h}}</b> {{idx_status2_p}}</div></div>
+      <div class="status-row"><span class="dot on"></span><div><b>{{idx_status3_h}}</b> {{idx_status3_p}}</div></div>
+      <div class="status-row"><span class="dot plan"></span><div><b>{{idx_status4_h}}</b> {{idx_status4_p}}</div></div>
+    </div>
+  </section>
+
+  <!-- 8 · КОНТАКТ -->
+  <section id="contact" class="contact">
+    <div class="kicker">{{idx_k_contact}}</div>
+    <h2>{{idx_h2_contact}}</h2>
+    <p class="sub" style="max-width:52ch;margin:12px auto 0">{{idx_contact_lead}}</p>
+    <div class="lines">
+      <a href="mailto:x.temrjan@gmail.com"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> x.temrjan@gmail.com</a>
+      <a href="https://t.me/temrjan" target="_blank" rel="noopener"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> Telegram @temrjan</a>
+      <a href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> {{idx_contact_miniapp}}</a>
+      <a href="tel:+998770036888"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M5 4h4l2 5-3 2a12 12 0 006 6l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg> +998 77 003 6888</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;font-size:13.5px">
+    <a href="{{url_how_it_works}}" style="color:var(--sub)">{{idx_foot_how}}</a>
+    <a href="{{url_license}}" style="color:var(--sub)">{{nav_license}}</a>
+    <a href="#contact" style="color:var(--sub)">{{idx_foot_contact}}</a>
+    <a href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener" style="color:var(--sub)">{{cta_open_miniapp}}</a>
+    <a href="{{url_repo}}" target="_blank" rel="noopener" style="color:var(--sub)">{{idx_foot_code}}</a>
+  </div>
+  {{foot_disclaimer}}<br>
+  {{idx_foot_tagline}}
+</footer>
+
+<script>
+  const panes=document.querySelectorAll('.pane'),tabs=document.querySelectorAll('.tab');
+  function go(n){panes.forEach(p=>p.classList.toggle('active',p.dataset.screen===n));tabs.forEach(t=>t.classList.toggle('on',t.dataset.go===n));}
+  tabs.forEach(t=>t.addEventListener('click',()=>go(t.dataset.go)));
+  document.querySelectorAll('.mpill').forEach(p=>p.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{p.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');})));
+</script>
+</body>
+</html>

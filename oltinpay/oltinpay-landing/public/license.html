@@ -1,12 +1,16 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/favicon.png">
-<title>OltinPay — лицензия и запуск</title>
+<title>OltinPay — licence and launch</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/license">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/license">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/license">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/license">
 <style>
   :root{
     --bg:#0b0d12; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
@@ -32,6 +36,10 @@
   .brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--gold),#c9922f);display:grid;place-items:center;color:#161200;font-weight:800;font-size:14px}
   .nav .back{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
   .nav .back:hover{color:var(--ink)}
+  .lang{display:flex;gap:2px;margin-left:14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
 
   .hero{padding:48px 0 8px}
   .hero p{font-size:17px;max-width:60ch;margin:16px 0 0}
@@ -75,49 +83,50 @@
 
 <header class="nav"><div class="wrap">
   <div class="brand"><span class="mark">O</span> OltinPay</div>
-  <a class="back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> На главную</a>
+  <a class="back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> Home</a>
+  <div class="lang"><a class="on" href="/license" hreflang="en">EN</a><a class="" href="/ru/license" hreflang="ru">RU</a><a class="" href="/uz/license" hreflang="uz">UZ</a></div>
 </div></header>
 
 <main class="wrap">
   <div class="hero">
-    <div class="eyebrow">Лицензия и запуск</div>
-    <h1 style="margin-top:12px">Регуляторная база — ваша. Интеграция — наша.</h1>
-    <p class="sub">Лицензию держит эмитент; мы не даём юридических советов и не заменяем регулятора. Здесь — под каким надзором работает инструмент и как ваша инфраструктура соединяется с нашей.</p>
+    <div class="eyebrow">Licence and launch</div>
+    <h1 style="margin-top:12px">The regulatory base is yours. The integration is ours.</h1>
+    <p class="sub">The issuer holds the licence; we do not give legal advice and do not stand in for the regulator. Below: the supervision this instrument operates under, and how your infrastructure connects to ours.</p>
   </div>
 
   <!-- LICENSE -->
   <section>
-    <div class="kicker">Лицензия</div>
-    <h2>Деятельность подлежит обязательному лицензированию</h2>
+    <div class="kicker">Licence</div>
+    <h2>This activity is subject to mandatory licensing</h2>
     <div class="lic">
-      <span class="tag">Регулятор — НАПП</span>
-      <p style="margin:0;font-size:15px">Выпуск и обращение крипто-активов в Узбекистане лицензируется <b>Национальным агентством перспективных проектов (НАПП)</b>. Конкретный тип лицензии и требования определяет регулятор, а не мы. Реестр поставщиков услуг и требования — на сайте НАПП.</p>
-      <p style="margin:14px 0 0;font-size:14px"><a class="link" href="https://napp.uz/ru/pages/service-providers" target="_blank" rel="noopener">napp.uz — поставщики услуг →</a></p>
+      <span class="tag">Regulator — NAPP</span>
+      <p style="margin:0;font-size:15px">In Uzbekistan, crypto-asset activity is licensed by the <b>National Agency of Perspective Projects (NAPP)</b>, and the service is provided by a licensed partner. The type of licence and its requirements are determined by the regulator. The register of service providers and the current requirements are published by the agency.</p>
+      <p style="margin:14px 0 0;font-size:14px"><a class="link" href="https://napp.uz/en/pages/service-providers" target="_blank" rel="noopener">napp.uz — service providers →</a></p>
     </div>
-    <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>Мы не публикуем приблизительную трактовку лицензирования: ошибка в этом на странице для финансовых организаций дискредитировала бы всё остальное. Точный тип и объём лицензии сверяются с первоисточником регулятора при пилоте.</div></div>
+    <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>We do not publish an approximate reading of the licensing regime: on a page written for financial institutions, an error there would discredit everything else on it. The exact type and scope of licence are checked against the regulator's own source during the pilot.</div></div>
   </section>
 
   <!-- WHO CONNECTS WHAT -->
   <section>
-    <div class="kicker">Что соединяется</div>
-    <h2>Ваша инфраструктура ↔ наша</h2>
+    <div class="kicker">What connects to what</div>
+    <h2>Your infrastructure ↔ ours</h2>
     <div class="two">
       <div class="card">
-        <div class="col-head"><span class="t you">Приносит партнёр</span></div>
+        <div class="col-head"><span class="t you">The partner brings</span></div>
         <ul class="li">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Лицензия НАПП</div></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Фиатные рельсы — ввод/вывод сумов</div></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Капитал и сумма обеспечения</div></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>KYC/AML и служба поддержки</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>NAPP licence</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Fiat rails — som in and out</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Capital and the coverage amount</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>KYC/AML and customer support</div></li>
         </ul>
       </div>
       <div class="card">
-        <div class="col-head"><span class="t us">Даём мы</span></div>
+        <div class="col-head"><span class="t us">We provide</span></div>
         <ul class="li">
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Задеплоенные и верифицированные контракты</div></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Некастодиальный кошелёк + Telegram Mini App</div></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Механизм обеспеченности и расчёты</div></li>
-          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Консоль оператора</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Deployed and verified contracts</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Non-custodial wallet + Telegram Mini App</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>The coverage mechanism and settlement</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Operator console</div></li>
         </ul>
       </div>
     </div>
@@ -125,33 +134,33 @@
 
   <!-- LAUNCH PHASES -->
   <section>
-    <div class="kicker">Порядок запуска</div>
-    <h2>От пилота к боевому — честными фазами</h2>
+    <div class="kicker">Order of launch</div>
+    <h2>From pilot to production, in honest phases</h2>
     <div style="margin-top:20px">
-      <div class="phase"><div class="n">1</div><div class="b"><h3>Пилот на тестовой сети <span class="badge now">сейчас доступно</span></h3><p>Работающее демо в zkSync Era Sepolia: контракты, кошелёк, биржа, стейкинг. Проверка сценариев, интеграции рельсов и KYC на стороне партнёра — без реальных средств.</p></div></div>
-      <div class="phase"><div class="n">2</div><div class="b"><h3>Независимый аудит контрактов <span class="badge next">до боевого</span></h3><p>Внешний аудит перед запуском с реальной стоимостью. Внутренний адверсариальный ревью-процесс уже работает и виден в репозитории.</p></div></div>
-      <div class="phase"><div class="n">3</div><div class="b"><h3>Мультисиг-казна <span class="badge next">до боевого</span></h3><p>Административные роли выносятся с единого ключа на мультисиг — приоритет перед любой монетизацией.</p></div></div>
-      <div class="phase"><div class="n">4</div><div class="b"><h3>Боевой выпуск под лицензией партнёра <span class="badge next">по готовности</span></h3><p>Развёртывание на боевой сети, подключение фиатных рельсов и капитала обеспечения эмитентом, публичный запуск.</p></div></div>
+      <div class="phase"><div class="n">1</div><div class="b"><h3>Pilot on the testnet <span class="badge now">available now</span></h3><p>A working demonstration on zkSync Era Sepolia: contracts, wallet, exchange, staking. Scenarios, rail integration and KYC on the partner's side can be exercised — with no real funds involved.</p></div></div>
+      <div class="phase"><div class="n">2</div><div class="b"><h3>Independent contract audit <span class="badge next">before production</span></h3><p>An external audit before any launch carrying real value. The internal adversarial review process already runs and is visible in the repository.</p></div></div>
+      <div class="phase"><div class="n">3</div><div class="b"><h3>Multisig treasury <span class="badge next">before production</span></h3><p>Administrative roles move off a single key onto a multisig — this takes priority over any monetisation.</p></div></div>
+      <div class="phase"><div class="n">4</div><div class="b"><h3>Production issuance under the partner's licence <span class="badge next">when ready</span></h3><p>Deployment to the production network, connection of fiat rails and of the issuer's covering capital, public launch.</p></div></div>
     </div>
-    <div class="note">Конкретные сроки не публикуем без основания — они зависят от аудита, регуляторного трека партнёра и интеграции его рельсов. Обсуждаются на пилоте.</div>
+    <div class="note">We do not publish dates without grounds — they depend on the audit, on the partner's regulatory track and on the integration of its rails. They are discussed during the pilot.</div>
   </section>
 
   <!-- INTEGRATION SURFACE -->
   <section>
-    <div class="kicker">Что делает IT-служба партнёра</div>
-    <h2>Точки интеграции</h2>
+    <div class="kicker">What the partner's IT does</div>
+    <h2>Points of integration</h2>
     <div class="iface">
-      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><div><b>Фиатные рельсы ↔ расчёты</b><span>Ввод/вывод сумов подключается к бирже и расчётному контуру — на стороне партнёра. Учёт входа/выхода фиата — по его регламентам.</span></div></div>
-      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></div><div><b>KYC/AML ↔ онбординг</b><span>Проверка клиента встраивается в вход в приложение по правилам партнёра. Кошелёк некастодиальный — ключ остаётся у клиента.</span></div></div>
-      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div><div><b>Консоль оператора</b><span>Управление, установка суммы обеспечения, подтверждения, выписки — интерфейс оператора эмитента.</span></div></div>
-      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/></svg></div><div><b>Контракты на цепи</b><span>Чтение состояния (обеспеченность, балансы) и операции идут напрямую в контракты — читаются и проверяются кем угодно, включая аудитора партнёра.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><div><b>Fiat rails ↔ settlement</b><span>Som in and out connects to the exchange and the settlement path — on the partner's side. Accounting for fiat entering and leaving follows the partner's own procedures.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></div><div><b>KYC/AML ↔ onboarding</b><span>Customer checks are built into entry to the application under the partner's rules. The wallet is non-custodial — the key stays with the customer.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div><div><b>Operator console</b><span>Administration, setting the coverage amount, confirmations, statements — the issuer's operator interface.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/></svg></div><div><b>Contracts on-chain</b><span>Reading state (coverage, balances) and operations go straight to the contracts — readable and checkable by anyone, including the partner's auditor.</span></div></div>
     </div>
   </section>
 </main>
 
 <footer>
-  Демо в тестовой сети zkSync Era Sepolia · токены не имеют реальной стоимости · деятельность требует обязательного лицензирования (регулятор НАПП).<br>
-  OltinPay · инфраструктура выпуска золото-индексированного обязательства.
+  Demonstration on the zkSync Era Sepolia testnet · tokens carry no monetary value · this activity requires a licence (regulator: NAPP).<br>
+  OltinPay · infrastructure for issuing tokenised, asset-indexed obligations.
 </footer>
 </body>
 </html>

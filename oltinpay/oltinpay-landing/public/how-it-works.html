@@ -1,12 +1,16 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/favicon.png">
-<title>OltinPay — как это работает (архитектура, инварианты, ограничения)</title>
+<title>OltinPay — how it works (architecture, invariants, limits)</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/how-it-works">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/how-it-works">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/how-it-works">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/how-it-works">
 <style>
   :root{
     --bg:#0b0d12; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
@@ -35,6 +39,16 @@
   .brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--gold),#c9922f);display:grid;place-items:center;color:#161200;font-weight:800;font-size:14px}
   .nav .back{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
   .nav .back:hover{color:var(--ink)}
+  .lang{display:flex;gap:2px;margin-left:14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
+
+  /* on-chain receipt attached to an invariant */
+  .inv .receipt{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+  .inv .receipt:hover{border-color:var(--gold)}
+  .inv .receipt .tx{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--gold)}
 
   .hero{padding:48px 0 8px}
   .hero p{font-size:17px;max-width:60ch;margin:16px 0 0}
@@ -99,150 +113,154 @@
 
 <header class="nav"><div class="wrap">
   <div class="brand"><span class="mark">O</span> OltinPay</div>
-  <a class="back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> На главную</a>
+  <a class="back" href="/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> Home</a>
+  <div class="lang"><a class="on" href="/how-it-works" hreflang="en">EN</a><a class="" href="/ru/how-it-works" hreflang="ru">RU</a><a class="" href="/uz/how-it-works" hreflang="uz">UZ</a></div>
 </div></header>
 
 <main class="wrap">
   <div class="hero">
-    <div class="eyebrow">Как это работает</div>
-    <h1 style="margin-top:12px">Что гарантирует код, а не маркетинг</h1>
-    <p class="sub">Каждое утверждение ниже — с указанием контракта и функции. Не «надёжная архитектура», а конкретные инварианты, которые вы или автоматический оценщик проверяете сами. Границы и слабые места названы прямо.</p>
+    <div class="eyebrow">How it works</div>
+    <h1 style="margin-top:12px">What the code guarantees, not what the marketing says</h1>
+    <p class="sub">Every statement below names the contract and the function that enforces it. Not «solid architecture», but specific invariants that you — or an automated assessor — can check yourselves. The boundaries and the weak spots are named outright.</p>
   </div>
 
   <!-- 1 · ARCHITECTURE -->
   <section>
-    <div class="kicker">1 · Архитектура и граница доверия</div>
-    <h2>Где что живёт — и что через границу не проходит</h2>
+    <div class="kicker">1 · Architecture and the trust boundary</div>
+    <h2>Where everything lives — and what never crosses the line</h2>
     <div class="diagram">
-      <div class="dlabel">Схема: три зоны и красная линия, которую ключ не пересекает</div>
+      <div class="dlabel">Diagram: three zones and the red line the key never crosses</div>
       <div class="flow">
-        <div class="zone device"><div class="zt">Устройство клиента</div>
-          <div class="node"><b>Приватный ключ</b><span>создан из seed, лежит только здесь</span></div>
-          <div class="node"><b>Подпись транзакций</b><span>происходит на устройстве</span></div>
+        <div class="zone device"><div class="zt">Customer's device</div>
+          <div class="node"><b>Private key</b><span>derived from the seed, lives only here</span></div>
+          <div class="node"><b>Transaction signing</b><span>happens on the device</span></div>
         </div>
-        <div class="barrier"><div class="ln"></div><div class="tx">ключ не переходит</div><div class="ln"></div></div>
-        <div class="zone chain"><div class="zt">На цепи (zkSync)</div>
-          <div class="node"><b>Токен обязательства</b><span>выпуск/сжигание, потолок</span></div>
-          <div class="node"><b>Обеспеченность</b><span>публикует потолок, аттестация</span></div>
-          <div class="node"><b>Биржа · стейкинг</b><span>обмен, накопление</span></div>
+        <div class="barrier"><div class="ln"></div><div class="tx">the key does not cross</div><div class="ln"></div></div>
+        <div class="zone chain"><div class="zt">On-chain (zkSync)</div>
+          <div class="node"><b>Obligation token</b><span>issuance/burn, ceiling</span></div>
+          <div class="node"><b>Coverage</b><span>publishes the ceiling, attestation</span></div>
+          <div class="node"><b>Exchange · staking</b><span>swap, savings</span></div>
         </div>
-        <div class="zone server"><div class="zt">Вне цепи (сервер)</div>
-          <div class="node"><b>Индексатор</b><span>читает события цепи для ленты</span></div>
-          <div class="node"><b>API</b><span>не хранит ключ; из кошелькового — адрес</span></div>
+        <div class="zone server"><div class="zt">Off-chain (server)</div>
+          <div class="node"><b>Indexer</b><span>reads chain events for the history feed</span></div>
+          <div class="node"><b>API</b><span>stores no key; from the wallet it has the address</span></div>
         </div>
       </div>
     </div>
-    <p class="sub" style="margin-top:14px">Сервер не может подписать за клиента и не хранит средства — он читает цепь и обслуживает интерфейс. Полномочие тратить средства есть только у ключа на устройстве.</p>
+    <p class="sub" style="margin-top:14px">The server cannot sign on the customer's behalf and does not hold funds — it reads the chain and serves the interface. The authority to spend belongs to the key on the device, and to nothing else.</p>
   </section>
 
   <!-- 2 · INVARIANTS -->
   <section>
-    <div class="kicker">2 · Инварианты, которые обеспечивает код</div>
-    <h2>Проверяемые утверждения — с контрактом и функцией</h2>
-    <div class="lead-note">Исходный код всех контрактов <b>опубликован и верифицирован</b> — совпадает с репозиторием байт-в-байт. Откройте адрес, где лежат средства, и прочитайте Solidity сами: не «поверьте, что код такой», а «проверьте». Каждый инвариант ниже держит сеть, а не приложение — обойти через интерфейс или через нас нельзя.</div>
+    <div class="kicker">2 · Invariants the code enforces</div>
+    <h2>Checkable statements — with contract and function</h2>
+    <div class="lead-note">The source of every contract is <b>published and verified</b> — it matches this repository byte for byte. Open the address that holds the funds and read the Solidity yourself: not «believe the code is like this», but «check it». Every invariant below is held by the network, not by the application — it cannot be bypassed through the interface, or through us.</div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
-      <div><h3>Выпуск не может превысить подтверждённый потолок</h3><p>Чеканка отклоняется, если <span class="mono">totalSupply() + amount</span> больше подтверждённого резерва. Проверка — в контракте токена; интерфейс её не обходит.</p></div></div>
-      <div class="check"><span class="c">контракт <b>OLTIN</b></span><span class="c">функция <b>mint</b></span><span class="c">потолок — контракт <b>0x9413F602…</b></span></div></div>
+      <div><h3>Issuance cannot exceed the attested ceiling</h3><p>Minting is rejected when <span class="mono">totalSupply() + amount</span> exceeds the attested reserve. The check lives in the token contract; the interface cannot route around it.</p></div></div>
+      <div class="check"><span class="c">contract <b>OLTIN</b></span><span class="c">function <b>mint</b></span><span class="c">ceiling — contract <b>0x9413F602…</b></span></div>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0x344b763d991d0f76411a4e3eceae11e14e5db8ad2a3f127815f8b6962c13add1" target="_blank" rel="noopener">A purchase that minted within the ceiling <span class="tx">0x344b763d…13add1</span></a></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
-      <div><h3>Устаревшее подтверждение останавливает выпуск само</h3><p>Если аттестация старше <b>1 часа</b> (<span class="mono">maxAgeReserve = 3600</span>), чеканка ревертит. Перестали подтверждать — выпуск замирает. Отказ в безопасную сторону.</p></div></div>
-      <div class="check"><span class="c">контракт <b>OLTIN</b></span><span class="c">функция <b>mint</b> · <b>maxAgeReserve</b></span></div></div>
+      <div><h3>A stale attestation halts issuance by itself</h3><p>If the attestation is older than <b>one hour</b> (<span class="mono">maxAgeReserve = 3600</span>), minting reverts. Stop attesting and issuance freezes. It fails towards safety.</p></div></div>
+      <div class="check"><span class="c">contract <b>OLTIN</b></span><span class="c">function <b>mint</b> · <b>maxAgeReserve</b></span></div>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener">The attestation history, open-ended <span class="tx">0x9413F602…7d1B</span></a></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
-      <div><h3>Вклад заперт на 7 дней — досрочно не может никто</h3><p>Каждый депозит создаёт лот с <span class="mono">lockedUntil = now + 7 дней</span>. Вывод берёт только из разблокированных лотов. Ни администратор, ни кто-либо другой не снимает раньше срока.</p></div></div>
-      <div class="check"><span class="c">контракт <b>Стейкинг</b></span><span class="c">функция <b>unstake</b> · <b>LOCK_PERIOD</b></span></div></div>
+      <div><h3>A deposit is locked for 7 days — nobody can shorten that</h3><p>Each deposit creates a lot with <span class="mono">lockedUntil = now + 7 days</span>. Withdrawal draws only from unlocked lots. Neither an administrator nor anyone else takes it out earlier.</p></div></div>
+      <div class="check"><span class="c">contract <b>Staking</b></span><span class="c">function <b>unstake</b> · <b>LOCK_PERIOD</b></span></div>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xc39f92b2febd59cfb8cb041221bb45d70a8b193cbddb6c3fc1640511014a7022" target="_blank" rel="noopener">A deposit, locked on-chain <span class="tx">0xc39f92b2…4a7022</span></a></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
-      <div><h3>Администратор не может тронуть чужой вклад</h3><p>Вывод работает только с лотами <span class="mono">msg.sender</span> — ограничение вшито в саму функцию, а не в правила приложения. У администратора нет пути к средствам вкладчика.</p></div></div>
-      <div class="check"><span class="c">контракт <b>Стейкинг</b></span><span class="c">функция <b>unstake</b> (msg.sender)</span></div></div>
+      <div><h3>An administrator cannot touch someone else's deposit</h3><p>Withdrawal works only on the lots of <span class="mono">msg.sender</span> — the restriction is welded into the function itself, not into application rules. An administrator has no path to a depositor's funds.</p></div></div>
+      <div class="check"><span class="c">contract <b>Staking</b></span><span class="c">function <b>unstake</b> (msg.sender)</span></div></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div>
-      <div><h3>Ключ клиента не покидает устройство</h3><p>Кошелёк выводит ключ из seed на устройстве и подписывает локально. Сервер <b>не хранит ключ и не может подписать</b>; из кошелькового у него — только публичный адрес (учётные данные вроде Telegram-id хранятся, но не дают доступа к средствам).</p></div></div>
-      <div class="check"><span class="c">клиент <b>lib/wallet</b></span><span class="c">бэкенд — только <b>wallet_address</b></span></div></div>
+      <div><h3>The customer's key never leaves the device</h3><p>The wallet derives the key from the seed on the device and signs locally. The server <b>stores no key and cannot sign</b>; from the wallet it holds only the public address (account data such as a Telegram id is stored, but grants no access to funds).</p></div></div>
+      <div class="check"><span class="c">client <b>lib/wallet</b></span><span class="c">backend — only <b>wallet_address</b></span></div></div>
   </section>
 
   <!-- MONEY PATH -->
   <section>
-    <div class="kicker">Путь денег</div>
-    <h2>Что происходит при покупке, обмене и продаже</h2>
+    <div class="kicker">The path of the money</div>
+    <h2>What happens on a purchase, a swap and a sale</h2>
     <div class="diagram">
-      <div class="dlabel">Схема: восемь шагов, каждый подписан действием</div>
+      <div class="dlabel">Diagram: eight steps, each labelled with its action</div>
       <div class="path">
-        <div class="step"><div class="num">1</div><div class="body"><b>Клиент вносит сумы</b><span>через фиатные рельсы партнёра</span></div></div>
-        <div class="step"><div class="num">2</div><div class="body"><b>Разрешает бирже списать</b><span>подпись на устройстве</span></div></div>
-        <div class="step"><div class="num">3</div><div class="body"><b>Покупает обязательство</b><span>биржа чеканит токен — но только в пределах подтверждённого потолка</span></div></div>
-        <div class="step"><div class="num">4</div><div class="body"><b>Держит в некастодиальном кошельке</b><span>ключ у клиента</span></div></div>
-        <div class="step"><div class="num">5</div><div class="body"><b>Переводит другому</b><span>или вносит в стейкинг под доход</span></div></div>
-        <div class="step"><div class="num">6</div><div class="body"><b>Продаёт обратно</b><span>биржа сжигает токен</span></div></div>
-        <div class="step"><div class="num">7</div><div class="body"><b>Получает сумы из казны биржи</b><span>расчёт на цепи</span></div></div>
-        <div class="step"><div class="num">8</div><div class="body"><b>Выводит через рельсы партнёра</b><span>фиат на стороне эмитента</span></div></div>
+        <div class="step"><div class="num">1</div><div class="body"><b>The customer deposits som</b><span>through the partner's fiat rails</span></div></div>
+        <div class="step"><div class="num">2</div><div class="body"><b>Approves the exchange to debit</b><span>signed on the device</span></div></div>
+        <div class="step"><div class="num">3</div><div class="body"><b>Buys the obligation</b><span>the exchange mints the token — but only within the attested ceiling</span></div></div>
+        <div class="step"><div class="num">4</div><div class="body"><b>Holds it in a non-custodial wallet</b><span>the key belongs to the customer</span></div></div>
+        <div class="step"><div class="num">5</div><div class="body"><b>Transfers it to someone else</b><span>or stakes it for a return</span></div></div>
+        <div class="step"><div class="num">6</div><div class="body"><b>Sells it back</b><span>the exchange burns the token</span></div></div>
+        <div class="step"><div class="num">7</div><div class="body"><b>Receives som from the exchange treasury</b><span>settled on-chain</span></div></div>
+        <div class="step"><div class="num">8</div><div class="body"><b>Withdraws through the partner's rails</b><span>fiat on the issuer's side</span></div></div>
       </div>
     </div>
   </section>
 
   <!-- ROLES -->
   <section>
-    <div class="kicker">Роли и полномочия</div>
-    <h2>Кто что может — и чего не может никто</h2>
+    <div class="kicker">Roles and powers</div>
+    <h2>Who can do what — and what nobody can do</h2>
     <div class="two">
-      <div class="card"><h3 style="color:var(--gold)">Может</h3>
-        <div class="node" style="margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Публикатор</b> — устанавливает потолок обеспечения (в проде это партнёр)</div>
-        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Биржа</b> — чеканит/сжигает токен, в пределах потолка. Роль MINTER держит <b>ровно один адрес — контракт биржи, не человеческий ключ</b> (проверяется воспроизведением событий RoleGranted/RoleRevoked)</div>
-        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Клиент</b> — подписывает только свои операции</div>
+      <div class="card"><h3 style="color:var(--gold)">Can</h3>
+        <div class="node" style="margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Publisher</b> — sets the coverage ceiling (in production, the partner)</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Exchange</b> — mints and burns the token, within the ceiling. The MINTER role is held by <b>exactly one address — the exchange contract, not a human key</b> (verifiable by replaying the RoleGranted/RoleRevoked events)</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px"><b>Customer</b> — signs only their own operations</div>
       </div>
-      <div class="card"><h3 style="color:var(--red)">Не может никто</h3>
-        <div class="node" style="margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Выпустить токен сверх потолка</div>
-        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Снять чужой вклад до срока</div>
-        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Подписать за клиента / достать его ключ</div>
+      <div class="card"><h3 style="color:var(--red)">Nobody can</h3>
+        <div class="node" style="margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Issue tokens above the ceiling</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Withdraw someone else's deposit before its term</div>
+        <div class="node" style="margin-top:8px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px;font-size:13.5px">Sign for a customer, or extract their key</div>
       </div>
     </div>
   </section>
 
   <!-- 3 · STACK -->
   <section>
-    <div class="kicker">3 · Стек с обоснованием</div>
-    <h2>Каждый выбор — с причиной, а не логотип</h2>
+    <div class="kicker">3 · The stack, with reasons</div>
+    <h2>Every choice with a reason, not a logo</h2>
     <div class="two">
-      <div class="card"><div class="why">Почему zkSync Era</div><h3>Стоимость транзакции</h3><p>Перевод и обмен стоят копейки. На дорогой сети микротранзакции розничного продукта нерентабельны.</p></div>
-      <div class="card"><div class="why">Почему некастодиальный кошелёк</div><h3>Эмитент не держит чужие средства</h3><p>Ключ у клиента — меньше операционной и регуляторной нагрузки на партнёра, нет «горячего» хранилища чужих денег.</p></div>
-      <div class="card"><div class="why">Почему без апгрейд-механизма</div><h3>Правила нельзя поменять задним числом</h3><p>Контракты неизменяемы — ни мы, ни кто-либо не перепишет логику под уже выпущенное. <b>Цена размена:</b> исправление требует нового контракта и миграции.</p></div>
+      <div class="card"><div class="why">Why zkSync Era</div><h3>Transaction cost</h3><p>Transfers and swaps cost pennies. On an expensive network the micro-transactions of a retail product do not add up.</p></div>
+      <div class="card"><div class="why">Why a non-custodial wallet</div><h3>The issuer does not hold other people's funds</h3><p>The key belongs to the customer — less operational and regulatory load on the partner, and no hot storage of other people's money.</p></div>
+      <div class="card"><div class="why">Why no upgrade mechanism</div><h3>The rules cannot be rewritten after the fact</h3><p>The contracts are immutable — neither we nor anyone else can rewrite the logic under what has already been issued. <b>The trade:</b> a fix requires a new contract and a migration.</p></div>
     </div>
   </section>
 
   <!-- 4 · DISCIPLINE -->
   <section>
-    <div class="kicker">4 · Дисциплина разработки</div>
-    <h2>Проверяемо в открытом репозитории</h2>
+    <div class="kicker">4 · Development discipline</div>
+    <h2>Checkable in the open repository</h2>
     <div class="stat-grid" style="grid-template-columns:repeat(2,1fr)">
-      <div class="stat"><div class="n">405</div><div class="l">тестов · 204 контракты · 165 бэкенд · 36 фронт</div></div>
-      <div class="stat"><div class="n">CI на PR</div><div class="l">гейты до слияния, без глушилок</div></div>
+      <div class="stat"><div class="n">405</div><div class="l">tests · 204 contracts · 165 backend · 36 frontend</div></div>
+      <div class="stat"><div class="n">CI on every PR</div><div class="l">gates before merge, no suppressions</div></div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-      <span class="chip">Экшены запинены по SHA</span><span class="chip">squash-only + автоудаление веток</span><span class="chip">push protection</span>
+      <span class="chip">Actions pinned by SHA</span><span class="chip">squash-only + branch auto-delete</span><span class="chip">push protection</span>
     </div>
-    <p class="sub" style="margin-top:16px">Процесс ревью — часть продукта: значимые блокеры (дренаж средств, обход аутентификации, гонка на резерве, двойная эмиссия) пойманы адверсариальным ревью. Всё это читается в репозитории напрямую.</p>
-    <a class="chip" style="margin-top:16px;display:inline-flex;align-items:center;gap:7px;color:var(--gold);border-color:color-mix(in srgb,var(--gold) 40%,transparent)" href="https://github.com/temrjan/OltinPay" target="_blank" rel="noopener">Открыть репозиторий на GitHub →</a>
+    <p class="sub" style="margin-top:16px">The review process is part of the product: the significant blockers — fund drainage, authentication bypass, a race on the reserve, double issuance — were caught by adversarial review. All of it reads directly in the repository.</p>
+    <a class="chip" style="margin-top:16px;display:inline-flex;align-items:center;gap:7px;color:var(--gold);border-color:color-mix(in srgb,var(--gold) 40%,transparent)" href="https://github.com/temrjan/OltinPay" target="_blank" rel="noopener">Open the repository on GitHub →</a>
   </section>
 
   <!-- 5 · LIMITATIONS -->
   <section>
-    <div class="kicker">5 · Ограничения — прямо</div>
-    <h2>Что мы называем сами</h2>
-    <div class="lead-note">Точная самооценка — не слабость, а сигнал зрелости. Проект без слабых мест читается как реклама.</div>
+    <div class="kicker">5 · Limits, stated plainly</div>
+    <h2>What we name ourselves</h2>
+    <div class="lead-note">A precise self-assessment is not weakness but a sign of maturity. A project with no weak spots reads as an advertisement.</div>
     <div style="background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:6px 18px">
-      <div class="limit"><span class="d"></span><div><b>Тестовая сеть.</b><span>zkSync Era Sepolia; токены не имеют реальной стоимости — это доказательство работоспособности, не боевой выпуск.</span></div></div>
-      <div class="limit"><span class="d"></span><div><b>Внешнего аудита не было.</b><span>Внутренний адверсариальный ревью-процесс работает; независимый аудит — до боевого запуска.</span></div></div>
-      <div class="limit"><span class="d"></span><div><b>Контракты неизменяемы.</b><span>Намеренно — правила не переписать задним числом. Цена: исправление требует нового контракта и миграции живых позиций.</span></div></div>
-      <div class="limit"><span class="d"></span><div><b>Управление на одном ключе.</b><span>Административные роли пока на едином EOA. Под паузой пользователь не может ничего (вклад/вывод/награда) — а наградный фонд администратор при этом вывести может (withdrawRewardPool не под паузой). Принципала и потолка это не касается: изъять чужой вклад или выпустить сверх потолка нельзя. Вынос в мультисиг запланирован, это приоритет перед монетизацией.</span></div></div>
-      <div class="limit"><span class="d"></span><div><b>Индексатор не устойчив к реорганизациям цепи.</b><span>Лента истории строится чтением событий; при реорганизации может кратко отставать — на балансы и инварианты цепи это не влияет.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>Testnet.</b><span>zkSync Era Sepolia; tokens carry no monetary value — this is proof that it works, not a production issuance.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>No external audit yet.</b><span>The internal adversarial review process is running; an independent audit comes before any production launch.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>The contracts are immutable.</b><span>Deliberately — the rules cannot be rewritten after the fact. The price: a fix requires a new contract and the migration of live positions.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>Administration sits on a single key.</b><span>Administrative roles are still on one EOA. Under a pause a user can do nothing (deposit, withdraw, claim), while the administrator can still withdraw the reward pool (withdrawRewardPool is not pausable). Principal and ceiling are untouched by this: nobody can seize a deposit or issue above the ceiling. Moving to a multisig is planned, and it takes priority over monetisation.</span></div></div>
+      <div class="limit"><span class="d"></span><div><b>The indexer is not reorg-resistant.</b><span>The history feed is built by reading events; on a chain reorganisation it may briefly lag — balances and on-chain invariants are unaffected.</span></div></div>
     </div>
   </section>
 </main>
 
 <footer>
-  Демо в тестовой сети zkSync Era Sepolia · токены не имеют реальной стоимости · деятельность требует обязательного лицензирования (регулятор НАПП).<br>
-  OltinPay · инфраструктура выпуска золото-индексированного обязательства.
+  Demonstration on the zkSync Era Sepolia testnet · tokens carry no monetary value · this activity requires a licence (regulator: NAPP).<br>
+  OltinPay · infrastructure for issuing tokenised, asset-indexed obligations.
 </footer>
 </body>
 </html>

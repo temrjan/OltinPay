@@ -16,6 +16,17 @@
     redir /how-it-works.html /how-it-works 301
     redir /license.html /license 301
 
+    # The same rule for the language versions. These matchers are exact paths, so
+    # the three above do NOT cover /ru/… and /uz/… — without these six lines every
+    # translated page would answer on two URLs at once, which is the thing the
+    # comment above exists to prevent.
+    redir /ru/index.html /ru/ 301
+    redir /uz/index.html /uz/ 301
+    redir /ru/how-it-works.html /ru/how-it-works 301
+    redir /uz/how-it-works.html /uz/how-it-works 301
+    redir /ru/license.html /ru/license 301
+    redir /uz/license.html /uz/license 301
+
     # Serve the page or its .html (so /how-it-works -> how-it-works.html). No
     # index.html catch-all: an unknown path must NOT return 200 to a bank's
     # security scanner — it falls through to the honest 404 below.

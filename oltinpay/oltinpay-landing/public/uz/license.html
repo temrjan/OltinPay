@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/favicon.png">
+<title>OltinPay — litsenziya va ishga tushirish</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/license">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/license">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/license">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/license">
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
+    --ink:#eef0f4; --sub:#9aa1b1; --faint:#6b7284;
+    --gold:#e7b64c; --green:#41cf8e; --blue:#6ea8fe;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.55}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 22px}
+  h1{font-size:clamp(26px,4vw,40px);line-height:1.1;font-weight:750;letter-spacing:-.02em;margin:0;text-wrap:balance}
+  h2{font-size:clamp(20px,2.6vw,26px);font-weight:700;letter-spacing:-.02em;margin:0}
+  h3{font-size:15px;font-weight:650;margin:0}
+  .sub{color:var(--sub)}
+  .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  section{padding:52px 0;border-top:1px solid var(--line)}
+  .kicker{color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px}
+
+  header.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:16px;height:58px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:750}
+  .brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--gold),#c9922f);display:grid;place-items:center;color:#161200;font-weight:800;font-size:14px}
+  .nav .back{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
+  .nav .back:hover{color:var(--ink)}
+  .lang{display:flex;gap:2px;margin-left:14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
+
+  .hero{padding:48px 0 8px}
+  .hero p{font-size:17px;max-width:60ch;margin:16px 0 0}
+
+  .lic{background:linear-gradient(160deg,color-mix(in srgb,var(--gold) 8%,transparent),transparent);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent);border-radius:16px;padding:24px;margin-top:18px}
+  .lic .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);border:1px solid color-mix(in srgb,var(--gold) 40%,transparent);border-radius:6px;padding:3px 9px;margin-bottom:12px}
+  .lic a.link{color:var(--gold);border-bottom:1px solid color-mix(in srgb,var(--gold) 40%,transparent)}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px}
+  .card h3{margin-bottom:6px} .card p{margin:0;color:var(--sub);font-size:14px}
+  .col-head{display:flex;align-items:center;gap:10px;font-weight:750;font-size:15px;margin-bottom:12px}
+  .col-head .t{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .t.us{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold)}
+  .t.you{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+  ul.li{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+  ul.li li{display:flex;gap:10px;font-size:14px}
+  ul.li li svg{flex:0 0 auto;margin-top:3px}
+
+  .phase{display:flex;gap:16px;align-items:flex-start}
+  .phase .n{flex:0 0 auto;width:30px;height:30px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;font-weight:700;color:var(--gold)}
+  .phase .b{padding-bottom:20px;border-left:1px dashed var(--line);margin-left:15px;padding-left:24px;margin-top:-15px;padding-top:15px}
+  .phase:last-child .b{border-left:0}
+  .phase h3{margin-bottom:3px} .phase p{margin:0;color:var(--sub);font-size:14px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-left:8px}
+  .badge.now{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+  .badge.next{background:var(--panel2);color:var(--faint);border:1px solid var(--line)}
+
+  .iface{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .iface .r{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .iface .r b{font-weight:650} .iface .r span{color:var(--sub);font-size:13px;display:block;margin-top:1px}
+  .iface .r .ic{flex:0 0 auto;width:32px;height:32px;border-radius:8px;background:var(--panel2);display:grid;place-items:center;color:var(--gold)}
+
+  .note{display:flex;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px;margin-top:16px;font-size:14px;color:var(--sub)}
+  footer{border-top:1px solid var(--line);padding:26px 0;color:var(--faint);font-size:12.5px;text-align:center;line-height:1.7}
+  svg{stroke-width:1.8}
+</style>
+</head>
+<body>
+
+<header class="nav"><div class="wrap">
+  <div class="brand"><span class="mark">O</span> OltinPay</div>
+  <a class="back" href="/uz/"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> Bosh sahifaga</a>
+  <div class="lang"><a class="" href="/license" hreflang="en">EN</a><a class="" href="/ru/license" hreflang="ru">RU</a><a class="on" href="/uz/license" hreflang="uz">UZ</a></div>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="eyebrow">Litsenziya va ishga tushirish</div>
+    <h1 style="margin-top:12px">Regulyativ baza — sizniki. Integratsiya — bizniki.</h1>
+    <p class="sub">Litsenziyani emitent ushlab turadi; biz yuridik maslahat bermaymiz va regulyatorning o'rnini bosmaymiz. Quyida: bu vosita qanday nazorat ostida ishlaydi va sizning infratuzilmangiz biznikiga qanday ulanadi.</p>
+  </div>
+
+  <!-- LICENSE -->
+  <section>
+    <div class="kicker">Litsenziya</div>
+    <h2>Bu faoliyat majburiy litsenziyalanadi</h2>
+    <div class="lic">
+      <span class="tag">Regulyator — NAPP</span>
+      <p style="margin:0;font-size:15px">O'zbekistonda kripto-aktivlar bo'yicha faoliyat <b>Istiqbolli loyihalar milliy agentligi (NAPP)</b> tomonidan litsenziyalanadi, xizmatni esa litsenziyaga ega hamkor ko'rsatadi. Litsenziya turini va talablarni regulyator belgilaydi. Xizmat ko'rsatuvchilar reyestri va joriy talablar agentlik saytida e'lon qilinadi.</p>
+      <p style="margin:14px 0 0;font-size:14px"><a class="link" href="https://napp.uz/uz/pages/service-providers" target="_blank" rel="noopener">napp.uz — xizmat ko'rsatuvchilar →</a></p>
+    </div>
+    <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>Biz litsenziyalash rejimining taxminiy talqinini e'lon qilmaymiz: moliya tashkilotlari uchun yozilgan sahifada bundagi xato qolgan hamma narsani obro'sizlantiradi. Litsenziyaning aniq turi va hajmi pilot vaqtida regulyatorning o'z manbasi bilan solishtiriladi.</div></div>
+  </section>
+
+  <!-- WHO CONNECTS WHAT -->
+  <section>
+    <div class="kicker">Nima nimaga ulanadi</div>
+    <h2>Sizning infratuzilmangiz ↔ bizniki</h2>
+    <div class="two">
+      <div class="card">
+        <div class="col-head"><span class="t you">Hamkor olib keladi</span></div>
+        <ul class="li">
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>NAPP litsenziyasi</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Fiat relslari — so'm kirimi/chiqimi</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>Kapital va ta'minot summasi</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div>KYC/AML va qo'llab-quvvatlash xizmati</div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="col-head"><span class="t us">Biz beramiz</span></div>
+        <ul class="li">
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Joylashtirilgan va verifikatsiyadan o'tgan kontraktlar</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Nokastodial hamyon + Telegram Mini App</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Ta'minot mexanizmi va hisob-kitoblar</div></li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M20 6L9 17l-5-5"/></svg><div>Operator konsoli</div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- LAUNCH PHASES -->
+  <section>
+    <div class="kicker">Ishga tushirish tartibi</div>
+    <h2>Pilotdan jangovarga — halol bosqichlar bilan</h2>
+    <div style="margin-top:20px">
+      <div class="phase"><div class="n">1</div><div class="b"><h3>Sinov tarmog'idagi pilot <span class="badge now">hozir mavjud</span></h3><p>zkSync Era Sepolia'dagi ishlayotgan demo: kontraktlar, hamyon, birja, steyking. Ssenariylarni, relslar integratsiyasini va hamkor tomonidagi KYC'ni tekshirish — haqiqiy mablag'siz.</p></div></div>
+      <div class="phase"><div class="n">2</div><div class="b"><h3>Kontraktlarning mustaqil auditi <span class="badge next">jangovardan oldin</span></h3><p>Haqiqiy qiymatli ishga tushirishdan oldin tashqi audit. Ichki adversarial ko'rib chiqish jarayoni allaqachon ishlayapti va repozitoriyda ko'rinadi.</p></div></div>
+      <div class="phase"><div class="n">3</div><div class="b"><h3>Multisig g'aznachilik <span class="badge next">jangovardan oldin</span></h3><p>Ma'muriy rollar yagona kalitdan multisigga chiqariladi — bu har qanday monetizatsiyadan ustun turadi.</p></div></div>
+      <div class="phase"><div class="n">4</div><div class="b"><h3>Hamkor litsenziyasi ostida jangovar chiqarish <span class="badge next">tayyor bo'lganda</span></h3><p>Jangovar tarmoqqa joylashtirish, fiat relslarini va emitentning ta'minot kapitalini ulash, ommaviy ishga tushirish.</p></div></div>
+    </div>
+    <div class="note">Aniq muddatlarni asossiz e'lon qilmaymiz — ular auditga, hamkorning regulyativ yo'liga va uning relslari integratsiyasiga bog'liq. Ular pilot vaqtida muhokama qilinadi.</div>
+  </section>
+
+  <!-- INTEGRATION SURFACE -->
+  <section>
+    <div class="kicker">Hamkorning IT xizmati nima qiladi</div>
+    <h2>Integratsiya nuqtalari</h2>
+    <div class="iface">
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div><div><b>Fiat relslari ↔ hisob-kitoblar</b><span>So'm kirimi/chiqimi birjaga va hisob-kitob konturiga ulanadi — hamkor tomonida. Fiat kirimi/chiqimi hisobi uning reglamentlari bo'yicha.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></div><div><b>KYC/AML ↔ onboarding</b><span>Mijozni tekshirish hamkor qoidalari bo'yicha ilovaga kirishga o'rnatiladi. Hamyon nokastodial — kalit mijozda qoladi.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div><div><b>Operator konsoli</b><span>Boshqaruv, ta'minot summasini belgilash, tasdiqlar, ko'chirmalar — emitent operatorining interfeysi.</span></div></div>
+      <div class="r"><div class="ic"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M8 3H5a2 2 0 00-2 2v3M16 3h3a2 2 0 012 2v3M8 21H5a2 2 0 01-2-2v-3M16 21h3a2 2 0 002-2v-3"/></svg></div><div><b>Zanjirdagi kontraktlar</b><span>Holatni o'qish (ta'minot, balanslar) va operatsiyalar to'g'ridan-to'g'ri kontraktlarga boradi — ularni hamkorning auditori ham, boshqa har kim ham o'qiy va tekshira oladi.</span></div></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  zkSync Era Sepolia sinov tarmog'idagi demo · tokenlarning haqiqiy qiymati yo'q · bu faoliyat majburiy litsenziyalanadi (regulyator — NAPP).<br>
+  OltinPay · aktivga bog'langan tokenlashtirilgan majburiyat chiqarish infratuzilmasi.
+</footer>
+</body>
+</html>

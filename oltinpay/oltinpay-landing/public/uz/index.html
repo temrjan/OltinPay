@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/favicon.png">
+<title>OltinPay — moliya tashkilotlari uchun aktivlarni tokenlashtirish infratuzilmasi</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/">
+<style>
+  :root{
+    --bg:#0b0d12; --bg2:#0f121a; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
+    --ink:#eef0f4; --sub:#9aa1b1; --faint:#6b7284;
+    --gold:#e7b64c; --gold2:#c9922f; --green:#41cf8e; --red:#f0605f; --blue:#6ea8fe;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.55}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  h1,h2,h3{letter-spacing:-.02em;margin:0}
+  h1{font-size:clamp(28px,4.5vw,46px);line-height:1.08;font-weight:750;text-wrap:balance}
+  h2{font-size:clamp(22px,3vw,30px);font-weight:700;text-wrap:balance}
+  h3{font-size:16px;font-weight:650}
+  .sub{color:var(--sub)}
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  section:first-of-type{border-top:0}
+  .kicker{color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
+
+  /* nav */
+  header.nav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:20px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:750;letter-spacing:-.01em}
+  .brand .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(150deg,var(--gold),var(--gold2));
+    display:grid;place-items:center;color:#161200;font-weight:800;font-size:15px}
+  .nav nav{display:flex;gap:22px;margin-left:auto;font-size:14px;color:var(--sub)}
+  .nav nav a:hover{color:var(--ink)}
+  .nav .cta{margin-left:20px}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#161200;font-weight:700;
+    padding:10px 16px;border-radius:11px;font-size:14px;border:0;cursor:pointer;font-family:inherit}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btn.tg{background:var(--blue);color:#0b1220}
+  @media(max-width:760px){.nav nav{display:none}}
+
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding-top:56px}
+  .hero .sub{font-size:17px;margin:18px 0 26px;max-width:34ch}
+  .hero .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .trust{display:flex;gap:22px;margin-top:26px;flex-wrap:wrap;font-size:13px;color:var(--faint)}
+  .trust b{color:var(--ink);font-weight:650;display:block;font-size:18px}
+  @media(max-width:860px){.hero{grid-template-columns:1fr;gap:30px}.phonewrap{order:-1}}
+
+  /* phone mockup */
+  .phonewrap{display:flex;justify-content:center;position:relative}
+  .phonewrap::before{content:"";position:absolute;inset:-30px;background:radial-gradient(closest-side,color-mix(in srgb,var(--gold) 16%,transparent),transparent);filter:blur(10px);z-index:0}
+  .phone{position:relative;z-index:1;width:340px;max-width:100%;background:#05060a;border-radius:46px;padding:10px;
+    box-shadow:0 40px 80px -24px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05) inset}
+  .screen{background:#0d0f14;border-radius:36px;overflow:hidden;height:648px;display:flex;flex-direction:column}
+  .statusbar{display:flex;justify-content:space-between;padding:11px 20px 3px;font-size:12px;opacity:.9}
+  .tgbar{display:flex;align-items:center;gap:10px;padding:5px 16px 11px}
+  .tgbar .x{font-size:19px;color:var(--sub)} .tgbar .title{font-weight:600;font-size:15px} .tgbar .spacer{flex:1} .tgbar .ico{color:var(--sub)}
+  .view{flex:1;position:relative;overflow:hidden}
+  .pane{position:absolute;inset:0;padding:4px 15px 14px;overflow-y:auto;opacity:0;transform:translateY(6px);pointer-events:none;transition:.28s}
+  .pane::-webkit-scrollbar{width:0}
+  .pane.active{opacity:1;transform:none;pointer-events:auto}
+  .pane h4{font-size:18px;margin:6px 2px 11px;font-weight:650}
+  .mc{background:#171a21;border:1px solid #262c3a;border-radius:15px;padding:13px}
+  .mrow{display:flex;justify-content:space-between;align-items:center}
+  .mmut{color:#8b909c} .v{font-weight:650} .cg{color:var(--gold)} .cgr{color:var(--green)} .cr{color:var(--red)}
+  .mbal{background:linear-gradient(160deg,color-mix(in srgb,var(--gold) 22%,transparent),color-mix(in srgb,var(--gold) 5%,transparent));border:1.5px solid var(--gold);border-radius:19px;padding:18px;text-align:center}
+  .mbal .big{font-size:28px;font-weight:800;color:var(--gold)} .mbal .big span{font-size:15px} .mbal .s{color:#8b909c;font-size:12.5px;margin-top:2px}
+  .mpill{display:flex;background:#171a21;border:1px solid #262c3a;border-radius:13px;padding:4px}
+  .mpill button{flex:1;border:0;background:transparent;color:#8b909c;font-weight:600;font-size:13px;padding:8px;border-radius:10px;cursor:pointer;font-family:inherit}
+  .mpill button.on{background:var(--gold);color:#161200}
+  .macts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mact{display:flex;align-items:center;gap:9px;background:#171a21;border:1px solid #262c3a;border-radius:15px;padding:12px;min-width:0}
+  .mact .ci{width:33px;height:33px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto} .mact .l{font-weight:600;font-size:13px;white-space:nowrap}
+  .cig{background:color-mix(in srgb,var(--gold) 20%,transparent);color:var(--gold)} .cigr{background:color-mix(in srgb,var(--green) 20%,transparent);color:var(--green)} .cired{background:color-mix(in srgb,var(--red) 18%,transparent);color:var(--red)}
+  .op{display:flex;align-items:center;gap:10px;padding:8px 0}.op .ci{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto}.op .t{font-size:13px;font-weight:600}.op .d{font-size:11px;color:#8b909c}.op .a{margin-left:auto;font-weight:700;font-size:13px}
+  .mfield{background:#0d0f14;border:1px solid #262c3a;border-radius:13px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center}.mfield .n{font-size:19px;color:#8b909c}.mfield .n.set{color:var(--ink)}.mfield .c{color:#8b909c;font-weight:600;font-size:13px}
+  .mcta{width:100%;border:0;border-radius:14px;padding:13px;font-weight:700;font-size:14px;background:var(--gold);color:#161200;font-family:inherit;margin-top:12px;cursor:pointer}
+  .mcta.g{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 40%,transparent);padding:10px;font-size:13px}
+  .tabbar{display:flex;background:#0a0c11;border-top:1px solid #262c3a;padding:7px 6px}
+  .tab{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;color:#8b909c;font-size:10px;font-weight:600;padding:4px;cursor:pointer;font-family:inherit}
+  .tab.on{color:var(--gold)} .tab svg{width:21px;height:21px}
+  .grip{width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.16);margin:5px auto 2px}
+  .msvg{stroke-width:1.9}
+  .prof{display:flex;flex-direction:column;align-items:center;padding:6px 0}.prof .av{width:64px;height:64px;border-radius:50%;background:linear-gradient(150deg,var(--gold),#8a6a1e);display:grid;place-items:center;color:#161200;font-weight:800;font-size:24px}.prof .nm{font-weight:700;margin-top:10px}.prof .id{color:#8b909c;font-size:12px}
+  .lr{display:flex;align-items:center;gap:10px;padding:12px 3px;border-bottom:1px solid #262c3a}.lr:last-child{border-bottom:0}.lr .k{flex:1;font-size:13.5px}.lr .val{color:#8b909c;font-size:12.5px}
+
+  /* generic blocks */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .card h3{margin-bottom:6px}
+  .col-head{display:flex;align-items:center;gap:10px;font-weight:750;font-size:15px;margin-bottom:14px}
+  .col-head .tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .tag.us{background:color-mix(in srgb,var(--gold) 16%,transparent);color:var(--gold)}
+  .tag.you{background:color-mix(in srgb,var(--blue) 16%,transparent);color:var(--blue)}
+  ul.li{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:11px}
+  ul.li li{display:flex;gap:11px;font-size:14.5px;color:var(--ink)}
+  ul.li li b{font-weight:650} ul.li li span{color:var(--sub);display:block;font-size:13px;margin-top:1px}
+  .ck{color:var(--gold);flex:0 0 auto;margin-top:2px} .cky{color:var(--blue)}
+  .audience{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:760px){.audience{grid-template-columns:1fr}}
+  .aud{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .aud h3{margin-bottom:4px} .aud p{color:var(--sub);font-size:13.5px;margin:0}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+  @media(max-width:680px){.stat-grid{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .stat .n{font-size:26px;font-weight:800;color:var(--gold);letter-spacing:-.02em}
+  .stat .n.gr{color:var(--green)} .stat .l{color:var(--sub);font-size:13px;margin-top:2px}
+  .addr{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .addr a{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 14px;font-size:13px}
+  .addr a:hover{border-color:var(--gold)} .addr .k{color:var(--ink);font-weight:600} .addr .h{color:var(--faint);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+  .addr .ext{color:var(--gold);flex:0 0 auto}
+
+  .risk{background:linear-gradient(160deg,color-mix(in srgb,var(--red) 8%,transparent),transparent);border:1px solid color-mix(in srgb,var(--red) 30%,transparent);border-radius:18px;padding:26px}
+  .risk .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);border:1px solid color-mix(in srgb,var(--red) 40%,transparent);border-radius:6px;padding:3px 9px;margin-bottom:14px}
+  .note{display:flex;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px;font-size:14px;color:var(--sub)}
+
+  .status-row{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .status-row:last-child{border-bottom:0}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;margin-top:6px}
+  .dot.on{background:var(--green)} .dot.plan{background:var(--faint)} .dot.warn{background:var(--gold)}
+
+  .contact{text-align:center}
+  .contact .lines{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:22px auto 0}
+  .contact .lines a{display:flex;align-items:center;gap:12px;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px;font-size:15px;font-weight:600}
+  .contact .lines a:hover{border-color:var(--gold)}
+  footer{border-top:1px solid var(--line);padding:28px 0;color:var(--faint);font-size:12.5px;text-align:center;line-height:1.7}
+  .chip{display:inline-block;font-size:12px;font-weight:600;color:var(--sub);background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:5px 10px}
+  .cap{color:var(--faint);font-size:12.5px;margin-top:10px}
+  svg{stroke-width:1.8}
+
+  /* language switch */
+  .lang{display:flex;gap:2px;margin-left:16px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px;letter-spacing:.02em}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
+  @media(max-width:760px){.lang{margin-left:auto}}
+
+  /* on-chain receipts — a claim and the transaction that settles it */
+  .receipts{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+  .receipt{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:12px 14px;font-size:13px;flex-wrap:wrap}
+  .receipt:hover{border-color:var(--gold)}
+  .receipt .what{font-weight:600;color:var(--ink);flex:1;min-width:180px}
+  .receipt .tx{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--gold);
+    border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
+  .receipt .when{color:var(--faint);font-size:12px;min-width:92px;text-align:right}
+</style>
+</head>
+<body>
+
+<header class="nav"><div class="wrap">
+  <div class="brand"><span class="mark">O</span> OltinPay</div>
+  <nav><a href="/uz/how-it-works">Qanday ishlaydi</a><a href="/uz/license">Litsenziya va ishga tushirish</a><a href="#proof">Dalillar</a><a href="https://github.com/temrjan/OltinPay" target="_blank" rel="noopener">Kod</a></nav>
+  <div class="lang"><a class="" href="/" hreflang="en">EN</a><a class="" href="/ru/" hreflang="ru">RU</a><a class="on" href="/uz/" hreflang="uz">UZ</a></div>
+  <a class="btn tg cta" href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> Mini App'ni ochish</a>
+</div></header>
+
+<main class="wrap">
+
+  <!-- 1 · HERO -->
+  <section class="hero" style="border-top:0">
+    <div>
+      <div class="eyebrow">Aktivlarni tokenlashtirish · moliya tashkilotlari uchun infratuzilma</div>
+      <h1 style="margin-top:14px">Aktiv narxiga bog'langan tokenlashtirilgan majburiyat</h1>
+      <p class="sub">Emitent ta'minot shiftini zanjirda e'lon qiladi, tarmoq bu shiftdan ortiq chiqarishni imkonsiz qiladi, mijozning kaliti esa uning qurilmasidan chiqmaydi. Siz — emitent va litsenziya egasi. Biz — texnika.</p>
+      <div class="actions"><a class="btn tg" href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> Mini App'ni ochish</a><a class="btn" href="#contact">Pilotni muhokama qilish</a><a class="btn ghost" href="#labor">Biz nima qilamiz, siz nima olib kelasiz</a></div>
+      <div class="trust">
+        <div><b>198,4%</b> majburiyatlar qoplamasi, zanjirda</div>
+        <div><b>Nokastodial</b> kalit faqat mijozda</div>
+        <div><b>Ochiq kod</b> 405 test · har bir PR'da CI · GitHub</div>
+      </div>
+    </div>
+    <div class="phonewrap">
+      <div class="phone" role="group" aria-label="Ishlayotgan OltinPay Mini App — tab'larni bosing">
+        <div class="screen">
+          <div class="statusbar"><span>9:41</span><span>5G ▮</span></div>
+          <div class="tgbar"><span class="x">×</span><span class="title">OltinPay</span><span class="spacer"></span>
+            <span class="ico"><svg class="msvg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><path d="M6 9l6 6 6-6"/></svg></span>
+            <span class="ico"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></span></div>
+          <div class="view">
+            <section class="pane active" data-screen="wallet">
+              <div class="mrow" style="padding:2px 2px 11px"><div><div class="mmut" style="font-size:12px">Xush kelibsiz</div><div style="font-weight:650;font-size:17px">@temrjan</div></div>
+                <div class="ci cig" style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#171a21;border:1px solid #262c3a"><svg class="msvg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 11-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div></div>
+              <div class="mbal"><div class="big">1 001 000 <span>UZD</span></div><div class="s">Umumiy balans</div></div>
+              <div style="height:11px"></div>
+              <div class="mpill"><button class="on">Hamyon</button><button>Steyking</button></div>
+              <div style="height:11px"></div>
+              <div class="mc" style="padding:2px 0"><div class="mrow" style="padding:12px 14px"><span class="mmut">UZD</span><span class="v">1 001 000</span></div><div class="mrow" style="padding:12px 14px;border-top:1px solid #262c3a"><span class="mmut">OLTIN</span><span class="v cg">0.98</span></div></div>
+              <div style="height:11px"></div>
+              <div class="macts"><div class="mact"><div class="ci cig"><svg class="msvg" viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></div><span class="l">Yuborish</span></div><div class="mact"><div class="ci cigr"><svg class="msvg" viewBox="0 0 24 24" width="17" fill="none" stroke="currentColor"><path d="M17 7L7 17"/><path d="M16 17H7V8"/></svg></div><span class="l">Qabul qilish</span></div></div>
+              <div style="height:11px"></div>
+              <div class="mc"><div style="font-weight:650;margin-bottom:5px">Oxirgi operatsiyalar</div>
+                <div class="op"><div class="ci cired"><svg class="msvg" viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></div><div><div class="t">Yuborildi</div><div class="d">28.07.2026</div></div><div class="a cr">−0.12 OLTIN</div></div>
+                <div class="op"><div class="ci cigr"><svg class="msvg" viewBox="0 0 24 24" width="15" fill="none" stroke="currentColor"><path d="M17 7L7 17"/><path d="M16 17H7V8"/></svg></div><div><div class="t">Hisoblandi</div><div class="d">28.07.2026</div></div><div class="a cgr">+1 000 000 UZD</div></div></div>
+            </section>
+            <section class="pane" data-screen="exchange">
+              <h4>Birja</h4>
+              <div class="mbal" style="padding:15px"><div class="mmut" style="font-size:12px">OLTIN narxi</div><div class="big" style="font-size:23px">1 576 000 <span>UZD</span></div><div class="s">oltinga indekslangan kurs</div></div>
+              <div style="height:11px"></div>
+              <div class="mpill"><button class="on">Sotib olish</button><button>Sotish</button></div>
+              <div style="height:12px"></div>
+              <div class="mmut" style="font-size:12px;margin-bottom:5px">Berasiz</div><div class="mfield"><span class="n set">100 000</span><span class="c">UZD</span></div>
+              <div style="text-align:center;color:var(--gold);margin:6px 0"><svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor"><path d="M7 4v13M7 4L4 7M7 4l3 3M17 20V7M17 20l3-3M17 20l-3-3"/></svg></div>
+              <div class="mmut" style="font-size:12px;margin-bottom:5px">Olasiz</div><div class="mfield"><span class="n set">0.0634</span><span class="c">OLTIN</span></div>
+              <button class="mcta">Sotib olish</button>
+            </section>
+            <section class="pane" data-screen="staking">
+              <h4>Steyking</h4>
+              <div class="mbal" style="padding:15px"><div class="mmut" style="font-size:12px">Yillik daromad</div><div class="big" style="font-size:30px">7% APY</div><div class="s">Har bir omonat uchun 7 kunlik lock</div></div>
+              <div style="height:11px"></div>
+              <div class="mc"><div class="mrow" style="padding:3px 0"><span class="mmut">Steykingda</span><span class="v">100 OLTIN</span></div><div class="mrow" style="padding:3px 0"><span class="mmut">Ochiq</span><span class="v">0 OLTIN</span></div><div class="mrow" style="padding:6px 0 3px;border-top:1px solid #262c3a;margin-top:5px"><span class="mmut">Mukofot</span><span class="cgr" style="font-weight:700">+0.00026214 OLTIN</span></div><button class="mcta g">Mukofotni olish</button></div>
+              <div style="height:11px"></div>
+              <div class="mfield"><span class="n">0.0000</span><span class="c">OLTIN</span></div><button class="mcta">Steykinga qo'yish</button>
+            </section>
+            <section class="pane" data-screen="profile">
+              <h4>Profil</h4>
+              <div class="prof"><div class="av">T</div><div class="nm">@temrjan</div><div class="id">OltinPay ID · tasdiqlangan</div></div>
+              <div style="height:12px"></div>
+              <div class="mc" style="padding:2px 13px"><div class="lr"><span class="k">Til</span><span class="val">O'zbekcha</span></div><div class="lr"><span class="k">Hamyon manzili</span><span class="val">0x4a75…8882</span></div><div class="lr"><span class="k">Xavfsizlik va PIN</span></div><div class="lr"><span class="k">Ilova haqida</span><span class="val">Testnet</span></div></div>
+              <div class="mmut" style="font-size:11px;text-align:center;margin-top:12px;line-height:1.5">Kalit faqat qurilmangizda saqlanadi.<br>Nokastodial model.</div>
+            </section>
+          </div>
+          <nav class="tabbar">
+            <button class="tab on" data-go="wallet"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12h3"/></svg>Hamyon</button>
+            <button class="tab" data-go="exchange"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 18V9M9 18V5M14 18v-6M19 18v-9"/></svg>Birja</button>
+            <button class="tab" data-go="staking"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l4 5-4 13-4-13z"/><path d="M8 8h8"/></svg>Steyking</button>
+            <button class="tab" data-go="profile"><svg class="msvg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Profil</button>
+          </nav>
+          <div class="grip"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · КОМУ -->
+  <section id="who">
+    <div class="kicker">Bu kimlar uchun</div>
+    <h2>Siz — emitent. Biz — infratuzilma.</h2>
+    <p class="sub" style="max-width:60ch;margin-top:10px">Bu vosita o'z litsenziyasi ostida aktiv qiymatiga bog'langan tokenlashtirilgan majburiyat chiqaradigan va unga xizmat ko'rsatadigan tashkilot uchun. Oltin — oxirigacha yetkazilgan birinchi holat: uning kontraktlari joylashtirilgan, verifikatsiyadan o'tgan va ishlayapti. Boshqa aktiv uchun o'z kontraktlar to'plami chiqariladi: narx manbai va o'lchov birligi joylashtirishda ataylab qat'iy belgilanadi va keyin o'zgarmaydi — bu aynan qoidalarni orqaga qaytib qayta yozishga yo'l qo'ymaydigan xususiyat.</p>
+    <div class="audience" style="margin-top:22px">
+      <div class="aud"><h3>Bank</h3><p>Aktivga indekslangan daromad evaziga mablag' jalb qilish; mavjud mijozlar bazasi uchun yangi chakana mahsulot.</p></div>
+      <div class="aud"><h3>To'lov tashkiloti</h3><p>Sizda allaqachon mavjud fiat relslari ustida hisob-kitob vositasi va hamyon.</p></div>
+      <div class="aud"><h3>Kripto-litsenziya egasi (NAPP)</h3><p>Siz allaqachon ega bo'lgan regulyativ baza ostida tayyor kontraktlar va ilova.</p></div>
+    </div>
+  </section>
+
+  <!-- 3 · РАЗДЕЛЕНИЕ ТРУДА -->
+  <section id="labor">
+    <div class="kicker">Mehnat taqsimoti</div>
+    <h2>Biz nima quramiz — siz nima olib kelasiz</h2>
+    <div class="two" style="margin-top:22px">
+      <div class="card">
+        <div class="col-head"><span class="tag us">Biz beramiz</span> Vosita va uning amalga oshirilishi</div>
+        <ul class="li">
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>Smart-kontraktlar</b><span>Chiqarish, kuydirish, ta'minot shifti, kontraktga o'rnatilgan majburlash</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>Nokastodial hamyon</b><span>Kalit mijoz qurilmasida — siz begona mablag'ni ushlab turmaysiz</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>Telegram Mini App + birja + steyking</b><span>Tayyor mijoz yo'li: majburiyat↔so'm ayirboshlash, jamg'arma</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>Ta'minotni majburlash mexanizmi</b><span>Tarmoq siz belgilagan shiftdan ortiq chiqarishni rad etadi</span></div></li>
+          <li><svg class="ck" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg><div><b>Operator konsoli va hisob-kitoblar</b><span>Boshqaruv, tasdiqlar, ko'chirmalar</span></div></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="col-head"><span class="tag you">Siz olib kelasiz</span> Sizning vakolat sohangiz</div>
+        <ul class="li">
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>Litsenziya</b><span>Litsenziya turini regulyator (NAPP) belgilaydi</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>Fiat relslari</b><span>So'mning kirimi va chiqimi</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>Kapital va ta'minot summasi</b><span>Uni o'zingiz, o'z ixtiyoringiz bilan belgilaysiz</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>Bozor riskini xejlash</b><span>Vositalar va g'aznachilik sizning tomoningizda qoladi</span></div></li>
+          <li><svg class="cky" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg><div><b>KYC/AML va qo'llab-quvvatlash xizmati</b><span>O'z reglamentlaringiz bo'yicha</span></div></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · ЭКОНОМИКА -->
+  <section id="econ">
+    <div class="kicker">Iqtisodiyot</div>
+    <h2>Hamkorning daromadi qayerda</h2>
+    <div class="two" style="margin-top:20px">
+      <div class="card"><h3>Stavka evaziga mablag' jalb qilish</h3><p class="sub" style="margin:6px 0 0">Mablag' oddiy so'm omonati o'rniga aktivga indekslangan daromad uchun keladi — pulni sizda saqlashning yangi sababi.</p></div>
+      <div class="card"><h3>Aylanmadan daromad (model, v-next)</h3><p class="sub" style="margin:6px 0 0">Majburiyat↔so'm ayirboshlashdagi svop komissiyasi. Joriy kontraktlarda komissiya yo'q — bu keyingi versiyaning monetizatsiya modeli, bugun e'lon qilingan daromad emas.</p></div>
+    </div>
+    <div class="note">Aniq stavkalar, mahalliy muqobilga nisbatan spred va komissiya nuqtalari tekshirib bo'ladigan raqam paydo bo'lganda alohida tahlil bilan qo'shiladi — hozir biz ularni o'ylab topmaymiz. Bugun mavjud narsa rejalashtirilganidan ajratilgan.</div>
+  </section>
+
+  <!-- 5 · РИСК -->
+  <section id="risk">
+    <div class="risk">
+      <span class="tag">Biz birinchi bo'lib aytadigan risk</span>
+      <h2>Majburiyat oltinda — aktivlar so'mda</h2>
+      <p class="sub" style="margin-top:12px;max-width:62ch">Majburiyat oltin narxiga nisbatan nominallangan, ta'minot kapitali esa so'mda. Oltinning o'sishi majburiyatni so'm ifodasida oshiradi. Bu tarkibiy bozor riski va biz uni yashirmasdan ochiq aytamiz.</p>
+      <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>Biz ekspozitsiya hajmini real vaqtda ko'rsatamiz. Riskni boshqarish hamkor tomonida: g'aznachilik, litsenziya va xejlash vositalari allaqachon sizda. Biz texnika va shaffoflikni beramiz, sizning ishingiz bo'yicha maslahat emas.</div></div>
+    </div>
+  </section>
+
+  <!-- 6 · ДОКАЗАТЕЛЬСТВА -->
+  <section id="proof">
+    <div class="kicker">O'zingiz tekshiring</div>
+    <h2>Qoplamani istalgan soniyada o'qish mumkin — bizga ham, bankka ham ishonmasdan</h2>
+    <p class="sub" style="max-width:64ch;margin-top:10px">Ta'minot shifti alohida kontrakt tomonidan e'lon qilinadi. Undan ortiq chiqarishni tarmoq rad etadi — interfeys orqali ham, biz orqali ham emas. Tasdiq bir soat amal qiladi: yangilashni to'xtatsangiz, chiqarish o'zi to'xtaydi. Chorakda bir marta hisobot emas, zanjirdagi ikkita raqam.</p>
+    <div class="stat-grid">
+      <div class="stat"><div class="n">5000</div><div class="l">Shift, gramm</div></div>
+      <div class="stat"><div class="n">2519,80</div><div class="l">Chiqarilgan</div></div>
+      <div class="stat"><div class="n gr">198,4%</div><div class="l">Qoplama</div></div>
+      <div class="stat"><div class="n">1 soat</div><div class="l">Tasdiqning amal qilish muddati</div></div>
+    </div>
+    <div class="cap">2026-07-29 holatidagi snapshot · zanjirda bu qiymatlarni istalgan soniyada o'qish mumkin; bu qat'iy nusxa, dolzarb raqam har doim kontraktda.</div>
+
+    <div style="font-weight:600;color:var(--sub);font-size:14px;margin-top:22px">Yuqoridagi uchta da'vo tranzaksiyalar bilan tasdiqlanadi — ularni oching.</div>
+    <div class="receipts">
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xe43c7ec5952fcdd27b554ff88cf141d6ba69211d6e6c16e1143ed4e8e3f92288" target="_blank" rel="noopener">
+        <span class="what">Ta'minot shifti zanjirda tasdiqlangan</span><span class="tx">0xe43c7ec5…f92288</span><span class="when">2026-08-14</span></a>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0x344b763d991d0f76411a4e3eceae11e14e5db8ad2a3f127815f8b6962c13add1" target="_blank" rel="noopener">
+        <span class="what">Majburiyat sotib olindi — tasdiqlangan shift doirasida chiqarildi</span><span class="tx">0x344b763d…13add1</span><span class="when">2026-07-30</span></a>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xc39f92b2febd59cfb8cb041221bb45d70a8b193cbddb6c3fc1640511014a7022" target="_blank" rel="noopener">
+        <span class="what">Omonat 7 kunga qulflandi</span><span class="tx">0xc39f92b2…4a7022</span><span class="when">2026-07-29</span></a>
+    </div>
+    <div class="cap">zkSync Era Sepolia'dagi haqiqiy tranzaksiyalar, har birini eksplorerda ochish mumkin. <a href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener" style="color:var(--gold);border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent)">barcha tasdiqlar →</a></div>
+
+    <div style="font-weight:600;color:var(--sub);font-size:14px;margin-top:18px">Kontraktlar joylashtirilgan va zanjirda ishlayapti. Manba kodi repozitoriyda (quyida).</div>
+    <div class="addr">
+      <a href="https://sepolia.explorer.zksync.io/address/0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5" target="_blank" rel="noopener"><span class="k">Majburiyat tokeni (OLTIN)</span><span class="h">0x906bcf6c…B3A5</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+      <a href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener"><span class="k">Ta'minot kontrakti (attestatsiya)</span><span class="h">0x9413F602…7d1B</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+      <a href="https://sepolia.explorer.zksync.io/address/0x99D733E64eb60c3B3D5f3DeDe4CC4adC92BCd1c9" target="_blank" rel="noopener"><span class="k">Birja</span><span class="h">0x99D733E6…d1c9</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+      <a href="https://sepolia.explorer.zksync.io/address/0xD3b6ffd1dE409e1C37BA5B867d6eC3897A721fAa" target="_blank" rel="noopener"><span class="k">Steyking</span><span class="h">0xD3b6ffd1…1fAa</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="col-head"><span class="tag us">Ochiq kod</span> Manba kodini va tartibni to'g'ridan-to'g'ri o'qing</div>
+      <p class="sub" style="margin:0 0 14px">Kontraktlarning manba kodi, testlar va yig'ish sozlamalari ochiq repozitoriyda, <b>kontraktlar verifikatsiyadan o'tgan</b> (manba joylashtirilgan bayt-kod bilan bayt-ma-bayt mos keladi). Sizning muhandisingiz yoki avtomatik baholovchi ularni bizsiz o'qiydi. Bu «bizga ishoning»ning o'rnini bosadi.</p>
+      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr)">
+        <div class="stat"><div class="n" style="font-size:22px">405</div><div class="l">test · 204 kontrakt · 165 backend · 36 frontend</div></div>
+        <div class="stat"><div class="n" style="font-size:22px">Har bir PR'da CI</div><div class="l">merge'dan oldingi gate'lar, bostirishlarsiz</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <span class="chip">Action'lar SHA bo'yicha qadalgan</span><span class="chip">faqat squash + branch avtomatik o'chadi</span><span class="chip">push protection yoqilgan</span>
+      </div>
+      <a class="btn" style="margin-top:16px" href="https://github.com/temrjan/OltinPay" target="_blank" rel="noopener">GitHub'da repozitoriyni ochish →</a>
+      <p class="sub" style="font-size:13px;margin:14px 0 0">Mashina uchun — kontrakt manbasini JSON'da qaytaradigan to'g'ridan-to'g'ri API, render qilishga hech narsa yo'q: <a style="color:var(--gold);border-bottom:1px solid color-mix(in srgb,var(--gold) 40%,transparent);word-break:break-all" href="https://explorer.sepolia.era.zksync.dev/contract_verification/info/0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5" target="_blank" rel="noopener">…/contract_verification/info/0x906bcf6c…</a></p>
+    </div>
+    <div style="margin-top:16px"><a href="/uz/how-it-works" style="color:var(--gold);font-weight:600;font-size:14px">Bu qanday ishlaydi va kod qanday invariantlarni ushlab turadi →</a></div>
+    <div class="note" style="margin-top:16px">Ishlayotgan demo — yuqoridagi bosiladigan Mini App; <a href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener" style="color:var(--blue);border-bottom:1px solid color-mix(in srgb,var(--blue) 40%,transparent)">haqiqiysini Telegram'da ochish →</a>. Hozirgacha topilgan har bir jiddiy bloker — mablag' oqib ketishi, autentifikatsiyani chetlab o'tish, rezervdagi poyga, ikki marta emissiya — adversarial ko'rib chiqishda tutilgan. Bu jarayonning o'zi mahsulotning bir qismi.</div>
+  </section>
+
+  <!-- 7 · СТАТУС -->
+  <section id="status">
+    <div class="kicker">Biz hozir qayerdamiz — rostini aytganda</div>
+    <h2>Va'dalar o'rniga aniq o'z-o'zini baholash</h2>
+    <div class="card" style="margin-top:18px">
+      <div class="status-row"><span class="dot warn"></span><div><b>Sinov tarmog'i.</b> zkSync Era Sepolia. Tokenlarning haqiqiy qiymati yo'q — bu ishlashning isboti, jangovar chiqarish emas.</div></div>
+      <div class="status-row"><span class="dot warn"></span><div><b>Tashqi audit bo'lmagan.</b> Ichki adversarial ko'rib chiqish jarayoni ishlayapti; mustaqil audit — jangovar ishga tushirishdan oldin.</div></div>
+      <div class="status-row"><span class="dot on"></span><div><b>Qurilgan va ishlayapti:</b> kontraktlar, nokastodial hamyon, Mini App, birja, steyking, ta'minot mexanizmi, hisob-kitoblar.</div></div>
+      <div class="status-row"><span class="dot plan"></span><div><b>Rejalashtirilgan:</b> multisig g'aznachilik, monetizatsiya modeli, hamkor modeli bo'yicha ta'minot daromadliligi, litsenziya ostida jangovar chiqarish. Ta'minotni va uning shaklini (oltin, likvidlik) emitent belgilaydi va boshqaradi; biz — shiftni ushlab turadigan zanjirdagi mexanizm, ombor emas.</div></div>
+    </div>
+  </section>
+
+  <!-- 8 · КОНТАКТ -->
+  <section id="contact" class="contact">
+    <div class="kicker">Keyingisi — suhbat</div>
+    <h2>Bu uchrashuvga arziydimi — yuqoridagi faktlar bo'yicha o'zingiz hal qiling</h2>
+    <p class="sub" style="max-width:52ch;margin:12px auto 0">Shakl emas, odamga to'g'ridan-to'g'ri chiziq. Demoni ko'rsatamiz, manzillarni beramiz, iqtisodingiz va joriy etishni ko'rib chiqamiz.</p>
+    <div class="lines">
+      <a href="mailto:x.temrjan@gmail.com"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> x.temrjan@gmail.com</a>
+      <a href="https://t.me/temrjan" target="_blank" rel="noopener"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> Telegram @temrjan</a>
+      <a href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--blue)"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> Mini App'ni ochish · @Oltin_Paybot</a>
+      <a href="tel:+998770036888"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--gold)"><path d="M5 4h4l2 5-3 2a12 12 0 006 6l2-3 5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg> +998 77 003 6888</a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;font-size:13.5px">
+    <a href="/uz/how-it-works" style="color:var(--sub)">Qanday ishlaydi</a>
+    <a href="/uz/license" style="color:var(--sub)">Litsenziya va ishga tushirish</a>
+    <a href="#contact" style="color:var(--sub)">Aloqa</a>
+    <a href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener" style="color:var(--sub)">Mini App'ni ochish</a>
+    <a href="https://github.com/temrjan/OltinPay" target="_blank" rel="noopener" style="color:var(--sub)">GitHub'dagi kod</a>
+  </div>
+  zkSync Era Sepolia sinov tarmog'idagi demo · tokenlarning haqiqiy qiymati yo'q · bu faoliyat majburiy litsenziyalanadi (regulyator — NAPP).<br>
+  OltinPay · moliya tashkilotlari uchun aktivga bog'langan tokenlashtirilgan majburiyat chiqarish infratuzilmasi.
+</footer>
+
+<script>
+  const panes=document.querySelectorAll('.pane'),tabs=document.querySelectorAll('.tab');
+  function go(n){panes.forEach(p=>p.classList.toggle('active',p.dataset.screen===n));tabs.forEach(t=>t.classList.toggle('on',t.dataset.go===n));}
+  tabs.forEach(t=>t.addEventListener('click',()=>go(t.dataset.go)));
+  document.querySelectorAll('.mpill').forEach(p=>p.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{p.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');})));
+</script>
+</body>
+</html>
