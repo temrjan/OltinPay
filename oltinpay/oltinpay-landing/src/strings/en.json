@@ -142,7 +142,7 @@
   "idx_stat_ttl_l": "Attestation validity",
   "idx_proof_cap": "Snapshot of 2026-07-29 · on-chain these values can be read at any second; this is a fixed copy, the live figure always sits on the contract.",
 
-  "idx_receipts_head": "Every claim above settles in a transaction. Here are three — open them.",
+  "idx_receipts_head": "Three of the claims above settle in transactions — open them.",
   "idx_receipt_attest": "Coverage ceiling attested on-chain",
   "idx_receipt_buy": "Obligation bought — minted within the attested ceiling",
   "idx_receipt_stake": "Deposit locked for 7 days",
