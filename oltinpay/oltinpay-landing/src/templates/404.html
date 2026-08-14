@@ -19,7 +19,9 @@
   h1{font-size:22px;margin:6px 0 0;font-weight:700;letter-spacing:-.01em}
   p{color:var(--sub);margin:0;max-width:44ch;font-size:15px}
   .code{color:var(--gold);font-weight:800;font-size:15px;letter-spacing:.1em}
-  a.btn{margin-top:8px;background:var(--gold);color:#161200;font-weight:700;padding:11px 18px;border-radius:11px;text-decoration:none;font-size:14px}
+  a.btn{background:var(--gold);color:#161200;font-weight:700;padding:11px 18px;border-radius:11px;text-decoration:none;font-size:14px}
+  a.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .homes{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px}
 </style>
 </head>
 <body>
@@ -27,6 +29,14 @@
   <div class="code">404</div>
   <h1>{{notfound_heading}}</h1>
   <p>{{notfound_body}}</p>
-  <a class="btn" href="{{url_home}}">{{notfound_home_label}}</a>
+  <!-- One 404 serves every language: Caddy has a single handle_errors and there is
+       nothing to read a language from on a path that does not exist. So it offers
+       all three ways home rather than stranding a visitor in a language they did
+       not choose. -->
+  <div class="homes">
+    <a class="btn" href="/">English</a>
+    <a class="btn ghost" href="/ru/">Русский</a>
+    <a class="btn ghost" href="/uz/">O'zbekcha</a>
+  </div>
 </body>
 </html>

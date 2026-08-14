@@ -7,6 +7,10 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/favicon.png">
 <title>{{hiw_title}}</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/how-it-works">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/how-it-works">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/how-it-works">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/how-it-works">
 <style>
   :root{
     --bg:#0b0d12; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
@@ -35,6 +39,16 @@
   .brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--gold),#c9922f);display:grid;place-items:center;color:#161200;font-weight:800;font-size:14px}
   .nav .back{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
   .nav .back:hover{color:var(--ink)}
+  .lang{display:flex;gap:2px;margin-left:14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
+
+  /* on-chain receipt attached to an invariant */
+  .inv .receipt{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+  .inv .receipt:hover{border-color:var(--gold)}
+  .inv .receipt .tx{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--gold)}
 
   .hero{padding:48px 0 8px}
   .hero p{font-size:17px;max-width:60ch;margin:16px 0 0}
@@ -100,6 +114,7 @@
 <header class="nav"><div class="wrap">
   <div class="brand"><span class="mark">O</span> OltinPay</div>
   <a class="back" href="{{url_home}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> {{nav_back_home}}</a>
+  <div class="lang"><a class="{{lang_class_en}}" href="/how-it-works" hreflang="en">EN</a><a class="{{lang_class_ru}}" href="/ru/how-it-works" hreflang="ru">RU</a><a class="{{lang_class_uz}}" href="/uz/how-it-works" hreflang="uz">UZ</a></div>
 </div></header>
 
 <main class="wrap">
@@ -143,15 +158,18 @@
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
       <div><h3>{{hiw_inv1_h}}</h3><p>{{hiw_inv1_p}}</p></div></div>
-      <div class="check">{{hiw_inv1_check}}</div></div>
+      <div class="check">{{hiw_inv1_check}}</div>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0x344b763d991d0f76411a4e3eceae11e14e5db8ad2a3f127815f8b6962c13add1" target="_blank" rel="noopener">{{hiw_receipt_mint}} <span class="tx">0x344b763d…13add1</span></a></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
       <div><h3>{{hiw_inv2_h}}</h3><p>{{hiw_inv2_p}}</p></div></div>
-      <div class="check">{{hiw_inv2_check}}</div></div>
+      <div class="check">{{hiw_inv2_check}}</div>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener">{{hiw_receipt_attest}} <span class="tx">0x9413F602…7d1B</span></a></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
       <div><h3>{{hiw_inv3_h}}</h3><p>{{hiw_inv3_p}}</p></div></div>
-      <div class="check">{{hiw_inv3_check}}</div></div>
+      <div class="check">{{hiw_inv3_check}}</div>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xc39f92b2febd59cfb8cb041221bb45d70a8b193cbddb6c3fc1640511014a7022" target="_blank" rel="noopener">{{hiw_receipt_stake}} <span class="tx">0xc39f92b2…4a7022</span></a></div>
 
     <div class="inv"><div class="top"><div class="lk"><svg width="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
       <div><h3>{{hiw_inv4_h}}</h3><p>{{hiw_inv4_p}}</p></div></div>

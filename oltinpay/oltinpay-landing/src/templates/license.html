@@ -7,6 +7,10 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/favicon.png">
 <title>{{lic_title}}</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/license">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/license">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/license">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/license">
 <style>
   :root{
     --bg:#0b0d12; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
@@ -32,6 +36,10 @@
   .brand .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--gold),#c9922f);display:grid;place-items:center;color:#161200;font-weight:800;font-size:14px}
   .nav .back{margin-left:auto;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
   .nav .back:hover{color:var(--ink)}
+  .lang{display:flex;gap:2px;margin-left:14px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
 
   .hero{padding:48px 0 8px}
   .hero p{font-size:17px;max-width:60ch;margin:16px 0 0}
@@ -76,6 +84,7 @@
 <header class="nav"><div class="wrap">
   <div class="brand"><span class="mark">O</span> OltinPay</div>
   <a class="back" href="{{url_home}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg> {{nav_back_home}}</a>
+  <div class="lang"><a class="{{lang_class_en}}" href="/license" hreflang="en">EN</a><a class="{{lang_class_ru}}" href="/ru/license" hreflang="ru">RU</a><a class="{{lang_class_uz}}" href="/uz/license" hreflang="uz">UZ</a></div>
 </div></header>
 
 <main class="wrap">

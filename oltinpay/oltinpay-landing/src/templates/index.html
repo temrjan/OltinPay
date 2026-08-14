@@ -7,6 +7,10 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/favicon.png">
 <title>{{idx_title}}</title>
+<link rel="alternate" hreflang="en" href="https://oltinpay.com/">
+<link rel="alternate" hreflang="ru" href="https://oltinpay.com/ru/">
+<link rel="alternate" hreflang="uz" href="https://oltinpay.com/uz/">
+<link rel="alternate" hreflang="x-default" href="https://oltinpay.com/">
 <style>
   :root{
     --bg:#0b0d12; --bg2:#0f121a; --panel:#141822; --panel2:#1a1f2b; --line:#262c3a;
@@ -138,6 +142,23 @@
     border:1px solid var(--line);border-radius:8px;padding:5px 10px}
   .cap{color:var(--faint);font-size:12.5px;margin-top:10px}
   svg{stroke-width:1.8}
+
+  /* language switch */
+  .lang{display:flex;gap:2px;margin-left:16px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px}
+  .lang a{font-size:12px;font-weight:650;color:var(--faint);padding:4px 9px;border-radius:6px;letter-spacing:.02em}
+  .lang a:hover{color:var(--ink)}
+  .lang a.on{background:var(--gold);color:#161200}
+  @media(max-width:760px){.lang{margin-left:auto}}
+
+  /* on-chain receipts — a claim and the transaction that settles it */
+  .receipts{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+  .receipt{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:11px;padding:12px 14px;font-size:13px;flex-wrap:wrap}
+  .receipt:hover{border-color:var(--gold)}
+  .receipt .what{font-weight:600;color:var(--ink);flex:1;min-width:180px}
+  .receipt .tx{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--gold);
+    border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent)}
+  .receipt .when{color:var(--faint);font-size:12px;min-width:92px;text-align:right}
 </style>
 </head>
 <body>
@@ -145,6 +166,7 @@
 <header class="nav"><div class="wrap">
   <div class="brand"><span class="mark">O</span> OltinPay</div>
   <nav><a href="{{url_how_it_works}}">{{nav_how}}</a><a href="{{url_license}}">{{nav_license}}</a><a href="#proof">{{nav_proof}}</a><a href="{{url_repo}}" target="_blank" rel="noopener">{{nav_code}}</a></nav>
+  <div class="lang"><a class="{{lang_class_en}}" href="/" hreflang="en">EN</a><a class="{{lang_class_ru}}" href="/ru/" hreflang="ru">RU</a><a class="{{lang_class_uz}}" href="/uz/" hreflang="uz">UZ</a></div>
   <a class="btn tg cta" href="https://t.me/Oltin_Paybot" target="_blank" rel="noopener"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L3 11l6 2 2 6 3-4 4 3z"/></svg> {{cta_open_miniapp}}</a>
 </div></header>
 
@@ -298,6 +320,18 @@
       <div class="stat"><div class="n">{{idx_stat_ttl_n}}</div><div class="l">{{idx_stat_ttl_l}}</div></div>
     </div>
     <div class="cap">{{idx_proof_cap}}</div>
+
+    <div style="font-weight:600;color:var(--sub);font-size:14px;margin-top:22px">{{idx_receipts_head}}</div>
+    <div class="receipts">
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xe43c7ec5952fcdd27b554ff88cf141d6ba69211d6e6c16e1143ed4e8e3f92288" target="_blank" rel="noopener">
+        <span class="what">{{idx_receipt_attest}}</span><span class="tx">0xe43c7ec5…f92288</span><span class="when">2026-08-14</span></a>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0x344b763d991d0f76411a4e3eceae11e14e5db8ad2a3f127815f8b6962c13add1" target="_blank" rel="noopener">
+        <span class="what">{{idx_receipt_buy}}</span><span class="tx">0x344b763d…13add1</span><span class="when">2026-07-30</span></a>
+      <a class="receipt" href="https://sepolia.explorer.zksync.io/tx/0xc39f92b2febd59cfb8cb041221bb45d70a8b193cbddb6c3fc1640511014a7022" target="_blank" rel="noopener">
+        <span class="what">{{idx_receipt_stake}}</span><span class="tx">0xc39f92b2…4a7022</span><span class="when">2026-07-29</span></a>
+    </div>
+    <div class="cap">{{idx_receipts_cap}} <a href="https://sepolia.explorer.zksync.io/address/0x9413F60295dcf7D81fcb69eE256029900B107d1B" target="_blank" rel="noopener" style="color:var(--gold);border-bottom:1px solid color-mix(in srgb,var(--gold) 35%,transparent)">{{idx_receipts_all}}</a></div>
+
     <div style="font-weight:600;color:var(--sub);font-size:14px;margin-top:18px">{{idx_proof_deployed}}</div>
     <div class="addr">
       <a href="https://sepolia.explorer.zksync.io/address/0x906bcf6c92ed1b30aA453c69eB40aeDbb3d5B3A5" target="_blank" rel="noopener"><span class="k">{{idx_addr_token}}</span><span class="h">0x906bcf6c…B3A5</span><span class="ext"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 17L17 7M8 7h9v9"/></svg></span></a>
