@@ -15,6 +15,7 @@ edits any more. That is exactly the class of defect nobody notices in review.
 from __future__ import annotations
 
 import json
+import unicodedata
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -201,6 +202,50 @@ class TestDifferencesAgainstPublic(unittest.TestCase):
 
         self.assertEqual(len(problems), 1)
         self.assertIn("ru/index.html", problems[0])
+
+
+class TestScript(unittest.TestCase):
+    """Homoglyphs: a Cyrillic «а» inside a Latin word is invisible to a reader.
+
+    This is not a hypothetical. Review found exactly one — `tegа` in the Uzbek
+    dictionary — and no human eye would have caught it, in review or in proof-
+    reading. A machine catches the whole class in milliseconds.
+    """
+
+    #: Which alphabet each language is written in. Uzbek is Latin script here,
+    #: matching the Mini App.
+    LATIN = ("en", "uz")
+    CYRILLIC = ("ru",)
+
+    @staticmethod
+    def cyrillic_in(strings: dict[str, str]) -> list[tuple[str, str]]:
+        return [
+            (key, char)
+            for key, value in strings.items()
+            for char in value
+            if "CYRILLIC" in unicodedata.name(char, "")
+        ]
+
+    def test_should_find_no_cyrillic_in_latin_script_languages(self) -> None:
+        for lang in self.LATIN:
+            with self.subTest(language=lang):
+                strings = build.load_strings(build.STRINGS_DIR / f"{lang}.json")
+                offenders = self.cyrillic_in(strings)
+                self.assertEqual(
+                    offenders,
+                    [],
+                    f"Cyrillic look-alike inside {lang}.json: {offenders}",
+                )
+
+    def test_should_still_find_cyrillic_where_it_belongs(self) -> None:
+        """Positive control: without this, the check above could be blind."""
+        for lang in self.CYRILLIC:
+            with self.subTest(language=lang):
+                strings = build.load_strings(build.STRINGS_DIR / f"{lang}.json")
+                self.assertTrue(
+                    self.cyrillic_in(strings),
+                    f"{lang}.json has no Cyrillic at all — the detector is broken",
+                )
 
 
 class TestPublishedPages(unittest.TestCase):

@@ -1,17 +1,14 @@
 {
   "_out": "uz",
   "lang": "uz",
-
   "lang_class_en": "",
   "lang_class_ru": "",
   "lang_class_uz": "on",
-
   "url_home": "/uz/",
   "url_how_it_works": "/uz/how-it-works",
   "url_license": "/uz/license",
   "url_repo": "https://github.com/temrjan/OltinPay",
   "url_napp": "https://napp.uz/uz/pages/service-providers",
-
   "nav_how": "Qanday ishlaydi",
   "nav_license": "Litsenziya va ishga tushirish",
   "nav_proof": "Dalillar",
@@ -19,21 +16,17 @@
   "nav_back_home": "Bosh sahifaga",
   "cta_open_miniapp": "Mini App'ni ochish",
   "cta_open_repo": "GitHub'da repozitoriyni ochish →",
-
   "stat_tests_n": "405",
   "stat_tests_l": "test · 204 kontrakt · 165 backend · 36 frontend",
   "stat_ci_n": "Har bir PR'da CI",
   "stat_ci_l": "merge'dan oldingi gate'lar, bostirishlarsiz",
   "chip_sha": "Action'lar SHA bo'yicha qadalgan",
   "chip_squash": "faqat squash + branch avtomatik o'chadi",
-
   "foot_disclaimer": "zkSync Era Sepolia sinov tarmog'idagi demo · tokenlarning haqiqiy qiymati yo'q · bu faoliyat majburiy litsenziyalanadi (regulyator — NAPP).",
   "foot_tagline": "OltinPay · aktivga bog'langan tokenlashtirilgan majburiyat chiqarish infratuzilmasi.",
-
   "notfound_title": "OltinPay — sahifa topilmadi",
   "notfound_heading": "Bunday sahifa yo'q",
   "notfound_body": "Havola eskirgan bo'lishi mumkin. Quyidan tilni tanlang va bosh sahifadan boshlang.",
-
   "idx_title": "OltinPay — moliya tashkilotlari uchun aktivlarni tokenlashtirish infratuzilmasi",
   "idx_eyebrow": "Aktivlarni tokenlashtirish · moliya tashkilotlari uchun infratuzilma",
   "idx_h1": "Aktiv narxiga bog'langan tokenlashtirilgan majburiyat",
@@ -46,7 +39,6 @@
   "idx_trust2_l": "kalit faqat mijozda",
   "idx_trust3_n": "Ochiq kod",
   "idx_trust3_l": "405 test · har bir PR'da CI · GitHub",
-
   "mock_aria": "Ishlayotgan OltinPay Mini App — tab'larni bosing",
   "mock_welcome": "Xush kelibsiz",
   "mock_total_balance": "Umumiy balans",
@@ -81,7 +73,6 @@
   "mock_about": "Ilova haqida",
   "mock_key_on_device": "Kalit faqat qurilmangizda saqlanadi.",
   "mock_noncustodial": "Nokastodial model.",
-
   "idx_k_who": "Bu kimlar uchun",
   "idx_h2_who": "Siz — emitent. Biz — infratuzilma.",
   "idx_who_lead": "Bu vosita o'z litsenziyasi ostida aktiv qiymatiga bog'langan tokenlashtirilgan majburiyat chiqaradigan va unga xizmat ko'rsatadigan tashkilot uchun. Oltin — oxirigacha yetkazilgan birinchi holat: uning kontraktlari joylashtirilgan, verifikatsiyadan o'tgan va ishlayapti. Boshqa aktiv uchun o'z kontraktlar to'plami chiqariladi: narx manbai va o'lchov birligi joylashtirishda ataylab qat'iy belgilanadi va keyin o'zgarmaydi — bu aynan qoidalarni orqaga qaytib qayta yozishga yo'l qo'ymaydigan xususiyat.",
@@ -91,7 +82,6 @@
   "idx_aud2_p": "Sizda allaqachon mavjud fiat relslari ustida hisob-kitob vositasi va hamyon.",
   "idx_aud3_h": "Kripto-litsenziya egasi (NAPP)",
   "idx_aud3_p": "Siz allaqachon ega bo'lgan regulyativ baza ostida tayyor kontraktlar va ilova.",
-
   "idx_k_labor": "Mehnat taqsimoti",
   "idx_h2_labor": "Biz nima quramiz — siz nima olib kelasiz",
   "idx_we_give_tag": "Biz beramiz",
@@ -118,7 +108,6 @@
   "idx_you4_p": "Vositalar va g'aznachilik sizning tomoningizda qoladi",
   "idx_you5_h": "KYC/AML va qo'llab-quvvatlash xizmati",
   "idx_you5_p": "O'z reglamentlaringiz bo'yicha",
-
   "idx_k_econ": "Iqtisodiyot",
   "idx_h2_econ": "Hamkorning daromadi qayerda",
   "idx_econ1_h": "Stavka evaziga mablag' jalb qilish",
@@ -126,12 +115,10 @@
   "idx_econ2_h": "Aylanmadan daromad (model, v-next)",
   "idx_econ2_p": "Majburiyat↔so'm ayirboshlashdagi svop komissiyasi. Joriy kontraktlarda komissiya yo'q — bu keyingi versiyaning monetizatsiya modeli, bugun e'lon qilingan daromad emas.",
   "idx_econ_note": "Aniq stavkalar, mahalliy muqobilga nisbatan spred va komissiya nuqtalari tekshirib bo'ladigan raqam paydo bo'lganda alohida tahlil bilan qo'shiladi — hozir biz ularni o'ylab topmaymiz. Bugun mavjud narsa rejalashtirilganidan ajratilgan.",
-
   "idx_risk_tag": "Biz birinchi bo'lib aytadigan risk",
   "idx_risk_h2": "Majburiyat oltinda — aktivlar so'mda",
   "idx_risk_p": "Majburiyat oltin narxiga nisbatan nominallangan, ta'minot kapitali esa so'mda. Oltinning o'sishi majburiyatni so'm ifodasida oshiradi. Bu tarkibiy bozor riski va biz uni yashirmasdan ochiq aytamiz.",
   "idx_risk_note": "Biz ekspozitsiya hajmini real vaqtda ko'rsatamiz. Riskni boshqarish hamkor tomonida: g'aznachilik, litsenziya va xejlash vositalari allaqachon sizda. Biz texnika va shaffoflikni beramiz, sizning ishingiz bo'yicha maslahat emas.",
-
   "idx_k_proof": "O'zingiz tekshiring",
   "idx_h2_proof": "Qoplamani istalgan soniyada o'qish mumkin — bizga ham, bankka ham ishonmasdan",
   "idx_proof_lead": "Ta'minot shifti alohida kontrakt tomonidan e'lon qilinadi. Undan ortiq chiqarishni tarmoq rad etadi — interfeys orqali ham, biz orqali ham emas. Tasdiq bir soat amal qiladi: yangilashni to'xtatsangiz, chiqarish o'zi to'xtaydi. Chorakda bir marta hisobot emas, zanjirdagi ikkita raqam.",
@@ -141,14 +128,12 @@
   "idx_stat_ttl_n": "1 soat",
   "idx_stat_ttl_l": "Tasdiqning amal qilish muddati",
   "idx_proof_cap": "2026-07-29 holatidagi snapshot · zanjirda bu qiymatlarni istalgan soniyada o'qish mumkin; bu qat'iy nusxa, dolzarb raqam har doim kontraktda.",
-
   "idx_receipts_head": "Yuqoridagi uchta da'vo tranzaksiyalar bilan tasdiqlanadi — ularni oching.",
   "idx_receipt_attest": "Ta'minot shifti zanjirda tasdiqlangan",
   "idx_receipt_buy": "Majburiyat sotib olindi — tasdiqlangan shift doirasida chiqarildi",
   "idx_receipt_stake": "Omonat 7 kunga qulflandi",
   "idx_receipts_cap": "zkSync Era Sepolia'dagi haqiqiy tranzaksiyalar, har birini eksplorerda ochish mumkin.",
   "idx_receipts_all": "barcha tasdiqlar →",
-
   "idx_proof_deployed": "Kontraktlar joylashtirilgan va zanjirda ishlayapti. Manba kodi repozitoriyda (quyida).",
   "idx_addr_token": "Majburiyat tokeni (OLTIN)",
   "idx_addr_attestor": "Ta'minot kontrakti (attestatsiya)",
@@ -163,7 +148,6 @@
   "idx_demo_note_pre": "Ishlayotgan demo — yuqoridagi bosiladigan Mini App;",
   "idx_demo_note_link": "haqiqiysini Telegram'da ochish →",
   "idx_demo_note_post": "Hozirgacha topilgan har bir jiddiy bloker — mablag' oqib ketishi, autentifikatsiyani chetlab o'tish, rezervdagi poyga, ikki marta emissiya — adversarial ko'rib chiqishda tutilgan. Bu jarayonning o'zi mahsulotning bir qismi.",
-
   "idx_k_status": "Biz hozir qayerdamiz — rostini aytganda",
   "idx_h2_status": "Va'dalar o'rniga aniq o'z-o'zini baholash",
   "idx_status1_h": "Sinov tarmog'i.",
@@ -174,22 +158,18 @@
   "idx_status3_p": "kontraktlar, nokastodial hamyon, Mini App, birja, steyking, ta'minot mexanizmi, hisob-kitoblar.",
   "idx_status4_h": "Rejalashtirilgan:",
   "idx_status4_p": "multisig g'aznachilik, monetizatsiya modeli, hamkor modeli bo'yicha ta'minot daromadliligi, litsenziya ostida jangovar chiqarish. Ta'minotni va uning shaklini (oltin, likvidlik) emitent belgilaydi va boshqaradi; biz — shiftni ushlab turadigan zanjirdagi mexanizm, ombor emas.",
-
   "idx_k_contact": "Keyingisi — suhbat",
   "idx_h2_contact": "Bu uchrashuvga arziydimi — yuqoridagi faktlar bo'yicha o'zingiz hal qiling",
   "idx_contact_lead": "Shakl emas, odamga to'g'ridan-to'g'ri chiziq. Demoni ko'rsatamiz, manzillarni beramiz, iqtisodingiz va joriy etishni ko'rib chiqamiz.",
   "idx_contact_miniapp": "Mini App'ni ochish · @Oltin_Paybot",
-
   "idx_foot_how": "Qanday ishlaydi",
   "idx_foot_contact": "Aloqa",
   "idx_foot_code": "GitHub'dagi kod",
   "idx_foot_tagline": "OltinPay · moliya tashkilotlari uchun aktivga bog'langan tokenlashtirilgan majburiyat chiqarish infratuzilmasi.",
-
   "hiw_title": "OltinPay — qanday ishlaydi (arxitektura, invariantlar, cheklovlar)",
   "hiw_eyebrow": "Qanday ishlaydi",
   "hiw_h1": "Marketing emas, kod nimani kafolatlaydi",
   "hiw_lead": "Quyidagi har bir da'vo uni majburlaydigan kontrakt va funksiyani nomlaydi. «Ishonchli arxitektura» emas, balki siz yoki avtomatik baholovchi o'zi tekshira oladigan aniq invariantlar. Chegaralar va zaif joylar ochiq aytilgan.",
-
   "hiw_k1": "1 · Arxitektura va ishonch chegarasi",
   "hiw_h2_arch": "Nima qayerda yashaydi — va chegaradan nima o'tmaydi",
   "hiw_diagram_label": "Sxema: uchta zona va kalit hech qachon kesib o'tmaydigan qizil chiziq",
@@ -212,7 +192,6 @@
   "hiw_node_api_h": "API",
   "hiw_node_api_p": "kalitni saqlamaydi; hamyondan — manzil",
   "hiw_arch_note": "Server mijoz o'rniga imzolay olmaydi va mablag'ni saqlamaydi — u zanjirni o'qiydi va interfeysga xizmat qiladi. Mablag'ni sarflash vakolati faqat qurilmadagi kalitda.",
-
   "hiw_k2": "2 · Kod majburlaydigan invariantlar",
   "hiw_h2_inv": "Tekshirib bo'ladigan da'volar — kontrakt va funksiya bilan",
   "hiw_inv_lead": "Barcha kontraktlarning manba kodi <b>e'lon qilingan va verifikatsiyadan o'tgan</b> — repozitoriy bilan bayt-ma-bayt mos keladi. Mablag' turgan manzilni oching va Solidity'ni o'zingiz o'qing: «kod shunday deb ishoning» emas, «tekshiring». Quyidagi har bir invariantni ilova emas, tarmoq ushlab turadi — uni interfeys orqali ham, biz orqali ham chetlab o'tib bo'lmaydi.",
@@ -228,13 +207,12 @@
   "hiw_inv3_p": "Har bir omonat <span class=\"mono\">lockedUntil = now + 7 kun</span> bilan lot yaratadi. Yechib olish faqat ochilgan lotlardan oladi. Na administrator, na boshqa birov muddatdan oldin yecha olmaydi.",
   "hiw_inv3_check": "<span class=\"c\">kontrakt <b>Steyking</b></span><span class=\"c\">funksiya <b>unstake</b> · <b>LOCK_PERIOD</b></span>",
   "hiw_receipt_stake": "Zanjirda qulflangan omonat",
-  "hiw_inv4_h": "Administrator begona omonatga tegа olmaydi",
+  "hiw_inv4_h": "Administrator begona omonatga tega olmaydi",
   "hiw_inv4_p": "Yechib olish faqat <span class=\"mono\">msg.sender</span> lotlari bilan ishlaydi — cheklov ilova qoidalariga emas, funksiyaning o'ziga payvandlangan. Administratorda omonatchi mablag'iga yo'l yo'q.",
   "hiw_inv4_check": "<span class=\"c\">kontrakt <b>Steyking</b></span><span class=\"c\">funksiya <b>unstake</b> (msg.sender)</span>",
   "hiw_inv5_h": "Mijoz kaliti qurilmadan chiqmaydi",
   "hiw_inv5_p": "Hamyon kalitni qurilmada seed'dan hosil qiladi va lokal imzolaydi. Server <b>kalitni saqlamaydi va imzolay olmaydi</b>; hamyondan unda faqat ochiq manzil bor (Telegram-id kabi hisob ma'lumotlari saqlanadi, lekin mablag'ga kirish bermaydi).",
   "hiw_inv5_check": "<span class=\"c\">klient <b>lib/wallet</b></span><span class=\"c\">backend — faqat <b>wallet_address</b></span>",
-
   "hiw_k_path": "Pulning yo'li",
   "hiw_h2_path": "Xarid, ayirboshlash va sotuvda nima sodir bo'ladi",
   "hiw_path_label": "Sxema: sakkiz qadam, har biri o'z harakati bilan belgilangan",
@@ -254,7 +232,6 @@
   "hiw_step7_p": "hisob-kitob zanjirda",
   "hiw_step8_h": "Hamkor relslari orqali yechib oladi",
   "hiw_step8_p": "fiat emitent tomonida",
-
   "hiw_k_roles": "Rollar va vakolatlar",
   "hiw_h2_roles": "Kim nima qila oladi — va hech kim nima qila olmaydi",
   "hiw_roles_can": "Qila oladi",
@@ -265,7 +242,6 @@
   "hiw_nobody_1": "Shiftdan ortiq token chiqarish",
   "hiw_nobody_2": "Begona omonatni muddatidan oldin yechish",
   "hiw_nobody_3": "Mijoz o'rniga imzolash yoki uning kalitini olish",
-
   "hiw_k3": "3 · Stek va uning asoslari",
   "hiw_h2_stack": "Har bir tanlov logotip emas, sabab bilan",
   "hiw_why_zksync": "Nega zkSync Era",
@@ -277,12 +253,10 @@
   "hiw_why_noupgrade": "Nega apgreyd mexanizmisiz",
   "hiw_noupgrade_h": "Qoidalarni orqaga qaytib o'zgartirib bo'lmaydi",
   "hiw_noupgrade_p": "Kontraktlar o'zgarmas — na biz, na boshqa birov allaqachon chiqarilgan narsa ostidagi mantiqni qayta yozmaydi. <b>Almashuv narxi:</b> tuzatish yangi kontrakt va migratsiyani talab qiladi.",
-
   "hiw_k4": "4 · Ishlab chiqish tartibi",
   "hiw_h2_discipline": "Ochiq repozitoriyda tekshirib bo'ladi",
   "hiw_chip_push": "push protection",
   "hiw_discipline_p": "Ko'rib chiqish jarayoni mahsulotning bir qismi: jiddiy blokerlar — mablag' oqib ketishi, autentifikatsiyani chetlab o'tish, rezervdagi poyga, ikki marta emissiya — adversarial ko'rib chiqishda tutilgan. Bularning barchasi repozitoriyda to'g'ridan-to'g'ri o'qiladi.",
-
   "hiw_k5": "5 · Cheklovlar — ochiq aytamiz",
   "hiw_h2_limits": "Biz o'zimiz nomlaydigan narsalar",
   "hiw_limits_lead": "Aniq o'z-o'zini baholash zaiflik emas, yetuklik belgisi. Zaif joyi yo'q loyiha reklama kabi o'qiladi.",
@@ -296,21 +270,18 @@
   "hiw_limit4_p": "Ma'muriy rollar hozircha yagona EOA'da. Pauza ostida foydalanuvchi hech narsa qila olmaydi (omonat/yechish/mukofot) — ammo mukofot fondini administrator shunda ham yechib olishi mumkin (withdrawRewardPool pauza ostida emas). Bu asosiy summaga va shiftga tegishli emas: begona omonatni tortib olish yoki shiftdan ortiq chiqarish mumkin emas. Multisigga o'tkazish rejalashtirilgan, bu monetizatsiyadan ustun turadi.",
   "hiw_limit5_h": "Indeksator zanjir reorganizatsiyasiga chidamli emas.",
   "hiw_limit5_p": "Tarix lentasi hodisalarni o'qish orqali quriladi; reorganizatsiyada qisqa vaqt orqada qolishi mumkin — bu balanslarga va zanjir invariantlariga ta'sir qilmaydi.",
-
   "lic_title": "OltinPay — litsenziya va ishga tushirish",
   "lic_eyebrow": "Litsenziya va ishga tushirish",
   "lic_h1": "Regulyativ baza — sizniki. Integratsiya — bizniki.",
   "lic_lead_intro": "Litsenziyani emitent ushlab turadi;",
   "lic_no_legal_advice": "biz yuridik maslahat bermaymiz va regulyatorning o'rnini bosmaymiz.",
   "lic_lead_tail": "Quyida: bu vosita qanday nazorat ostida ishlaydi va sizning infratuzilmangiz biznikiga qanday ulanadi.",
-
   "lic_k1": "Litsenziya",
   "lic_h2_license": "Bu faoliyat majburiy litsenziyalanadi",
   "lic_regulator_tag": "Regulyator — NAPP",
   "lic_regulator_body": "O'zbekistonda kripto-aktivlar bo'yicha faoliyat <b>Istiqbolli loyihalar milliy agentligi (NAPP)</b> tomonidan litsenziyalanadi, xizmatni esa litsenziyaga ega hamkor ko'rsatadi. Litsenziya turini va talablarni regulyator belgilaydi. Xizmat ko'rsatuvchilar reyestri va joriy talablar agentlik saytida e'lon qilinadi.",
   "lic_napp_link": "napp.uz — xizmat ko'rsatuvchilar →",
   "lic_no_advice": "Biz litsenziyalash rejimining taxminiy talqinini e'lon qilmaymiz: moliya tashkilotlari uchun yozilgan sahifada bundagi xato qolgan hamma narsani obro'sizlantiradi. Litsenziyaning aniq turi va hajmi pilot vaqtida regulyatorning o'z manbasi bilan solishtiriladi.",
-
   "lic_k2": "Nima nimaga ulanadi",
   "lic_h2_connect": "Sizning infratuzilmangiz ↔ bizniki",
   "lic_partner_brings": "Hamkor olib keladi",
@@ -323,7 +294,6 @@
   "lic_we_2": "Nokastodial hamyon + Telegram Mini App",
   "lic_we_3": "Ta'minot mexanizmi va hisob-kitoblar",
   "lic_we_4": "Operator konsoli",
-
   "lic_k3": "Ishga tushirish tartibi",
   "lic_h2_phases": "Pilotdan jangovarga — halol bosqichlar bilan",
   "lic_phase1_h": "Sinov tarmog'idagi pilot",
@@ -339,7 +309,6 @@
   "lic_phase4_badge": "tayyor bo'lganda",
   "lic_phase4_p": "Jangovar tarmoqqa joylashtirish, fiat relslarini va emitentning ta'minot kapitalini ulash, ommaviy ishga tushirish.",
   "lic_no_dates": "Aniq muddatlarni asossiz e'lon qilmaymiz — ular auditga, hamkorning regulyativ yo'liga va uning relslari integratsiyasiga bog'liq. Ular pilot vaqtida muhokama qilinadi.",
-
   "lic_k4": "Hamkorning IT xizmati nima qiladi",
   "lic_h2_integration": "Integratsiya nuqtalari",
   "lic_iface1_h": "Fiat relslari ↔ hisob-kitoblar",
