@@ -1,0 +1,49 @@
+name: Landing (static)
+
+# The landing is generated: `public/` is printed from src/templates + src/strings
+# and committed. Without a gate that reprints and compares, a hand edit to
+# `public/` would survive review and then be silently overwritten by the next
+# build — and nobody would be watching, because until now the landing had no CI
+# at all.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'oltinpay/oltinpay-landing/**'
+      - '.github/workflows/landing.yml'
+  pull_request:
+    paths:
+      - 'oltinpay/oltinpay-landing/**'
+      - '.github/workflows/landing.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oltinpay/oltinpay-landing
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+
+      # Reprints every page and diffs against the committed tree, both ways: a
+      # stale page and an orphan nobody prints any more both fail here.
+      - name: Committed pages match the templates
+        run: python3 src/build.py --check
+
+      # Guards that outlive us: every language declares its own lang attribute,
+      # every page still discloses the testnet, the legal note exists in each
+      # language, and no placeholder shipped unsubstituted.
+      - name: Generator and page guards
+        run: python3 -m unittest discover -s src -p 'test_*.py' -v
