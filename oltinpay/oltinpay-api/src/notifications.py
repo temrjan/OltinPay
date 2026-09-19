@@ -38,23 +38,6 @@ async def send_telegram_notification(
         return False
 
 
-async def notify_transfer_received(
-    recipient_telegram_id: int,
-    sender_oltin_id: str,
-    amount: str,
-    language: str = "en",
-) -> bool:
-    """Notify user about received transfer."""
-    messages = {
-        "uz": f"💰 <b>Sizga OLTIN keldi!</b>\n\n@{sender_oltin_id} sizga <b>{amount} OLTIN</b> yubordi.",
-        "ru": f"💰 <b>Вам пришёл OLTIN!</b>\n\n@{sender_oltin_id} отправил вам <b>{amount} OLTIN</b>.",
-        "en": f"💰 <b>You received OLTIN!</b>\n\n@{sender_oltin_id} sent you <b>{amount} OLTIN</b>.",
-    }
-
-    message = messages.get(language, messages["en"])
-    return await send_telegram_notification(recipient_telegram_id, message)
-
-
 async def notify_staking_reward(
     telegram_id: int,
     amount: str,

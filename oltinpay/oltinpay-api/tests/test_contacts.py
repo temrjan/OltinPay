@@ -1,29 +1,64 @@
 """Contacts module tests."""
 
+from typing import Any
+
 import pytest
 from httpx import AsyncClient
 
+from src.database import Base
 
-class TestRecentContacts:
-    """Tests for recent contacts endpoint."""
 
-    @pytest.mark.asyncio
-    async def test_get_recent_contacts_empty(self, client: AsyncClient, test_user):
-        """Test getting recent contacts with no transfers."""
-        response = await client.get(
-            "/api/v1/contacts/recent",
+class TestRemovedLedgerRoutes:
+    """The retired ledger cannot be reached through the API or ORM."""
+
+    @pytest.mark.parametrize(
+        ("method", "path"),
+        [
+            ("GET", "/api/v1/transfers"),
+            ("POST", "/api/v1/transfers"),
+            ("GET", "/api/v1/transfers/00000000-0000-0000-0000-000000000000"),
+            ("GET", "/api/v1/contacts/recent"),
+        ],
+    )
+    async def test_removed_endpoint_returns_404(
+        self,
+        client: AsyncClient,
+        test_user: dict[str, Any],
+        method: str,
+        path: str,
+    ) -> None:
+        response = await client.request(
+            method,
+            path,
             headers=test_user["headers"],
+            json={"to_oltin_id": "testuser", "amount": "1"}
+            if method == "POST"
+            else None,
         )
 
+        assert response.status_code == 404
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "/api/v1/transfers",
+            "/api/v1/transfers/{transfer_id}",
+            "/api/v1/contacts/recent",
+        ],
+    )
+    async def test_openapi_omits_ledger_but_keeps_history_and_favorites(
+        self, client: AsyncClient, path: str
+    ) -> None:
+        response = await client.get("/openapi.json")
+
         assert response.status_code == 200
-        assert response.json() == []
+        paths = response.json()["paths"]
+        assert "/api/v1/transactions" in paths
+        assert "/api/v1/contacts/favorites" in paths
+        assert path not in paths
 
-    @pytest.mark.asyncio
-    async def test_get_recent_contacts_unauthorized(self, client: AsyncClient):
-        """Test getting recent contacts without auth fails."""
-        response = await client.get("/api/v1/contacts/recent")
-
-        assert response.status_code == 401
+    def test_orm_omits_transfers(self) -> None:
+        assert "transfers" not in Base.metadata.tables
 
 
 class TestFavoriteContacts:

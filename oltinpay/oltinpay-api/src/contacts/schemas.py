@@ -6,13 +6,6 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class RecentContactResponse(BaseModel):
-    """Recent contact from transfers."""
-
-    oltin_id: str
-    last_transfer_at: datetime
-
-
 class FavoriteContactResponse(BaseModel):
     """Favorite contact response."""
 
