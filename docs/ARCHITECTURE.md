@@ -35,7 +35,7 @@ Regulatory window: НАПП stablecoin pilot started 2026-01-01, runs 12 months 
 │  - users (KYC meta)  │    │  │ OltinTokenV2 (OLTIN)           │  │
 │  - balances (RPC     │◄───┼──│   ERC20 + AccessControl        │  │
 │      read-only)      │    │  │   mint/burn by admin           │  │
-│  - transfers (event  │    │  ├────────────────────────────────┤  │
+│  - indexer (event    │    │  ├────────────────────────────────┤  │
 │      indexing)       │    │  │ UZD (deployed)                 │  │
 │  - staking (event    │    │  │   ERC20 + AccessControl        │  │
 │      indexing)       │    │  │   mint/burn by admin           │  │
@@ -91,7 +91,7 @@ Regulatory window: НАПП stablecoin pilot started 2026-01-01, runs 12 months 
 
 **Read on-chain:**
 - `balances/service.py` → `balanceOf(wallet_address)` via JSON-RPC
-- `transfers/service.py` → index Transfer events from contract; user signs and broadcasts on the client
+- `src/indexer/` → serves `GET /transactions` from `ChainEvent`; the client signs and broadcasts transfers using viem
 - `staking/service.py` → wrap calls to `OltinStaking` contract; rewards calculated on-chain by contract
 
 **Remove:**

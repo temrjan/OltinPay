@@ -68,7 +68,6 @@ export const translations = {
     transferSuccess: 'Muvaffaqiyatli yuborildi!',
     backToWallet: 'Hamyonga qaytish',
     favorites: 'Sevimlilar',
-    recent: 'Oxirgilar',
 
     // Profile
     language: 'Til',
@@ -194,7 +193,6 @@ export const translations = {
     transferSuccess: 'Успешно отправлено!',
     backToWallet: 'Вернуться в кошелёк',
     favorites: 'Избранные',
-    recent: 'Недавние',
 
     // Profile
     language: 'Язык',
@@ -320,7 +318,6 @@ export const translations = {
     transferSuccess: 'Successfully sent!',
     backToWallet: 'Back to wallet',
     favorites: 'Favorites',
-    recent: 'Recent',
 
     // Profile
     language: 'Language',
