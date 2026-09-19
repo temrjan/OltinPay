@@ -147,18 +147,6 @@ class ApiClient {
     }>('/welcome/claim', { method: 'POST' });
   }
 
-  // Transfers
-  async createTransfer(to_oltin_id: string, amount: number) {
-    return this.request<any>('/transfers', {
-      method: 'POST',
-      body: JSON.stringify({ to_oltin_id, amount }),
-    });
-  }
-
-  async getTransfers(limit = 20, offset = 0) {
-    return this.request<any[]>(`/transfers?limit=${limit}&offset=${offset}`);
-  }
-
   // Staking — read-only. stake/unstake/claim are signed client-side via viem
   // straight to the OltinStaking contract (see lib/chain), never through here.
   async getStaking() {
@@ -206,10 +194,6 @@ class ApiClient {
   }
 
   // Contacts
-  async getRecentContacts() {
-    return this.request<any[]>('/contacts/recent');
-  }
-
   async getFavorites() {
     return this.request<any[]>('/contacts/favorites');
   }

@@ -67,10 +67,6 @@ export default function SendPage() {
     queryFn: () => api.searchUsers(searchQuery),
     enabled: searchQuery.length >= 2,
   });
-  const { data: recentContacts } = useQuery({
-    queryKey: ['recentContacts'],
-    queryFn: () => api.getRecentContacts(),
-  });
   const { data: favorites } = useQuery({
     queryKey: ['favorites'],
     queryFn: () => api.getFavorites(),
@@ -103,7 +99,7 @@ export default function SendPage() {
         );
       }
       const to = recipientAddress as Address;
-      // Backstop self-guard by resolved address (favorites/recent skip the search self-filter).
+      // Backstop self-guard by resolved address (favorites skip the search self-filter).
       if (balancesData && to.toLowerCase() === balancesData.wallet_address.toLowerCase()) {
         throw new Error(L("O'zingizga yubora olmaysiz", 'Нельзя отправить самому себе', 'Cannot send to yourself'));
       }
@@ -135,7 +131,6 @@ export default function SendPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['balances'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['recentContacts'] });
       setStep('success');
       hapticFeedback('success');
     },
@@ -262,28 +257,6 @@ export default function SendPage() {
                         <User className="text-gold" size={20} />
                       </div>
                       <span>@{f.contact_oltin_id}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {!searchQuery && recentContacts && recentContacts.length > 0 && (
-              <div>
-                <h3 className="text-text-muted text-sm mb-2">{t('recent')}</h3>
-                <div className="space-y-2">
-                  {recentContacts.slice(0, 5).map((c: any) => (
-                    <button
-                      key={c.user_id}
-                      onClick={() =>
-                        handleSelectRecipient({ id: c.user_id, oltin_id: c.oltin_id, telegram_id: 0 })
-                      }
-                      className="w-full bg-card border border-border rounded-xl p-4 flex items-center gap-3 hover:border-gold transition-colors"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center">
-                        <User className="text-text-muted" size={20} />
-                      </div>
-                      <span>@{c.oltin_id}</span>
                     </button>
                   ))}
                 </div>

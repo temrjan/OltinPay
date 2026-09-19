@@ -19,7 +19,6 @@ from src.config import settings
 from src.contacts.models import FavoriteContact  # noqa: F401
 from src.database import Base
 from src.indexer.models import ChainEvent  # noqa: F401
-from src.transfers.models import Transfer  # noqa: F401
 from src.users.models import User  # noqa: F401
 from src.welcome.models import WelcomeClaim  # noqa: F401
 from src.withdrawals.models import Withdrawal  # noqa: F401

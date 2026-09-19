@@ -21,7 +21,6 @@ from src.indexer.poller import indexer
 from src.indexer.router import router as transactions_router
 from src.por.router import router as por_router
 from src.staking.router import router as staking_router
-from src.transfers.router import router as transfers_router
 from src.users.router import router as users_router
 from src.welcome.router import router as welcome_router
 from src.withdrawals.router import router as withdrawals_router
@@ -67,9 +66,6 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix=f"{prefix}/auth", tags=["auth"])
     app.include_router(users_router, prefix=f"{prefix}/users", tags=["users"])
     app.include_router(balances_router, prefix=f"{prefix}/balances", tags=["balances"])
-    app.include_router(
-        transfers_router, prefix=f"{prefix}/transfers", tags=["transfers"]
-    )
     app.include_router(staking_router, prefix=f"{prefix}/staking", tags=["staking"])
     app.include_router(welcome_router, prefix=f"{prefix}/welcome", tags=["welcome"])
     app.include_router(contacts_router, prefix=f"{prefix}/contacts", tags=["contacts"])

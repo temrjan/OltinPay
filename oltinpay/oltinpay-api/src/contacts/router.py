@@ -9,19 +9,9 @@ from src.contacts import service
 from src.contacts.schemas import (
     FavoriteContactCreate,
     FavoriteContactResponse,
-    RecentContactResponse,
 )
 
 router = APIRouter()
-
-
-@router.get("/recent", response_model=list[RecentContactResponse])
-async def get_recent_contacts(
-    current_user: CurrentUser,
-    db: DbSession,
-) -> list[RecentContactResponse]:
-    """Get last 5 transfer recipients."""
-    return await service.get_recent_contacts(db, current_user.id, limit=5)
 
 
 @router.get("/favorites", response_model=list[FavoriteContactResponse])

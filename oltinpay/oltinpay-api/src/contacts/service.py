@@ -2,7 +2,6 @@
 
 import uuid
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -14,50 +13,8 @@ from src.common.exceptions import (
     NotFoundException,
 )
 from src.contacts.models import FavoriteContact
-from src.contacts.schemas import FavoriteContactResponse, RecentContactResponse
-from src.transfers.models import Transfer
+from src.contacts.schemas import FavoriteContactResponse
 from src.users import service as user_service
-
-
-async def get_recent_contacts(
-    db: AsyncSession,
-    user_id: UUID,
-    limit: int = 5,
-) -> list[RecentContactResponse]:
-    """Get recent transfer recipients.
-
-    Returns last N unique recipients ordered by most recent transfer.
-    """
-    result = await db.execute(
-        select(Transfer.to_user_id, Transfer.created_at)
-        .where(Transfer.from_user_id == user_id)
-        .order_by(Transfer.created_at.desc())
-    )
-    transfers = result.all()
-
-    # Get unique recipients preserving order
-    seen: set[UUID] = set()
-    recent: list[tuple[UUID, Any]] = []
-    for to_user_id, created_at in transfers:
-        if to_user_id not in seen:
-            seen.add(to_user_id)
-            recent.append((to_user_id, created_at))
-            if len(recent) >= limit:
-                break
-
-    # Fetch user details
-    contacts: list[RecentContactResponse] = []
-    for contact_user_id, last_transfer_at in recent:
-        user = await user_service.get_user_by_id(db, contact_user_id)
-        if user:
-            contacts.append(
-                RecentContactResponse(
-                    oltin_id=f"@{user.oltin_id}",
-                    last_transfer_at=last_transfer_at,
-                )
-            )
-
-    return contacts
 
 
 async def get_favorites(
